@@ -1,0 +1,107 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { FileCategory } from '@prisma/client';
+import { randomUUID } from 'crypto';
+import { extname } from 'path';
+import { AuthUser } from '../../common/auth';
+import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from './storage.service';
+
+@Injectable()
+export class FilesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
+
+  async upload(ownerUserId: string, file: Express.Multer.File, category: FileCategory) {
+    this.assertFile(file, category);
+    const extension = extname(file.originalname).toLowerCase();
+    const key = `${category}/${new Date().getUTCFullYear()}/${randomUUID()}${extension}`;
+    await this.storage.put(key, file.buffer);
+    try {
+      return await this.prisma.file.create({
+        data: {
+          ownerUserId,
+          storageKey: key,
+          originalFilename: file.originalname,
+          mimeType: file.mimetype,
+          sizeBytes: BigInt(file.size),
+          fileCategory: category,
+          isPrivate: category !== 'logo',
+        },
+      });
+    } catch (error) {
+      await this.storage.delete(key);
+      throw error;
+    }
+  }
+
+  async open(fileId: string, user?: AuthUser) {
+    const file = await this.prisma.file.findUnique({ where: { id: fileId } });
+    if (!file) throw new NotFoundException('File not found');
+    if (file.isPrivate && !(await this.canRead(file.id, file.ownerUserId, user))) {
+      throw new ForbiddenException('File access denied');
+    }
+    return { file, stream: this.storage.read(file.storageKey) };
+  }
+
+  async remove(fileId: string, user: AuthUser): Promise<void> {
+    const file = await this.prisma.file.findUnique({ where: { id: fileId } });
+    if (!file) return;
+    if (file.ownerUserId !== user.id && !user.roles.includes('admin')) {
+      throw new ForbiddenException();
+    }
+    await this.prisma.file.delete({ where: { id: fileId } });
+    await this.storage.delete(file.storageKey);
+  }
+
+  private async canRead(fileId: string, ownerUserId: string | null, user?: AuthUser) {
+    if (!user) return false;
+    if (ownerUserId === user.id || user.roles.some((r) => r === 'admin' || r === 'moderator')) {
+      return true;
+    }
+    if (!user.roles.includes('employer')) return false;
+    return Boolean(
+      await this.prisma.application.findFirst({
+        where: {
+          resume: { fileId },
+          job: {
+            company: {
+              members: { some: { userId: user.id, status: 'active' } },
+            },
+          },
+        },
+        select: { id: true },
+      }),
+    );
+  }
+
+  private assertFile(file: Express.Multer.File, category: FileCategory): void {
+    if (!file?.buffer?.length) throw new BadRequestException('A file is required');
+    const signatures = {
+      pdf: file.buffer.subarray(0, 5).toString() === '%PDF-',
+      docx:
+        file.buffer[0] === 0x50 &&
+        file.buffer[1] === 0x4b &&
+        ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(
+          file.mimetype,
+        ),
+      doc:
+        file.buffer.subarray(0, 8).toString('hex') === 'd0cf11e0a1b11ae1' &&
+        file.mimetype === 'application/msword',
+      image:
+        file.buffer.subarray(0, 4).toString('hex').startsWith('89504e47') ||
+        file.buffer.subarray(0, 3).toString('hex') === 'ffd8ff',
+    };
+    const valid = category === 'cv' ? signatures.pdf || signatures.docx || signatures.doc : true;
+    if (!valid) throw new BadRequestException('Unsupported or invalid file content');
+    if ((category === 'logo' || category === 'profile_image') && !signatures.image) {
+      throw new BadRequestException('Only PNG and JPEG images are supported');
+    }
+  }
+}

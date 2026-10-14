@@ -1,0 +1,149 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { EmploymentType, JobStatus, WorkplaceType } from '@prisma/client';
+import {
+  AuthUser,
+  CompanyMemberGuard,
+  CurrentUser,
+  JwtAuthGuard,
+  Roles,
+  RolesGuard,
+} from '../../common/auth';
+import {
+  CreateJobDto,
+  ReplaceJobSkillsDto,
+  ReplaceScreeningDto,
+  UpdateJobDto,
+} from './jobs.dto';
+import { JobsService } from './jobs.service';
+
+@ApiTags('jobs')
+@Controller('jobs')
+export class PublicJobsController {
+  constructor(private readonly jobs: JobsService) {}
+
+  @Get()
+  list(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('location') location?: string,
+    @Query('company') company?: string,
+    @Query('employment_type', new ParseEnumPipe(EmploymentType, { optional: true }))
+    employmentType?: EmploymentType,
+    @Query('career_level') careerLevel?: string,
+    @Query('workplace_type', new ParseEnumPipe(WorkplaceType, { optional: true }))
+    workplaceType?: WorkplaceType,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.jobs.listPublic({
+      q,
+      category,
+      location,
+      company,
+      employmentType,
+      careerLevel,
+      workplaceType,
+      page,
+      limit,
+    });
+  }
+
+  @Get(':slug')
+  detail(
+    @Param('slug') slug: string,
+    @Headers('x-session-id') sessionId?: string,
+    @Headers('x-view-source') source?: string,
+  ) {
+    return this.jobs.publicDetail(slug, sessionId, source);
+  }
+}
+
+@ApiTags('admin jobs')
+@ApiBearerAuth()
+@Controller('admin/jobs')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'moderator')
+export class AdminJobsController {
+  constructor(private readonly jobs: JobsService) {}
+
+  @Get()
+  list() {
+    return this.jobs.adminList();
+  }
+
+  @Get('pending')
+  pending() {
+    return this.jobs.adminList('pending_review');
+  }
+
+  @Post()
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateJobDto) {
+    return this.jobs.create(user.id, dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateJobDto) {
+    return this.jobs.update(id, dto);
+  }
+
+  @Post(':id/:transition')
+  transition(
+    @Param('id') id: string,
+    @Param('transition') transition: 'publish' | 'close' | 'archive',
+    @CurrentUser() user: AuthUser,
+  ) {
+    const states: Record<typeof transition, JobStatus> = {
+      publish: 'published',
+      close: 'closed',
+      archive: 'archived',
+    };
+    return this.jobs.transition(id, states[transition], user.id);
+  }
+
+  @Put(':id/screening-questions')
+  screening(@Param('id') id: string, @Body() dto: ReplaceScreeningDto) {
+    return this.jobs.replaceScreening(id, dto);
+  }
+
+  @Put(':id/skills')
+  skills(@Param('id') id: string, @Body() dto: ReplaceJobSkillsDto) {
+    return this.jobs.replaceSkills(id, dto);
+  }
+}
+
+@ApiTags('employer jobs')
+@ApiBearerAuth()
+@Controller('employer/companies/:companyId/jobs')
+@UseGuards(JwtAuthGuard, RolesGuard, CompanyMemberGuard)
+@Roles('employer')
+export class EmployerJobsController {
+  constructor(private readonly jobs: JobsService) {}
+
+  @Get()
+  list(@CurrentUser() user: AuthUser, @Param('companyId') companyId: string) {
+    return this.jobs.employerJobs(user.id, companyId);
+  }
+
+  @Get(':jobId/stats')
+  stats(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('jobId') jobId: string,
+  ) {
+    return this.jobs.employerStats(user.id, companyId, jobId);
+  }
+}
