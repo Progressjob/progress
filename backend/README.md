@@ -33,8 +33,10 @@ npm install
 cp .env.example .env
 npm run prisma:deploy
 npm run prisma:seed
-npm run start:dev
+npm run dev
 ```
+
+(`npm run start:dev` is equivalent.)
 
 On Windows PowerShell, use `Copy-Item .env.example .env`.
 
@@ -44,6 +46,7 @@ Example connection string (adjust user/password as needed):
 
 The API base is `http://localhost:3000/api/v1`. Swagger is at
 `http://localhost:3000/api/docs`; health is at `/api/v1/health`.
+A React + Vite frontend harness is available in `../frontend` (`cd ../frontend && npm run dev`).
 
 Development seed logins:
 
@@ -52,6 +55,33 @@ Development seed logins:
 - Candidate: `candidate@example.com` / `Candidate123!`
 
 Change all development passwords before exposing the service.
+
+## Troubleshooting
+
+### `EADDRINUSE: address already in use :::3000`
+
+The API defaults to port 3000 ([`PORT`](.env.example)). Nest can bootstrap fully and still exit if another process already listens on that port—often a **second** terminal running `npm run dev` or `npm run start:dev`.
+
+1. Run **only one** watch-mode backend at a time.
+2. Find what holds the port (Windows):
+
+   ```bash
+   netstat -ano | findstr :3000
+   taskkill /PID <pid_from_last_column> /F
+   ```
+
+3. Start again: `npm run dev`.
+4. Confirm: `http://localhost:3000/api/v1/health` should return 200.
+
+Watch-mode restarts rely on graceful shutdown; avoid force-killing Node unless the port stays stuck.
+
+### `Cannot find module '.../dist/main'`
+
+[`nest-cli.json`](nest-cli.json) uses `"deleteOutDir": true`, so `dist/` is wiped on each watch rebuild. Do **not** run `npm run build && npm run start:prod` while `npm run dev` is active in another terminal—build output can disappear mid-run. Stop watch first, then build and `npm run start:prod`.
+
+### TypeScript watch errors block restarts
+
+If the compiler reports errors (for example invalid `ignoreDeprecations` or missing `vitest/globals` types), fix [`tsconfig.json`](tsconfig.json) / [`tsconfig.build.json`](tsconfig.build.json) before expecting the server to reload. An old Node process may still hold port 3000 until you stop it.
 
 ## Environment
 

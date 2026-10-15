@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -16,6 +17,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "types": ["vitest/globals", "node", "express", "multer"]
-  }
+    "types": ["node", "express", "multer"]
+  },
+  "include": ["src/**/*", "test/**/*", "prisma/**/*", "vitest.config.ts", "vitest.config.e2e.ts"]
 }

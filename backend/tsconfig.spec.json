@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node", "express", "multer"]
+  },
+  "include": ["src/**/*.spec.ts", "test/**/*.ts", "src/common/**/*.spec.ts"]
+}

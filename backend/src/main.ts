@@ -7,6 +7,7 @@ import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   app.use(helmet());
   app.enableCors();
   app.setGlobalPrefix('api');
@@ -27,7 +28,27 @@ async function bootstrap(): Promise<void> {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
 
-  await app.get(PrismaService).enableShutdownHooks(app);
-  await app.listen(process.env.PORT ?? 3000);
+  app.get(PrismaService).enableShutdownHooks(app);
+
+  const port = Number(process.env.PORT ?? 3000);
+  try {
+    await app.listen(port);
+  } catch (err: unknown) {
+    const code =
+      err !== null && typeof err === 'object' && 'code' in err
+        ? (err as NodeJS.ErrnoException).code
+        : undefined;
+    if (code === 'EADDRINUSE') {
+      console.error(
+        [
+          `Port ${port} is already in use.`,
+          'Stop other backend dev servers (only one `npm run dev` at a time), then free the port:',
+          `  netstat -ano | findstr :${port}`,
+          '  taskkill /PID <pid> /F',
+        ].join('\n'),
+      );
+    }
+    throw err;
+  }
 }
 void bootstrap();
