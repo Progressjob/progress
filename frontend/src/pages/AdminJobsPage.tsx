@@ -101,37 +101,49 @@ export const AdminJobsPage: React.FC = () => {
   };
 
   return (
-    <div className="stack">
-      <div className="job-card-header">
-        <div>
-          <h1>Admin Job Management</h1>
-          <p className="muted">Create draft jobs and publish them to the public job board.</p>
+    <div className="jobs-list-container">
+      {/* Studio Header */}
+      <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <span className="section-eyebrow">Enterprise Recruitment Hub</span>
+            <h1 className="board-title" style={{ margin: '0.25rem 0' }}>Job Advertisement Studio</h1>
+            <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
+              Publish verified company vacancies, manage hiring campaigns, and approve advertisements for Adama & Bishoftu.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-nav-register"
+            onClick={() => setShowCreate((v) => !v)}
+            style={{ cursor: 'pointer', border: 'none' }}
+          >
+            <span>{showCreate ? '✕ Close Studio' : '+ Post New Job Advertisement'}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setShowCreate((v) => !v)}
-        >
-          {showCreate ? 'Cancel New Job' : '+ Create Draft Job'}
-        </button>
       </div>
 
-      {actionError && <div className="card alert-error">{actionError}</div>}
+      {actionError && <div className="alert-box-error">{actionError}</div>}
 
+      {/* Creation Drawer / Form */}
       {showCreate && (
-        <div className="card">
-          <h3>Create New Job (Draft)</h3>
-          <form onSubmit={handleCreate} className="stack">
-            <div className="grid-two">
-              <div className="field">
-                <label htmlFor="adm-co">Company *</label>
+        <div className="jobs-filter-card" style={{ marginBottom: '2.5rem', border: '2px solid rgba(11, 87, 208, 0.3)' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0a2540', margin: '0 0 1.25rem' }}>
+            Draft a New Job Advertisement
+          </h2>
+
+          <form onSubmit={handleCreate} className="contact-form-fields">
+            <div className="form-row-two">
+              <div className="form-input-group">
+                <label htmlFor="adm-co">Target Hiring Organization *</label>
                 <select
                   id="adm-co"
                   required
                   value={companyId}
                   onChange={(e) => setCompanyId(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                 >
-                  <option value="">-- Select Company --</option>
+                  <option value="">-- Select Partner Company --</option>
                   {(companiesQuery.data ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -140,13 +152,14 @@ export const AdminJobsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="field">
-                <label htmlFor="adm-cat">Category *</label>
+              <div className="form-input-group">
+                <label htmlFor="adm-cat">Job Domain / Category *</label>
                 <select
                   id="adm-cat"
                   required
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                 >
                   <option value="">-- Select Category --</option>
                   {(categoriesQuery.data ?? []).map((c) => (
@@ -158,90 +171,97 @@ export const AdminJobsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid-two">
-              <div className="field">
-                <label htmlFor="adm-loc">Location</label>
-                <select
-                  id="adm-loc"
-                  value={locationId}
-                  onChange={(e) => setLocationId(e.target.value)}
-                >
-                  <option value="">-- Optional Location --</option>
-                  {(locationsQuery.data ?? []).map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label htmlFor="adm-title">Job Title *</label>
+            <div className="form-row-two">
+              <div className="form-input-group">
+                <label htmlFor="adm-title">Job Advertisement Title *</label>
                 <input
                   id="adm-title"
                   type="text"
                   required
-                  placeholder="e.g. Senior React Engineer"
+                  placeholder="e.g. Senior Production Operations Engineer"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
+
+              <div className="form-input-group">
+                <label htmlFor="adm-loc">Operating Location (Adama / Bishoftu Corridor)</label>
+                <select
+                  id="adm-loc"
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
+                >
+                  <option value="">-- Select Operating Region --</option>
+                  {(locationsQuery.data ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} ({l.region ?? 'Ethiopia'})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="field">
-              <label htmlFor="adm-desc">Description *</label>
+            <div className="form-input-group">
+              <label htmlFor="adm-desc">Full Role Description & Requirements *</label>
               <textarea
                 id="adm-desc"
                 rows={4}
                 required
+                placeholder="Detailed description of responsibilities, technical skills, and candidate profile..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 
-            <div className="grid-filters">
-              <div className="field">
-                <label htmlFor="adm-emp">Employment Type</label>
+            <div className="form-row-two">
+              <div className="form-input-group">
+                <label htmlFor="adm-emp">Employment Model</label>
                 <select
                   id="adm-emp"
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as EmploymentType)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                 >
-                  <option value="full_time">full_time</option>
-                  <option value="part_time">part_time</option>
-                  <option value="contract">contract</option>
-                  <option value="internship">internship</option>
+                  <option value="full_time">Full Time</option>
+                  <option value="part_time">Part Time</option>
+                  <option value="contract">Contract</option>
+                  <option value="internship">Internship</option>
                 </select>
               </div>
 
-              <div className="field">
-                <label htmlFor="adm-work">Workplace Type</label>
+              <div className="form-input-group">
+                <label htmlFor="adm-work">Workplace Mode</label>
                 <select
                   id="adm-work"
                   value={workplaceType}
                   onChange={(e) => setWorkplaceType(e.target.value as WorkplaceType)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                 >
-                  <option value="on_site">on_site</option>
-                  <option value="hybrid">hybrid</option>
-                  <option value="remote">remote</option>
+                  <option value="on_site">On-Site Facility</option>
+                  <option value="hybrid">Hybrid</option>
+                  <option value="remote">Fully Remote</option>
                 </select>
               </div>
 
-              <div className="field">
+              <div className="form-input-group">
                 <label htmlFor="adm-method">Application Method</label>
                 <select
                   id="adm-method"
                   value={applicationMethod}
                   onChange={(e) => setApplicationMethod(e.target.value as ApplicationMethod)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                 >
-                  <option value="internal">internal</option>
-                  <option value="external_url">external_url</option>
-                  <option value="email">email</option>
+                  <option value="internal">Internal Platform Submission</option>
+                  <option value="external_url">External Company URL</option>
+                  <option value="email">Direct Email Submission</option>
                 </select>
               </div>
+            </div>
 
-              <div className="field">
-                <label htmlFor="adm-deadline">Deadline *</label>
+            <div className="form-row-two">
+              <div className="form-input-group">
+                <label htmlFor="adm-deadline">Application Closing Date *</label>
                 <input
                   id="adm-deadline"
                   type="date"
@@ -251,8 +271,8 @@ export const AdminJobsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="field">
-                <label htmlFor="adm-vac">Vacancies *</label>
+              <div className="form-input-group">
+                <label htmlFor="adm-vac">Open Positions Count *</label>
                 <input
                   id="adm-vac"
                   type="number"
@@ -264,104 +284,133 @@ export const AdminJobsPage: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <button type="submit" className="btn" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating Draft...' : 'Save Draft Job'}
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                className="btn-auth-submit"
+                disabled={createMutation.isPending}
+                style={{ width: 'auto', padding: '0.85rem 2rem' }}
+              >
+                {createMutation.isPending ? 'Publishing Draft...' : 'Save & Prepare Advertisement →'}
+              </button>
+              <button
+                type="button"
+                className="btn-clear-filters"
+                onClick={() => setShowCreate(false)}
+              >
+                Cancel
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="tabs">
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem' }}>
         <button
           type="button"
-          className={`btn btn-sm ${tab === 'all' ? '' : 'btn-secondary'}`}
           onClick={() => setTab('all')}
+          className={`pagination-btn ${tab === 'all' ? 'active' : ''}`}
+          style={{
+            background: tab === 'all' ? 'var(--primary)' : '#ffffff',
+            color: tab === 'all' ? '#ffffff' : '#0f172a',
+            fontWeight: 700,
+          }}
         >
-          All Jobs ({allJobsQuery.data?.length ?? 0})
+          Active Job Advertisements ({allJobsQuery.data?.length ?? 0})
         </button>
         <button
           type="button"
-          className={`btn btn-sm ${tab === 'pending' ? '' : 'btn-secondary'}`}
           onClick={() => setTab('pending')}
+          className={`pagination-btn ${tab === 'pending' ? 'active' : ''}`}
+          style={{
+            background: tab === 'pending' ? 'var(--primary)' : '#ffffff',
+            color: tab === 'pending' ? '#ffffff' : '#0f172a',
+            fontWeight: 700,
+          }}
         >
-          Pending Review ({pendingJobsQuery.data?.length ?? 0})
+          Pending Review Queue ({pendingJobsQuery.data?.length ?? 0})
         </button>
       </div>
 
-      <div className="card">
-        {allJobsQuery.isLoading && <p>Loading jobs...</p>}
-        {!allJobsQuery.isLoading && jobs.length === 0 && (
-          <p className="muted">No jobs in this view.</p>
-        )}
+      {/* Jobs Campaign List */}
+      <div className="jobs-board-grid">
+        {jobs.map((job) => (
+          <div key={job.id} className="premium-job-card">
+            <div className="job-card-header">
+              <div className="company-badge">
+                {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
+              </div>
+              <div className="job-card-meta">
+                <span className="job-company-name">{job.company?.name ?? 'Partner Employer'}</span>
+                <h3 className="job-card-title">
+                  <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
+                </h3>
+              </div>
+            </div>
 
-        {jobs.length > 0 && (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Company</th>
-                <th>Status</th>
-                <th>Deadline</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id}>
-                  <td>
-                    {job.status === 'published' ? (
-                      <Link to={`/jobs/${job.slug}`}>
-                        <strong>{job.title}</strong>
-                      </Link>
-                    ) : (
-                      <strong>{job.title}</strong>
-                    )}
-                    <div>
-                      <small className="muted">{job.slug}</small>
-                    </div>
-                  </td>
-                  <td>{job.company?.name ?? job.companyId}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        job.status === 'published' ? 'badge-success' : 'badge-outline'
-                      }`}
-                    >
-                      {job.status}
-                    </span>
-                  </td>
-                  <td>{new Date(job.applicationDeadline).toLocaleDateString()}</td>
-                  <td className="row-actions">
-                    {(job.status === 'draft' ||
-                      job.status === 'pending_review' ||
-                      job.status === 'closed') && (
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        disabled={publishMutation.isPending}
-                        onClick={() => publishMutation.mutate(job.id)}
-                      >
-                        Publish
-                      </button>
-                    )}
-                    {job.status === 'published' && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-secondary"
-                        disabled={closeMutation.isPending}
-                        onClick={() => closeMutation.mutate(job.id)}
-                      >
-                        Close
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+            <div className="job-card-tags">
+              <span
+                className="tag-pill"
+                style={{
+                  background:
+                    job.status === 'published'
+                      ? '#dcfce7'
+                      : job.status === 'pending_review'
+                        ? '#fef3c7'
+                        : '#f1f5f9',
+                  color:
+                    job.status === 'published'
+                      ? '#15803d'
+                      : job.status === 'pending_review'
+                        ? '#b45309'
+                        : '#475569',
+                  fontWeight: 700,
+                }}
+              >
+                ● {job.status.toUpperCase()}
+              </span>
+              <span className="tag-pill tag-type">{job.employmentType.replace('_', ' ').toUpperCase()}</span>
+              {job.location && <span className="tag-pill tag-location">{job.location.name}</span>}
+            </div>
+
+            <div className="job-card-footer" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
+              <span className="job-deadline">
+                Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
+              </span>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {job.status !== 'published' && (
+                  <button
+                    type="button"
+                    className="btn-card-apply"
+                    style={{ background: '#16a34a', color: '#ffffff', cursor: 'pointer', border: 'none' }}
+                    onClick={() => publishMutation.mutate(job.id)}
+                    disabled={publishMutation.isPending}
+                  >
+                    Publish Live ✓
+                  </button>
+                )}
+
+                {job.status === 'published' && (
+                  <button
+                    type="button"
+                    className="btn-clear-filters"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => closeMutation.mutate(job.id)}
+                    disabled={closeMutation.isPending}
+                  >
+                    Close Vacancy
+                  </button>
+                )}
+
+                <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
+                  View Public Ad →
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

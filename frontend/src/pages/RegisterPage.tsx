@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { ProgressLogo } from '../components/ProgressLogo';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -32,7 +33,7 @@ export const RegisterPage: React.FC = () => {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError((err as Error).message || 'Registration failed');
+        setError((err as Error).message || 'Registration failed. Please verify your details.');
       }
     } finally {
       setSubmitting(false);
@@ -40,84 +41,113 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="narrow-container">
-      <div className="page-header">
-        <h1>Candidate Registration</h1>
-        <p className="muted">
-          Create a candidate account (employer accounts are created by an administrator).
+    <div className="auth-page-container">
+      <div className="auth-card auth-card-wide">
+        <div className="auth-card-brand">
+          <ProgressLogo size="md" />
+        </div>
+
+        <h1 className="auth-title">Create Candidate Account</h1>
+        <p className="auth-subtitle">
+          Join thousands of professionals matched with top Ethiopian employers across Adama, Bishoftu, and nationwide.
         </p>
-      </div>
 
-      <div className="card">
-        {error && <div className="alert-error">{error}</div>}
+        {error && <div className="alert-box-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="stack">
-          <div className="grid-two">
-            <div className="field">
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-row-two">
+            <div className="form-input-group">
               <label htmlFor="reg-first">First Name *</label>
               <input
                 id="reg-first"
                 type="text"
                 required
+                placeholder="Abebe"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
 
-            <div className="field">
+            <div className="form-input-group">
               <label htmlFor="reg-last">Last Name *</label>
               <input
                 id="reg-last"
                 type="text"
                 required
+                placeholder="Kebede"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="field">
-            <label htmlFor="reg-email">Email *</label>
-            <input
-              id="reg-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div className="form-input-group">
+            <label htmlFor="reg-email">Email Address *</label>
+            <div className="auth-input-wrapper">
+              <svg className="auth-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" strokeWidth="2" />
+                <polyline points="22,6 12,13 2,6" strokeWidth="2" />
+              </svg>
+              <input
+                id="reg-email"
+                type="email"
+                required
+                placeholder="abebe@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="field">
-            <label htmlFor="reg-phone">Phone (Optional)</label>
-            <input
-              id="reg-phone"
-              type="text"
-              placeholder="+251911000000"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
+          <div className="form-input-group">
+            <label htmlFor="reg-phone">Mobile Phone (Optional)</label>
+            <div className="auth-input-wrapper">
+              <svg className="auth-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+                  strokeWidth="2"
+                />
+              </svg>
+              <input
+                id="reg-phone"
+                type="text"
+                placeholder="+251 9..."
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="field">
-            <label htmlFor="reg-pass">Password (min 8 chars) *</label>
-            <input
-              id="reg-pass"
-              type="password"
-              minLength={8}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="form-input-group">
+            <label htmlFor="reg-pass">Secure Password (min 8 characters) *</label>
+            <div className="auth-input-wrapper">
+              <svg className="auth-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" strokeWidth="2" />
+              </svg>
+              <input
+                id="reg-pass"
+                type="password"
+                minLength={8}
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
 
-          <button type="submit" className="btn" disabled={submitting}>
-            {submitting ? 'Creating account...' : 'Register Candidate Account'}
+          <button type="submit" className="btn-auth-submit" disabled={submitting}>
+            {submitting ? 'Creating Candidate Profile...' : 'Create Account & Continue →'}
           </button>
         </form>
 
-        <p className="muted" style={{ marginTop: '1rem' }}>
-          Already have an account? <Link to="/login">Sign in</Link>
-        </p>
+        <div className="auth-footer-prompt">
+          <span>Already registered with Progress?</span>
+          <Link to="/login" className="auth-link">
+            Sign In Here
+          </Link>
+        </div>
       </div>
     </div>
   );

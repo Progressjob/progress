@@ -1,19 +1,11 @@
 import React from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supportApi } from '../api/support';
 import { useAuth } from '../auth/AuthContext';
+import { ProgressLogo } from './ProgressLogo';
 
 export const Layout: React.FC = () => {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
-
-  const healthQuery = useQuery({
-    queryKey: ['health'],
-    queryFn: () => supportApi.health(),
-    refetchInterval: 30_000,
-    retry: 1,
-  });
 
   const handleLogout = async () => {
     await logout();
@@ -24,29 +16,16 @@ export const Layout: React.FC = () => {
     <div className="app-shell">
       <header className="top-nav">
         <div className="nav-brand">
-          <Link to="/jobs" className="brand-title">
-            Ethiojobs Harness
+          <Link to="/" className="brand-logo-link">
+            <ProgressLogo size="sm" />
           </Link>
-          <span
-            className={`health-badge ${
-              healthQuery.isSuccess
-                ? 'health-ok'
-                : healthQuery.isError
-                  ? 'health-err'
-                  : 'health-wait'
-            }`}
-            title={
-              healthQuery.data?.timestamp
-                ? `Last check: ${healthQuery.data.timestamp}`
-                : 'Backend /api/v1/health status'
-            }
-          >
-            API: {healthQuery.isSuccess ? 'OK' : healthQuery.isError ? 'OFFLINE' : '...'}
-          </span>
         </div>
 
         <nav className="nav-links">
-          <NavLink to="/jobs">Jobs</NavLink>
+          <NavLink to="/" end>
+            Home
+          </NavLink>
+          <NavLink to="/jobs">Find Jobs</NavLink>
           <NavLink to="/companies">Companies</NavLink>
           <NavLink to="/contact">Contact</NavLink>
 
@@ -78,23 +57,29 @@ export const Layout: React.FC = () => {
         <div className="nav-auth">
           {user ? (
             <div className="user-pill">
-              <span>
+              <div className="user-avatar-initial">
+                {user.firstName?.charAt(0) || 'U'}
+              </div>
+              <span className="user-pill-name">
                 <strong>
                   {user.firstName} {user.lastName}
-                </strong>{' '}
+                </strong>
                 <small>({user.roles.join(', ')})</small>
               </span>
-              <button type="button" className="btn btn-sm btn-secondary" onClick={handleLogout}>
+              <button type="button" className="btn-logout" onClick={handleLogout}>
                 Logout
               </button>
             </div>
           ) : (
             <div className="auth-buttons">
-              <Link to="/login" className="btn btn-sm">
-                Login
+              <Link to="/login" className="btn-nav-login">
+                Sign In
               </Link>
-              <Link to="/register" className="btn btn-sm btn-secondary">
-                Register
+              <Link to="/register" className="btn-nav-register">
+                <span>Get Started</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
               </Link>
             </div>
           )}
@@ -104,6 +89,90 @@ export const Layout: React.FC = () => {
       <main className="main-container">
         <Outlet />
       </main>
+
+      {/* Corporate Footer */}
+      <footer className="site-footer">
+        <div className="footer-top">
+          <div className="footer-brand-col">
+            <ProgressLogo variant="white" size="md" />
+            <p className="footer-tagline">
+              "We understand that talent drives your business strategy and we make it our business to
+              find that talent."
+            </p>
+            <p className="footer-quote">"We handpick the best among the rest"</p>
+            <div className="footer-license-badge">
+              Licensed, certified & registered O/R/ G/Labor & Social Affairs Bureau
+            </div>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Quick Links</h4>
+            <ul>
+              <li>
+                <Link to="/">Home</Link>
+              </li>
+              <li>
+                <Link to="/jobs">Browse Jobs</Link>
+              </li>
+              <li>
+                <Link to="/companies">Partner Companies</Link>
+              </li>
+              <li>
+                <Link to="/contact">Contact Dukem HQ</Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Portals</h4>
+            <ul>
+              <li>
+                <Link to="/register">Candidate Registration</Link>
+              </li>
+              <li>
+                <Link to="/login">Account Sign In</Link>
+              </li>
+              <li>
+                <Link to="/employer">Employer Solutions</Link>
+              </li>
+              <li>
+                <Link to="/admin">Moderation Panel</Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="footer-contact-col">
+            <h4>Headquarters & Contact</h4>
+            <div className="contact-item">
+              <strong>Location:</strong> Dukem, Oromia Region, Ethiopia
+            </div>
+            <div className="contact-item">
+              <strong>Telephone:</strong> +251 11 887 9710
+            </div>
+            <div className="contact-item">
+              <strong>Mobile / Hotline:</strong> +251 949 811 818 / +251 994 251 515
+            </div>
+            <div className="contact-item">
+              <strong>Email:</strong> progressjobs8@gmail.com
+            </div>
+            <div className="contact-item">
+              <strong>Web:</strong> progressjobsplc.com
+            </div>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <p>© {new Date().getFullYear()} Progress Manpower Supply & Training PLC. All rights reserved.</p>
+          <div className="footer-legal-links">
+            <Link to="/contact">Privacy Policy</Link>
+            <span>•</span>
+            <Link to="/contact">Terms of Service</Link>
+            <span>•</span>
+            <Link to="/contact">Support</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
+

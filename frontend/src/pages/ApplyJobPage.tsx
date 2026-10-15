@@ -55,13 +55,19 @@ export const ApplyJobPage: React.FC = () => {
   });
 
   if (jobQuery.isLoading) {
-    return <div className="card">Loading application form...</div>;
+    return (
+      <div className="jobs-list-container">
+        <div className="job-card-skeleton" style={{ minHeight: '300px' }} />
+      </div>
+    );
   }
 
   if (jobQuery.isError || !jobQuery.data) {
     return (
-      <div className="card alert-error">
-        Could not load job: {(jobQuery.error as Error)?.message}
+      <div className="jobs-list-container">
+        <div className="alert-box-error">
+          Could not load vacancy details: {(jobQuery.error as Error)?.message}
+        </div>
       </div>
     );
   }
@@ -77,138 +83,148 @@ export const ApplyJobPage: React.FC = () => {
   };
 
   return (
-    <div className="narrow-container">
-      <div>
-        <Link to={`/jobs/${job.slug}`} className="muted">
-          ← Back to {job.title}
-        </Link>
-      </div>
+    <div className="jobs-list-container" style={{ maxWidth: '820px' }}>
+      <nav className="detail-breadcrumbs" style={{ marginBottom: '1.5rem' }}>
+        <Link to={`/jobs/${job.slug}`}>← Back to {job.title}</Link>
+      </nav>
 
-      <div className="page-header">
-        <h1>Apply for {job.title}</h1>
-        <p className="muted">
-          Company: <strong>{job.company?.name}</strong> • Job UUID: <code>{job.id}</code>
+      <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+        <span className="section-eyebrow">Direct Application</span>
+        <h1 className="board-title" style={{ margin: '0.25rem 0' }}>Apply for {job.title}</h1>
+        <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
+          Submitting to <strong>{job.company?.name ?? 'Progress Partner Employer'}</strong> • Verified Vacancy
         </p>
       </div>
 
       {job.applicationMethod !== 'internal' ? (
-        <div className="card alert-error">
-          This job uses <code>{job.applicationMethod}</code> applications and does not accept
-          in-app submissions.
+        <div className="alert-box-error">
+          This position accepts applications through external portals and does not process direct platform submissions.
         </div>
       ) : (
-        <div className="card">
+        <div className="jobs-filter-card" style={{ padding: '2.5rem' }}>
           {err && (
-            <div className="alert-error">
-              <strong>Error ({err.status}):</strong> {err.message}
+            <div className="alert-box-error">
+              <strong>Error:</strong> {err.message}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="stack">
-            <div className="field">
-              <label htmlFor="apply-resume">Select CV / Resume (Optional if none uploaded)</label>
+          <form onSubmit={handleSubmit} className="contact-form-fields">
+            {/* Resume Selection */}
+            <div className="form-input-group">
+              <label htmlFor="apply-resume">Select Curriculum Vitae (CV) *</label>
               <select
                 id="apply-resume"
                 value={resumeId}
                 onChange={(e) => setResumeId(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
               >
-                <option value="">-- No Resume / Use None --</option>
+                <option value="">-- No Attached CV (Submit Profile Only) --</option>
                 {resumes.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.title} ({r.file?.originalName ?? 'file'}) {r.isDefault ? '[Default]' : ''}
+                    {r.title} ({r.file?.originalName ?? 'Uploaded CV'}) {r.isDefault ? '[Default]' : ''}
                   </option>
                 ))}
               </select>
-              <small className="muted">
-                Need to upload a new CV? <Link to="/candidate/resumes">Manage CVs</Link>
-              </small>
+              <span style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.25rem' }}>
+                Need to upload a newly updated CV?{' '}
+                <Link to="/candidate/resumes" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                  Manage Candidate CVs →
+                </Link>
+              </span>
             </div>
 
-            <div className="field">
-              <label htmlFor="apply-cover">Cover Letter</label>
+            {/* Cover Letter */}
+            <div className="form-input-group">
+              <label htmlFor="apply-cover">Candidate Cover Statement (Optional)</label>
               <textarea
                 id="apply-cover"
                 rows={5}
-                placeholder="Introduce yourself and explain why you're a great fit..."
+                placeholder="Highlight your relevant experience, technical competencies, and why you are the ideal fit for this role..."
                 value={coverLetter}
                 onChange={(e) => setCoverLetter(e.target.value)}
               />
             </div>
 
+            {/* Screening Questions */}
             {questions.length > 0 && (
-              <div className="stack">
-                <h3>Screening Questions</h3>
-                {questions.map((q) => {
-                  const val = answers[q.id] ?? '';
-                  const opts = Array.isArray(q.options) ? q.options.map(String) : [];
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0a2540', marginBottom: '1.25rem' }}>
+                  Employer Screening Questions
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {questions.map((q) => {
+                    const val = answers[q.id] ?? '';
+                    const opts = Array.isArray(q.options) ? q.options.map(String) : [];
 
-                  return (
-                    <div key={q.id} className="field">
-                      <label>
-                        {q.questionText}{' '}
-                        {q.isRequired && <span className="req">*</span>}
-                        <small className="muted"> ({q.questionType})</small>
-                      </label>
+                    return (
+                      <div key={q.id} className="form-input-group">
+                        <label>
+                          {q.questionText} {q.isRequired && <span style={{ color: '#dc2626' }}>*</span>}
+                        </label>
 
-                      {q.questionType === 'yes_no' ? (
-                        <select
-                          required={q.isRequired}
-                          value={val}
-                          onChange={(e) =>
-                            setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                          }
-                        >
-                          <option value="">-- Select --</option>
-                          <option value="Yes">Yes</option>
-                          <option value="No">No</option>
-                        </select>
-                      ) : q.questionType === 'single_choice' && opts.length > 0 ? (
-                        <select
-                          required={q.isRequired}
-                          value={val}
-                          onChange={(e) =>
-                            setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                          }
-                        >
-                          <option value="">-- Select Option --</option>
-                          {opts.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : q.questionType === 'number' ? (
-                        <input
-                          type="number"
-                          required={q.isRequired}
-                          value={val}
-                          onChange={(e) =>
-                            setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                          }
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          required={q.isRequired}
-                          placeholder={
-                            q.questionType === 'multiple_choice' && opts.length
-                              ? `Options: ${opts.join(', ')}`
-                              : 'Your answer...'
-                          }
-                          value={val}
-                          onChange={(e) =>
-                            setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                          }
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                        {q.questionType === 'yes_no' ? (
+                          <select
+                            required={q.isRequired}
+                            value={val}
+                            onChange={(e) =>
+                              setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
+                          >
+                            <option value="">-- Select Answer --</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                          </select>
+                        ) : q.questionType === 'single_choice' && opts.length > 0 ? (
+                          <select
+                            required={q.isRequired}
+                            value={val}
+                            onChange={(e) =>
+                              setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
+                          >
+                            <option value="">-- Select Option --</option>
+                            {opts.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : q.questionType === 'number' ? (
+                          <input
+                            type="number"
+                            required={q.isRequired}
+                            value={val}
+                            onChange={(e) =>
+                              setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            required={q.isRequired}
+                            placeholder="Your answer..."
+                            value={val}
+                            onChange={(e) =>
+                              setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            <button type="submit" className="btn" disabled={applyMutation.isPending}>
-              {applyMutation.isPending ? 'Submitting Application...' : 'Submit Application'}
+            <button
+              type="submit"
+              className="btn-auth-submit"
+              disabled={applyMutation.isPending}
+              style={{ marginTop: '1.5rem' }}
+            >
+              {applyMutation.isPending ? 'Transmitting Application...' : 'Submit Application to Employer →'}
             </button>
           </form>
         </div>

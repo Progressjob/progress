@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { RequireRole } from './components/RequireRole';
+import { LandingPage } from './pages/LandingPage';
 import { JobsListPage } from './pages/JobsListPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { CompaniesListPage } from './pages/CompaniesListPage';
@@ -37,7 +38,7 @@ export function App(): React.ReactElement {
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/jobs" replace />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/jobs" element={<JobsListPage />} />
               <Route path="/jobs/:slug" element={<JobDetailPage />} />
               <Route
