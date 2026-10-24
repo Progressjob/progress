@@ -2,7 +2,20 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
+import { publicFileUrl } from '../api/files';
 import { useAuth } from '../auth/AuthContext';
+
+function compensationLabel(job: {
+  salaryVisibility?: boolean;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
+}): string {
+  if (job.salaryVisibility && (job.salaryMin || job.salaryMax)) {
+    return `${job.salaryCurrency ?? 'ETB'} ${Number(job.salaryMin ?? 0).toLocaleString()} - ${Number(job.salaryMax ?? 0).toLocaleString()}`;
+  }
+  return 'Negotiable';
+}
 
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -37,21 +50,28 @@ export const JobDetailPage: React.FC = () => {
   }
 
   const job = jobQuery.data;
+  const logoId = job.company?.logo?.id;
 
   return (
     <div className="job-detail-container">
-      {/* Breadcrumb Navigation */}
       <nav className="detail-breadcrumbs" aria-label="Breadcrumb">
         <Link to="/jobs">← Back to Vacancies</Link>
         <span>/</span>
         <span className="current-crumb">{job.title}</span>
       </nav>
 
-      {/* Hero Header Card */}
       <div className="job-hero-card">
         <div className="job-hero-top">
           <div className="company-badge-large">
-            {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
+            {logoId ? (
+              <img
+                src={publicFileUrl(logoId)}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }}
+              />
+            ) : (
+              (job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P')
+            )}
           </div>
           <div className="job-hero-info">
             <span className="job-company-pill">
@@ -72,21 +92,10 @@ export const JobDetailPage: React.FC = () => {
                   {job.location.name}
                 </span>
               )}
-              {job.category && (
-                <span className="meta-item">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
-                  </svg>
-                  {job.category.name}
-                </span>
-              )}
-              {job.referenceCode && <span className="meta-item ref-code">Ref: {job.referenceCode}</span>}
             </div>
           </div>
         </div>
 
-        {/* Highlight Pills Grid */}
         <div className="job-highlights-strip">
           <div className="highlight-pill-box">
             <span className="highlight-label">Employment Type</span>
@@ -98,12 +107,16 @@ export const JobDetailPage: React.FC = () => {
           </div>
           <div className="highlight-pill-box">
             <span className="highlight-label">Compensation</span>
-            <strong className="highlight-value">
-              {job.salaryVisibility && (job.salaryMin || job.salaryMax)
-                ? `${job.salaryCurrency ?? 'ETB'} ${Number(job.salaryMin ?? 0).toLocaleString()} - ${Number(job.salaryMax ?? 0).toLocaleString()}`
-                : 'Competitive'}
-            </strong>
+            <strong className="highlight-value">{compensationLabel(job)}</strong>
           </div>
+          {job.experienceMinYears != null && Number(job.experienceMinYears) > 0 && (
+            <div className="highlight-pill-box">
+              <span className="highlight-label">Work Experience</span>
+              <strong className="highlight-value">
+                {Number(job.experienceMinYears)}+ years
+              </strong>
+            </div>
+          )}
           <div className="highlight-pill-box">
             <span className="highlight-label">Vacancies</span>
             <strong className="highlight-value">{job.vacanciesCount} Open</strong>
@@ -115,25 +128,27 @@ export const JobDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Two Column Layout: Main Content & Sticky Sidebar */}
       <div className="job-content-columns">
-        {/* Left Column: Job Overview & Specs */}
         <div className="job-main-specs">
-          <section className="spec-card">
-            <h2>Role Overview</h2>
-            <div className="prose-content">{job.description}</div>
-          </section>
-
-          {job.responsibilities && (
+          {(job.category || job.responsibilities || job.description) && (
             <section className="spec-card">
-              <h2>Key Responsibilities</h2>
-              <div className="prose-content">{job.responsibilities}</div>
+              <h2>Responsibilities</h2>
+              {job.category && (
+                <p style={{ fontWeight: 600, margin: '0 0 0.5rem' }}>{job.category.name}</p>
+              )}
+              {(() => {
+                const resp = job.responsibilities?.trim();
+                const desc = job.description?.trim();
+                const body =
+                  resp && desc && resp === desc ? resp : resp || desc;
+                return body ? <div className="prose-content">{body}</div> : null;
+              })()}
             </section>
           )}
 
           {job.requirements && (
             <section className="spec-card">
-              <h2>Required Qualifications & Experience</h2>
+              <h2>Required Qualifications and Skills</h2>
               <div className="prose-content">{job.requirements}</div>
             </section>
           )}
@@ -162,7 +177,6 @@ export const JobDetailPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Column: Sticky Application & Employer Card */}
         <aside className="job-sidebar-specs">
           <div className="sticky-apply-card">
             <h3>Ready to Apply?</h3>
@@ -170,75 +184,36 @@ export const JobDetailPage: React.FC = () => {
               Application closes on <strong>{new Date(job.applicationDeadline).toLocaleDateString()}</strong>
             </p>
 
-            {job.applicationMethod === 'internal' && (
-              <div className="apply-actions-stack">
-                {!user ? (
-                  <>
-                    <p className="apply-helper-text">
-                      Sign in with your Progress candidate account to submit your credentials and CV.
-                    </p>
-                    <Link
-                      to="/login"
-                      state={{ from: `/jobs/${job.slug}/apply` }}
-                      className="btn-apply-primary"
-                    >
-                      Sign In to Apply
-                    </Link>
-                    <Link to="/register" className="btn-apply-secondary">
-                      Register as Candidate
-                    </Link>
-                  </>
-                ) : hasRole('candidate') ? (
-                  <Link to={`/jobs/${job.slug}/apply`} className="btn-apply-primary">
-                    <span>Submit Application</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </Link>
-                ) : (
-                  <div className="role-note-card">
-                    Signed in as <strong>{user.roles.join(', ')}</strong>. Job applications are open to candidate accounts.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {job.applicationMethod === 'external_url' && (
-              <div className="apply-actions-stack">
-                <p className="apply-helper-text">
-                  This partner employer processes applications through their corporate career portal:
-                </p>
-                {job.applicationUrl ? (
-                  <a
-                    href={job.applicationUrl}
-                    target="_blank"
-                    rel="noreferrer"
+            <div className="apply-actions-stack">
+              {!user ? (
+                <>
+                  <p className="apply-helper-text">
+                    Sign in with your Progress candidate account to submit your credentials and CV.
+                  </p>
+                  <Link
+                    to="/login"
+                    state={{ from: `/jobs/${job.slug}/apply` }}
                     className="btn-apply-primary"
                   >
-                    <span>Apply on Company Website ↗</span>
-                  </a>
-                ) : (
-                  <p className="muted">External career link not provided.</p>
-                )}
-                {job.applicationInstructions && (
-                  <div className="instructions-box">{job.applicationInstructions}</div>
-                )}
-              </div>
-            )}
-
-            {job.applicationMethod === 'email' && (
-              <div className="apply-actions-stack">
-                <p className="apply-helper-text">Submit your resume and cover letter via email to:</p>
-                {job.applicationEmail && (
-                  <a href={`mailto:${job.applicationEmail}`} className="btn-apply-primary">
-                    <span>{job.applicationEmail}</span>
-                  </a>
-                )}
-                {job.applicationInstructions && (
-                  <div className="instructions-box">{job.applicationInstructions}</div>
-                )}
-              </div>
-            )}
+                    Sign In to Apply
+                  </Link>
+                  <Link to="/register" className="btn-apply-secondary">
+                    Register as Candidate
+                  </Link>
+                </>
+              ) : hasRole('candidate') ? (
+                <Link to={`/jobs/${job.slug}/apply`} className="btn-apply-primary">
+                  <span>Submit Application</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </Link>
+              ) : (
+                <div className="role-note-card">
+                  Signed in as <strong>{user.roles.join(', ')}</strong>. Job applications are open to candidate accounts.
+                </div>
+              )}
+            </div>
 
             <div className="agency-guarantee-footer">
               <span className="guarantee-shield">🛡️</span>
@@ -246,10 +221,16 @@ export const JobDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Employer Card Preview */}
           {job.company && (
             <div className="company-preview-card">
               <h4>About the Employer</h4>
+              {logoId && (
+                <img
+                  src={publicFileUrl(logoId)}
+                  alt=""
+                  style={{ maxWidth: 80, maxHeight: 48, objectFit: 'contain', marginBottom: '0.5rem' }}
+                />
+              )}
               <p className="company-preview-name">{job.company.name}</p>
               {job.company.description && (
                 <p className="company-preview-desc">{job.company.description.slice(0, 160)}...</p>

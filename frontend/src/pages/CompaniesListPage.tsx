@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
+import { publicFileUrl } from '../api/files';
 
 export const CompaniesListPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -52,7 +53,15 @@ export const CompaniesListPage: React.FC = () => {
           <div key={c.id} className="company-directory-card">
             <div className="company-card-top">
               <div className="company-avatar-box">
-                {c.name ? c.name.charAt(0).toUpperCase() : 'C'}
+                {c.logo?.id ? (
+                  <img
+                    src={publicFileUrl(c.logo.id)}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  (c.name ? c.name.charAt(0).toUpperCase() : 'C')
+                )}
               </div>
               <div className="company-card-headings">
                 <span className="verified-badge">✓ Verified Employer</span>

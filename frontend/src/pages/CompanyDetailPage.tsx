@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
+import { publicFileUrl } from '../api/files';
 
 export const CompanyDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -39,6 +40,13 @@ export const CompanyDetailPage: React.FC = () => {
       </div>
 
       <div className="card">
+        {company.logo?.id && (
+          <img
+            src={publicFileUrl(company.logo.id)}
+            alt=""
+            style={{ maxWidth: 120, maxHeight: 72, objectFit: 'contain', marginBottom: '0.75rem' }}
+          />
+        )}
         <h1>{company.name}</h1>
         <p className="muted">
           {company.industry?.name}

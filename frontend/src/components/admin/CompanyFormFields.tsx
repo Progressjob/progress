@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CompanyPayload } from '../../api/admin';
+import { filesApi, publicFileUrl } from '../../api/files';
 import { taxonomyApi } from '../../api/taxonomy';
 
 const selectStyle: React.CSSProperties = {
@@ -21,6 +22,9 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
   onChange,
   idPrefix = 'co',
 }) => {
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
   const industriesQuery = useQuery({
     queryKey: ['taxonomy', 'industries'],
     queryFn: () => taxonomyApi.industries(),
@@ -28,8 +32,62 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
 
   const set = (patch: Partial<CompanyPayload>) => onChange({ ...value, ...patch });
 
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setLogoError(null);
+    setUploadingLogo(true);
+    try {
+      const uploaded = await filesApi.uploadLogo(file);
+      set({ logoFileId: uploaded.id });
+    } catch (err) {
+      setLogoError((err as Error).message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   return (
     <div className="contact-form-fields">
+      <div className="form-input-group">
+        <label htmlFor={`${idPrefix}-logo`}>Company logo (optional)</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          {value.logoFileId ? (
+            <img
+              src={publicFileUrl(value.logoFileId)}
+              alt="Company logo preview"
+              style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, border: '1px solid #e2e8f0' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 8,
+                background: '#f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                fontSize: '0.75rem',
+              }}
+            >
+              No logo
+            </div>
+          )}
+          <input
+            id={`${idPrefix}-logo`}
+            type="file"
+            accept="image/png,image/jpeg"
+            disabled={uploadingLogo}
+            onChange={handleLogoChange}
+          />
+          {uploadingLogo && <span className="muted">Uploading…</span>}
+        </div>
+        {logoError && <p className="muted" style={{ color: '#b91c1c', margin: '0.35rem 0 0' }}>{logoError}</p>}
+      </div>
+
       <div className="form-row-two">
         <div className="form-input-group">
           <label htmlFor={`${idPrefix}-name`}>Company name *</label>
@@ -72,7 +130,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
 
       <div className="form-row-two">
         <div className="form-input-group">
-          <label htmlFor={`${idPrefix}-web`}>Website</label>
+          <label htmlFor={`${idPrefix}-web`}>Website (optional)</label>
           <input
             id={`${idPrefix}-web`}
             type="url"
@@ -114,6 +172,27 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
 
       <div className="form-row-two">
         <div className="form-input-group">
+          <label htmlFor={`${idPrefix}-contact`}>Contact person (HR manager)</label>
+          <input
+            id={`${idPrefix}-contact`}
+            value={value.contactPerson ?? ''}
+            onChange={(e) => set({ contactPerson: e.target.value || undefined })}
+            placeholder="For admin verification only"
+          />
+        </div>
+        <div className="form-input-group">
+          <label htmlFor={`${idPrefix}-licence`}>Company licence registration number</label>
+          <input
+            id={`${idPrefix}-licence`}
+            value={value.licenceNumber ?? ''}
+            onChange={(e) => set({ licenceNumber: e.target.value || undefined })}
+            placeholder="For verification"
+          />
+        </div>
+      </div>
+
+      <div className="form-row-two">
+        <div className="form-input-group">
           <label htmlFor={`${idPrefix}-country`}>Country</label>
           <input
             id={`${idPrefix}-country`}
@@ -141,7 +220,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
           />
         </div>
         <div className="form-input-group">
-          <label htmlFor={`${idPrefix}-founded`}>Founded year</label>
+          <label htmlFor={`${idPrefix}-founded`}>Founded year (optional)</label>
           <input
             id={`${idPrefix}-founded`}
             type="number"
@@ -158,7 +237,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
       </div>
 
       <div className="form-input-group">
-        <label htmlFor={`${idPrefix}-address`}>Address</label>
+        <label htmlFor={`${idPrefix}-address`}>Office address</label>
         <input
           id={`${idPrefix}-address`}
           value={value.address ?? ''}

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CreateAdminJobPayload } from '../../api/admin';
 import { taxonomyApi } from '../../api/taxonomy';
-import type { ApplicationMethod, EmploymentType, WorkplaceType } from '../../types/api';
+import type { Category, EmploymentType, WorkplaceType } from '../../types/api';
 
 const selectStyle: React.CSSProperties = {
   width: '100%',
@@ -10,6 +10,17 @@ const selectStyle: React.CSSProperties = {
   borderRadius: '12px',
   border: '1px solid #cbd5e1',
 };
+
+function flattenCategories(categories: Category[]): Category[] {
+  const out: Category[] = [];
+  for (const c of categories) {
+    out.push(c);
+    if (c.children?.length) {
+      out.push(...flattenCategories(c.children));
+    }
+  }
+  return out;
+}
 
 export interface AdminJobFormFieldsProps {
   value: CreateAdminJobPayload;
@@ -34,36 +45,54 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
     queryFn: () => taxonomyApi.locations(),
   });
 
+  const categoryOptions = useMemo(
+    () => flattenCategories(categoriesQuery.data ?? []),
+    [categoriesQuery.data],
+  );
+
+  const selectedCategory = categoryOptions.find((c) => c.id === value.categoryId);
+
+  const salaryMode: 'negotiable' | 'range' =
+    value.salaryVisibility || value.salaryMin != null || value.salaryMax != null
+      ? 'range'
+      : 'negotiable';
+
   const set = (patch: Partial<CreateAdminJobPayload>) => onChange({ ...value, ...patch });
+
+  const setSalaryMode = (mode: 'negotiable' | 'range') => {
+    if (mode === 'negotiable') {
+      onChange({
+        ...value,
+        salaryMin: undefined,
+        salaryMax: undefined,
+        salaryVisibility: false,
+      });
+    } else {
+      onChange({
+        ...value,
+        salaryVisibility: true,
+        salaryCurrency: value.salaryCurrency ?? 'ETB',
+      });
+    }
+  };
 
   return (
     <div className="contact-form-fields">
       {!hideCompanySelect && companySelect}
 
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-title">Job title *</label>
-          <input
-            id="adm-title"
-            required
-            value={value.title}
-            onChange={(e) => set({ title: e.target.value })}
-          />
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-ref">Reference code</label>
-          <input
-            id="adm-ref"
-            value={value.referenceCode ?? ''}
-            onChange={(e) => set({ referenceCode: e.target.value || undefined })}
-            placeholder="e.g. DEV-002"
-          />
-        </div>
+      <div className="form-input-group">
+        <label htmlFor="adm-title">Job title *</label>
+        <input
+          id="adm-title"
+          required
+          value={value.title}
+          onChange={(e) => set({ title: e.target.value })}
+        />
       </div>
 
       <div className="form-row-two">
         <div className="form-input-group">
-          <label htmlFor="adm-cat">Category *</label>
+          <label htmlFor="adm-cat">Responsibilities *</label>
           <select
             id="adm-cat"
             required
@@ -71,8 +100,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
             onChange={(e) => set({ categoryId: e.target.value })}
             style={selectStyle}
           >
-            <option value="">— Select category —</option>
-            {(categoriesQuery.data ?? []).map((c) => (
+            <option value="">— Select responsibility area —</option>
+            {categoryOptions.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -97,38 +126,30 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
         </div>
       </div>
 
-      <div className="form-input-group">
-        <label htmlFor="adm-summary">Short summary</label>
-        <input
-          id="adm-summary"
-          value={value.summary ?? ''}
-          onChange={(e) => set({ summary: e.target.value || undefined })}
-        />
-      </div>
+      {value.categoryId && (
+        <div className="form-input-group">
+          <label htmlFor="adm-resp-desc">
+            Responsibility description *
+            {selectedCategory ? ` (${selectedCategory.name})` : ''}
+          </label>
+          {selectedCategory?.description && (
+            <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>
+              {selectedCategory.description}
+            </p>
+          )}
+          <textarea
+            id="adm-resp-desc"
+            rows={3}
+            required
+            value={value.responsibilities ?? ''}
+            onChange={(e) => set({ responsibilities: e.target.value })}
+            placeholder="Describe what the hire will do in this role (shown to candidates)."
+          />
+        </div>
+      )}
 
       <div className="form-input-group">
-        <label htmlFor="adm-desc">Full description *</label>
-        <textarea
-          id="adm-desc"
-          rows={4}
-          required
-          value={value.description}
-          onChange={(e) => set({ description: e.target.value })}
-        />
-      </div>
-
-      <div className="form-input-group">
-        <label htmlFor="adm-resp">Responsibilities</label>
-        <textarea
-          id="adm-resp"
-          rows={3}
-          value={value.responsibilities ?? ''}
-          onChange={(e) => set({ responsibilities: e.target.value || undefined })}
-        />
-      </div>
-
-      <div className="form-input-group">
-        <label htmlFor="adm-req">Requirements</label>
+        <label htmlFor="adm-req">Required Qualifications and Skills</label>
         <textarea
           id="adm-req"
           rows={3}
@@ -147,23 +168,12 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           />
         </div>
         <div className="form-input-group">
-          <label htmlFor="adm-career">Career level</label>
+          <label htmlFor="adm-exp">Required Work Experience (years)</label>
           <input
-            id="adm-career"
-            value={value.careerLevel ?? ''}
-            onChange={(e) => set({ careerLevel: e.target.value || undefined })}
-            placeholder="e.g. Mid-level"
-          />
-        </div>
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-exp-min">Min experience (years)</label>
-          <input
-            id="adm-exp-min"
+            id="adm-exp"
             type="number"
             min={0}
+            step={0.5}
             value={value.experienceMinYears ?? ''}
             onChange={(e) =>
               set({
@@ -172,20 +182,19 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
             }
           />
         </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-exp-max">Max experience (years)</label>
-          <input
-            id="adm-exp-max"
-            type="number"
-            min={0}
-            value={value.experienceMaxYears ?? ''}
-            onChange={(e) =>
-              set({
-                experienceMaxYears: e.target.value ? Number(e.target.value) : undefined,
-              })
-            }
-          />
-        </div>
+      </div>
+
+      <div className="form-input-group">
+        <label htmlFor="adm-vac">Open positions *</label>
+        <input
+          id="adm-vac"
+          type="number"
+          min={1}
+          required
+          value={value.vacanciesCount}
+          onChange={(e) => set({ vacanciesCount: Number(e.target.value) || 1 })}
+          style={{ maxWidth: '120px' }}
+        />
       </div>
 
       <div className="form-row-two">
@@ -220,126 +229,74 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
         </div>
       </div>
 
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-sal-min">Salary min</label>
-          <input
-            id="adm-sal-min"
-            type="number"
-            min={0}
-            value={value.salaryMin ?? ''}
-            onChange={(e) =>
-              set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })
-            }
-          />
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-sal-max">Salary max</label>
-          <input
-            id="adm-sal-max"
-            type="number"
-            min={0}
-            value={value.salaryMax ?? ''}
-            onChange={(e) =>
-              set({ salaryMax: e.target.value ? Number(e.target.value) : undefined })
-            }
-          />
-        </div>
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-currency">Salary currency</label>
-          <input
-            id="adm-currency"
-            value={value.salaryCurrency ?? 'ETB'}
-            onChange={(e) => set({ salaryCurrency: e.target.value || undefined })}
-          />
-        </div>
-        <div className="form-input-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="form-input-group">
+        <span style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Salary</span>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <input
-              type="checkbox"
-              checked={Boolean(value.salaryVisibility)}
-              onChange={(e) => set({ salaryVisibility: e.target.checked })}
+              type="radio"
+              name="adm-salary-mode"
+              checked={salaryMode === 'negotiable'}
+              onChange={() => setSalaryMode('negotiable')}
             />
-            Show salary on public listing
+            Negotiable
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <input
+              type="radio"
+              name="adm-salary-mode"
+              checked={salaryMode === 'range'}
+              onChange={() => setSalaryMode('range')}
+            />
+            Specify range
           </label>
         </div>
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-method">Application method</label>
-          <select
-            id="adm-method"
-            value={value.applicationMethod}
-            onChange={(e) => set({ applicationMethod: e.target.value as ApplicationMethod })}
-            style={selectStyle}
-          >
-            <option value="internal">Internal (platform)</option>
-            <option value="external_url">External URL</option>
-            <option value="email">Email</option>
-          </select>
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-deadline">Application deadline *</label>
-          <input
-            id="adm-deadline"
-            type="date"
-            required
-            value={value.applicationDeadline}
-            onChange={(e) => set({ applicationDeadline: e.target.value })}
-          />
-        </div>
-      </div>
-
-      {value.applicationMethod === 'external_url' && (
-        <div className="form-input-group">
-          <label htmlFor="adm-app-url">Application URL *</label>
-          <input
-            id="adm-app-url"
-            type="url"
-            required
-            value={value.applicationUrl ?? ''}
-            onChange={(e) => set({ applicationUrl: e.target.value || undefined })}
-          />
-        </div>
-      )}
-
-      {value.applicationMethod === 'email' && (
-        <div className="form-input-group">
-          <label htmlFor="adm-app-email">Application email *</label>
-          <input
-            id="adm-app-email"
-            type="email"
-            required
-            value={value.applicationEmail ?? ''}
-            onChange={(e) => set({ applicationEmail: e.target.value || undefined })}
-          />
-        </div>
-      )}
-
-      <div className="form-input-group">
-        <label htmlFor="adm-app-inst">Application instructions</label>
-        <textarea
-          id="adm-app-inst"
-          rows={2}
-          value={value.applicationInstructions ?? ''}
-          onChange={(e) => set({ applicationInstructions: e.target.value || undefined })}
-        />
+        {salaryMode === 'range' && (
+          <div className="form-row-two">
+            <div className="form-input-group">
+              <label htmlFor="adm-sal-min">Minimum</label>
+              <input
+                id="adm-sal-min"
+                type="number"
+                min={0}
+                value={value.salaryMin ?? ''}
+                onChange={(e) =>
+                  set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })
+                }
+              />
+            </div>
+            <div className="form-input-group">
+              <label htmlFor="adm-sal-max">Maximum</label>
+              <input
+                id="adm-sal-max"
+                type="number"
+                min={0}
+                value={value.salaryMax ?? ''}
+                onChange={(e) =>
+                  set({ salaryMax: e.target.value ? Number(e.target.value) : undefined })
+                }
+              />
+            </div>
+            <div className="form-input-group">
+              <label htmlFor="adm-currency">Currency</label>
+              <input
+                id="adm-currency"
+                value={value.salaryCurrency ?? 'ETB'}
+                onChange={(e) => set({ salaryCurrency: e.target.value || undefined })}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="form-input-group">
-        <label htmlFor="adm-vac">Open positions *</label>
+        <label htmlFor="adm-deadline">Application deadline *</label>
         <input
-          id="adm-vac"
-          type="number"
-          min={1}
+          id="adm-deadline"
+          type="date"
           required
-          value={value.vacanciesCount}
-          onChange={(e) => set({ vacanciesCount: Number(e.target.value) || 1 })}
-          style={{ maxWidth: '120px' }}
+          value={value.applicationDeadline}
+          onChange={(e) => set({ applicationDeadline: e.target.value })}
         />
       </div>
     </div>

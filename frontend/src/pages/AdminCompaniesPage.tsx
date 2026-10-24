@@ -9,7 +9,9 @@ import {
   companyFromRecord,
   emptyCompanyForm,
   emptyEmployerForm,
+  sanitizeCompanyPayload,
 } from '../components/admin/adminFormUtils';
+import { publicFileUrl } from '../api/files';
 import type { Company } from '../types/api';
 
 const iconBtn: React.CSSProperties = {
@@ -66,10 +68,7 @@ export const AdminCompaniesPage: React.FC = () => {
   const provisionMutation = useMutation({
     mutationFn: () =>
       adminApi.provisionCompany({
-        company: {
-          ...registerCompany,
-          industryId: registerCompany.industryId || undefined,
-        },
+        company: sanitizeCompanyPayload(registerCompany),
         employer: registerEmployer,
         verify: true,
         canSelfPublishJobs,
@@ -89,10 +88,7 @@ export const AdminCompaniesPage: React.FC = () => {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editTarget) return;
-      const payload = {
-        ...editForm,
-        industryId: editForm.industryId || undefined,
-      };
+      const payload = sanitizeCompanyPayload(editForm);
       await adminApi.updateCompany(editTarget.id, payload);
       if (editVerification !== editTarget.verificationStatus) {
         await adminApi.verifyCompany(editTarget.id, editVerification);
@@ -191,10 +187,44 @@ export const AdminCompaniesPage: React.FC = () => {
               return (
                 <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: suspended ? 0.75 : 1 }}>
                   <td style={{ padding: '0.75rem' }}>
-                    <strong>{c.name}</strong>
-                    <div className="muted" style={{ fontSize: '0.85rem' }}>
-                      {c.slug}
-                      {c.email ? ` · ${c.email}` : ''}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      {c.logo?.id ? (
+                        <img
+                          src={publicFileUrl(c.logo.id)}
+                          alt=""
+                          style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, border: '1px solid #e2e8f0' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 6,
+                            background: '#f1f5f9',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            color: '#64748b',
+                          }}
+                        >
+                          {c.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <strong>{c.name}</strong>
+                        <div className="muted" style={{ fontSize: '0.85rem' }}>
+                          {c.slug}
+                          {c.email ? ` · ${c.email}` : ''}
+                        </div>
+                        {(c.contactPerson || c.licenceNumber) && (
+                          <div className="muted" style={{ fontSize: '0.8rem', marginTop: '0.15rem' }}>
+                            {c.contactPerson ? `HR: ${c.contactPerson}` : ''}
+                            {c.contactPerson && c.licenceNumber ? ' · ' : ''}
+                            {c.licenceNumber ? `Licence: ${c.licenceNumber}` : ''}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td style={{ padding: '0.75rem' }}>
@@ -274,7 +304,7 @@ export const AdminCompaniesPage: React.FC = () => {
           >
             <h3 style={{ margin: '0 0 0.5rem' }}>Company profile</h3>
             <CompanyFormFields value={registerCompany} onChange={setRegisterCompany} idPrefix="reg" />
-            <h3 style={{ margin: '1.25rem 0 0.5rem' }}>Employer login</h3>
+            <h3 style={{ margin: '1.25rem 0 0.5rem' }}>Company login</h3>
             <EmployerCredentialsFields value={registerEmployer} onChange={setRegisterEmployer} idPrefix="reg-emp" />
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
               <input

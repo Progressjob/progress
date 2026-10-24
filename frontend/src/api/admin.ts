@@ -2,9 +2,7 @@ import { apiFetch } from './client';
 import type {
   AdminCandidateUser,
   AdminDashboard,
-  ApplicationMethod,
   Company,
-  CompanyMemberRole,
   CompanyPortalStatus,
   EmploymentType,
   Job,
@@ -23,16 +21,16 @@ export interface CompanyPayload {
   region?: string;
   city?: string;
   address?: string;
+  contactPerson?: string;
+  licenceNumber?: string;
+  logoFileId?: string;
   companySize?: string;
   foundedYear?: number;
 }
 
 export interface CreateEmployerPayload {
   email: string;
-  firstName: string;
-  lastName: string;
   temporaryPassword: string;
-  memberRole: CompanyMemberRole;
 }
 
 export interface ProvisionCompanyPayload {
@@ -56,25 +54,18 @@ export interface CreateAdminJobPayload {
   categoryId: string;
   locationId?: string;
   title: string;
-  description: string;
-  referenceCode?: string;
-  summary?: string;
+  /** Set from responsibility description on submit (backend requires `description`). */
+  description?: string;
   responsibilities?: string;
   requirements?: string;
   educationRequirement?: string;
   experienceMinYears?: number;
-  experienceMaxYears?: number;
   employmentType: EmploymentType;
-  careerLevel?: string;
   workplaceType: WorkplaceType;
   salaryMin?: number;
   salaryMax?: number;
   salaryCurrency?: string;
   salaryVisibility?: boolean;
-  applicationMethod: ApplicationMethod;
-  applicationUrl?: string;
-  applicationEmail?: string;
-  applicationInstructions?: string;
   applicationDeadline: string;
   vacanciesCount: number;
 }

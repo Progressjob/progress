@@ -19,6 +19,7 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -36,6 +37,7 @@ export class CompanyDto {
   description?: string;
 
   @IsOptional()
+  @ValidateIf((o: CompanyDto) => Boolean(o.websiteUrl?.trim()))
   @IsUrl()
   websiteUrl?: string;
 
@@ -65,6 +67,16 @@ export class CompanyDto {
 
   @IsOptional()
   @IsString()
+  @Length(0, 200)
+  contactPerson?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  licenceNumber?: string;
+
+  @IsOptional()
+  @IsString()
   companySize?: string;
 
   @IsOptional()
@@ -85,19 +97,8 @@ export class CreateEmployerDto {
   email!: string;
 
   @IsString()
-  @Length(1, 100)
-  firstName!: string;
-
-  @IsString()
-  @Length(1, 100)
-  lastName!: string;
-
-  @IsString()
   @MinLength(8)
   temporaryPassword!: string;
-
-  @IsEnum(CompanyMemberRole)
-  memberRole!: CompanyMemberRole;
 }
 
 export class UpdateMemberDto {

@@ -41,7 +41,7 @@ export const AdminCredentialsModal: React.FC<AdminCredentialsModalProps> = ({
         style={{ maxWidth: '480px', width: '100%' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: 0 }}>Employer login credentials</h2>
+        <h2 style={{ margin: 0 }}>Company login credentials</h2>
         <p className="muted" style={{ margin: 0 }}>
           Share these once with the company. If the email already existed, the password was not
           changed—use their existing password or reset separately.

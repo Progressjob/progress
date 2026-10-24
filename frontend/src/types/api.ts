@@ -27,6 +27,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
   parentId?: string | null;
   children?: Category[];
 }
@@ -67,6 +68,8 @@ export interface Company {
   region?: string | null;
   city?: string | null;
   address?: string | null;
+  contactPerson?: string | null;
+  licenceNumber?: string | null;
   companySize?: string | null;
   foundedYear?: number | null;
   verificationStatus: 'pending' | 'verified' | 'rejected';

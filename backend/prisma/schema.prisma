@@ -345,6 +345,8 @@ model Company {
   region             String?                       @db.VarChar(100)
   city               String?                       @db.VarChar(100)
   address            String?
+  contactPerson      String?                       @map("contact_person") @db.VarChar(200)
+  licenceNumber      String?                       @map("licence_number") @db.VarChar(100)
   companySize        String?                       @map("company_size") @db.VarChar(50)
   foundedYear        Int?                          @map("founded_year") @db.SmallInt
   verificationStatus VerificationStatus            @default(pending) @map("verification_status")

@@ -6,7 +6,6 @@ export function emptyCompanyForm(): CompanyPayload {
     name: '',
     country: 'Ethiopia',
     description: '',
-    websiteUrl: '',
     email: '',
     phone: '',
     region: '',
@@ -17,13 +16,34 @@ export function emptyCompanyForm(): CompanyPayload {
   };
 }
 
+/** Strip empty strings so optional URL and text fields do not fail validation. */
+export function sanitizeCompanyPayload(company: CompanyPayload): CompanyPayload {
+  const trim = (s?: string) => {
+    const t = s?.trim();
+    return t ? t : undefined;
+  };
+  return {
+    ...company,
+    industryId: company.industryId || undefined,
+    description: trim(company.description),
+    websiteUrl: trim(company.websiteUrl),
+    email: trim(company.email),
+    phone: trim(company.phone),
+    region: trim(company.region),
+    city: trim(company.city),
+    address: trim(company.address),
+    contactPerson: trim(company.contactPerson),
+    licenceNumber: trim(company.licenceNumber),
+    companySize: trim(company.companySize),
+    foundedYear: company.foundedYear,
+    logoFileId: company.logoFileId,
+  };
+}
+
 export function emptyEmployerForm(): CreateEmployerPayload {
   return {
     email: '',
-    firstName: '',
-    lastName: '',
     temporaryPassword: generateTemporaryPassword(),
-    memberRole: 'owner',
   };
 }
 
@@ -42,19 +62,14 @@ export function emptyAdminJobForm(companyId = ''): CreateAdminJobPayload {
     companyId,
     categoryId: '',
     title: '',
-    description: '',
-    summary: '',
-    referenceCode: '',
     responsibilities: '',
     requirements: '',
     educationRequirement: '',
     employmentType: 'full_time',
     workplaceType: 'on_site',
-    applicationMethod: 'internal',
     applicationDeadline: '2026-12-31',
     vacanciesCount: 1,
     salaryCurrency: 'ETB',
-    salaryVisibility: false,
   };
 }
 
@@ -69,6 +84,10 @@ export function companyFromRecord(c: {
   region?: string | null;
   city?: string | null;
   address?: string | null;
+  contactPerson?: string | null;
+  licenceNumber?: string | null;
+  logoFileId?: string | null;
+  logo?: { id: string } | null;
   companySize?: string | null;
   foundedYear?: number | null;
   industry?: { id: string } | null;
@@ -84,7 +103,27 @@ export function companyFromRecord(c: {
     region: c.region ?? undefined,
     city: c.city ?? undefined,
     address: c.address ?? undefined,
+    contactPerson: c.contactPerson ?? undefined,
+    licenceNumber: c.licenceNumber ?? undefined,
+    logoFileId: c.logoFileId ?? c.logo?.id ?? undefined,
     companySize: c.companySize ?? undefined,
     foundedYear: c.foundedYear ?? undefined,
+  };
+}
+
+/** Normalize job form values before API create. */
+export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobPayload {
+  const trim = (s?: string) => {
+    const t = s?.trim();
+    return t ? t : undefined;
+  };
+  const responsibilities = trim(form.responsibilities);
+  return {
+    ...form,
+    description: responsibilities ?? '',
+    responsibilities,
+    requirements: trim(form.requirements),
+    educationRequirement: trim(form.educationRequirement),
+    locationId: form.locationId || undefined,
   };
 }

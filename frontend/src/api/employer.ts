@@ -1,7 +1,6 @@
 import { apiFetch } from './client';
 import type {
   Application,
-  ApplicationMethod,
   ApplicationStatus,
   Company,
   EmploymentType,
@@ -14,9 +13,15 @@ export interface CreateCompanyJobPayload {
   locationId?: string;
   title: string;
   description: string;
+  responsibilities?: string;
+  requirements?: string;
+  experienceMinYears?: number;
   employmentType: EmploymentType;
   workplaceType: WorkplaceType;
-  applicationMethod: ApplicationMethod;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryVisibility?: boolean;
   applicationDeadline: string;
   vacanciesCount: number;
 }

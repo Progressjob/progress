@@ -22,22 +22,46 @@ import {
 export class CompaniesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly publicCompanySelect = {
+    id: true,
+    name: true,
+    slug: true,
+    logoFileId: true,
+    industryId: true,
+    description: true,
+    websiteUrl: true,
+    email: true,
+    phone: true,
+    country: true,
+    region: true,
+    city: true,
+    address: true,
+    companySize: true,
+    foundedYear: true,
+    verificationStatus: true,
+    isFeatured: true,
+    logo: true,
+    industry: true,
+  } satisfies Prisma.CompanySelect;
+
   listPublic(page = 1, limit = 20) {
     return this.prisma.company.findMany({
       where: { verificationStatus: 'verified', portalStatus: 'active' },
       orderBy: [{ isFeatured: 'desc' }, { name: 'asc' }],
       skip: (page - 1) * limit,
       take: Math.min(limit, 100),
-      include: { logo: true, industry: true, _count: { select: { jobs: true } } },
+      select: {
+        ...this.publicCompanySelect,
+        _count: { select: { jobs: true } },
+      },
     });
   }
 
   detail(slug: string) {
     return this.prisma.company.findFirstOrThrow({
       where: { slug, verificationStatus: 'verified', portalStatus: 'active' },
-      include: {
-        logo: true,
-        industry: true,
+      select: {
+        ...this.publicCompanySelect,
         jobs: {
           where: { status: 'published', applicationDeadline: { gte: new Date() } },
           orderBy: { postedAt: 'desc' },
@@ -62,7 +86,7 @@ export class CompaniesService {
     return this.prisma.company.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { industry: true, _count: { select: { jobs: true, members: true } } },
+      include: { industry: true, logo: true, _count: { select: { jobs: true, members: true } } },
     });
   }
 
@@ -144,13 +168,17 @@ export class CompaniesService {
     if (!role) throw new ConflictException('Employer role is not seeded');
     const passwordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id });
 
+    const nameFromEmail = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim() || 'Company';
+    const firstName = nameFromEmail.slice(0, 100) || 'Company';
+    const lastName = '';
+
     let user = await tx.user.findUnique({ where: { email } });
     if (!user) {
       user = await tx.user.create({
         data: {
           email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
+          firstName,
+          lastName,
           passwordHash,
           roles: { create: { roleId: role.id } },
         },
@@ -174,7 +202,7 @@ export class CompaniesService {
       data: {
         companyId,
         userId: user.id,
-        memberRole: dto.memberRole,
+        memberRole: 'owner',
         invitedBy: actorId,
       },
       include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },

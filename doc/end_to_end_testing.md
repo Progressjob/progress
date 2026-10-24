@@ -213,7 +213,7 @@ Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no pu
 1. Open `/admin/companies`.
 2. Use **Search companies** to find **Demo Technology PLC** by name or email.
 3. Confirm job and member counts, verification badge, and posting toggle (🟢 / ⚪).
-4. Click **+ Register company** and complete company profile + employer login (use a unique email, e.g. `e2e.partner@example.com` / generated password).
+4. Click **+ Register company** and complete company profile + **Company login** (email and temporary password only; optional website, logo, office address, HR contact, licence number).
 5. Copy credentials from the modal; log out admin and log in as the new employer — confirm `/company` loads.
 6. Log back in as admin. Use **✏️ Edit** to change city or industry; set verification if needed.
 7. Toggle direct posting (🟢) on for a test company, then off again.
@@ -223,7 +223,7 @@ Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no pu
 ### 7.1c Terminate and reactivate a company
 
 1. On `/admin/companies`, click **🚫 Terminate** on a non-production test company (not Demo Technology PLC unless you re-seed).
-2. Confirm optional reason. Employer login for that company should fail with a suspension message.
+2. Confirm optional reason. Company login for that company should fail with a suspension message.
 3. Confirm the company no longer appears on `/companies` (public directory).
 4. Click **♻️ Reactivate** on the same row. Employer can log in again; company reappears when verified.
 
@@ -233,10 +233,10 @@ Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no pu
 
 1. Open `/admin/jobs`.
 2. Use **Search jobs and companies** — try a company name and a job title from the seed.
-3. In the **Companies** panel, confirm job counts; click a row to filter the job list, then **Clear filter**.
+3. In **Filter job list by company**, confirm job counts; click a row to filter the job list, then **Clear filter**.
 4. Click **+ Post new job**.
-5. Test **Existing company**: select **Demo Technology PLC**, fill category, title, description, deadline, etc. Leave **Publish live immediately** checked or unchecked to test draft vs live.
-6. Test **Register new company & post**: fill company + employer + job in one flow; save credentials from the modal.
+5. Test **Existing company**: search and click **Demo Technology PLC** in the company picker, then fill job title, **Responsibilities** (category + responsibility description), qualifications, experience, salary (negotiable or range), and deadline. Leave **Publish live immediately** checked or unchecked to test draft vs live.
+6. Test **Register new company & post**: fill company + company login + job in one flow; save credentials from the modal.
 7. On the job card, use **Publish live** / **Reject** (pending queue), **View public ad**, and **Close vacancy** as needed.
 
 **Pass:** Search hits companies and jobs. Admin can post for existing or newly provisioned companies. Published jobs appear on `/jobs`; closed jobs drop off the open board.
@@ -319,10 +319,7 @@ For API-only setup (Swagger or curl), use the admin JWT from `POST /api/v1/auth/
    ```json
    {
      "email": "new.employer@example.com",
-     "firstName": "Hana",
-     "lastName": "Bekele",
-     "temporaryPassword": "EmployerNew123!",
-     "memberRole": "owner"
+     "temporaryPassword": "EmployerNew123!"
    }
    ```
 

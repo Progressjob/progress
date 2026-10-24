@@ -11,6 +11,8 @@ import {
   emptyAdminJobForm,
   emptyCompanyForm,
   emptyEmployerForm,
+  sanitizeCompanyPayload,
+  sanitizeJobPayload,
 } from '../components/admin/adminFormUtils';
 import type { Company } from '../types/api';
 
@@ -75,7 +77,7 @@ export const AdminJobsPage: React.FC = () => {
       let companyId = jobForm.companyId;
       if (postMode === 'new') {
         const provisioned = await adminApi.provisionCompany({
-          company: { ...newCompanyForm, industryId: newCompanyForm.industryId || undefined },
+          company: sanitizeCompanyPayload(newCompanyForm),
           employer: newEmployerForm,
           verify: true,
           canSelfPublishJobs: newCompanyCanPost,
@@ -84,7 +86,7 @@ export const AdminJobsPage: React.FC = () => {
         setCredentials(provisioned.credentials);
       }
       if (!companyId) throw new Error('Select a company');
-      const job = await adminApi.createJob({ ...jobForm, companyId });
+      const job = await adminApi.createJob(sanitizeJobPayload({ ...jobForm, companyId }));
       if (publishAfterCreate) {
         await adminApi.publishJob(job.id);
       }
@@ -150,33 +152,66 @@ export const AdminJobsPage: React.FC = () => {
     createMutation.mutate();
   };
 
+  const pickerCompanies = pickerCompaniesQuery.data ?? companies;
+
   const companySelect = (
     <div className="form-input-group">
-      <label htmlFor="adm-co">Target company *</label>
+      <label htmlFor="adm-co-search">Post on behalf of company *</label>
       <input
         id="adm-co-search"
-        placeholder="Filter companies…"
+        placeholder="Search by company name…"
         value={companyPickerSearch}
         onChange={(e) => setCompanyPickerSearch(e.target.value)}
         style={{ marginBottom: '0.5rem' }}
       />
-      <select
-        id="adm-co"
-        required
-        value={jobForm.companyId}
-        onChange={(e) => setJobForm({ ...jobForm, companyId: e.target.value })}
-        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}
+      <div
+        role="listbox"
+        aria-label="Select company"
+        style={{
+          maxHeight: '200px',
+          overflowY: 'auto',
+          border: '1px solid #cbd5e1',
+          borderRadius: '12px',
+        }}
       >
-        <option value="">— Select company —</option>
-        {(pickerCompaniesQuery.data ?? companies).map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name} ({c._count?.jobs ?? 0} jobs)
-          </option>
-        ))}
-      </select>
+        {pickerCompanies.length === 0 ? (
+          <p className="muted" style={{ padding: '0.75rem', margin: 0 }}>
+            No companies match your search.
+          </p>
+        ) : (
+          pickerCompanies.map((c) => {
+            const selected = jobForm.companyId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => setJobForm({ ...jobForm, companyId: c.id })}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '0.65rem 0.85rem',
+                  border: 'none',
+                  borderBottom: '1px solid #f1f5f9',
+                  background: selected ? 'rgba(11, 87, 208, 0.08)' : 'transparent',
+                  cursor: 'pointer',
+                  fontWeight: selected ? 700 : 400,
+                }}
+              >
+                {c.name}{' '}
+                <span className="muted" style={{ fontWeight: 400 }}>
+                  ({c._count?.jobs ?? 0} jobs)
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
       {selectedCompany && (
         <p className="muted" style={{ fontSize: '0.85rem', margin: '0.35rem 0 0' }}>
-          {selectedCompany.verificationStatus} ·{' '}
+          Selected: <strong>{selectedCompany.name}</strong> · {selectedCompany.verificationStatus} ·{' '}
           {selectedCompany.canSelfPublishJobs ? 'direct posting' : 'review required'}
           {selectedCompany.portalStatus === 'suspended' ? ' · SUSPENDED' : ''}
         </p>
@@ -223,7 +258,7 @@ export const AdminJobsPage: React.FC = () => {
         <label htmlFor="job-admin-search">Search jobs and companies</label>
         <input
           id="job-admin-search"
-          placeholder="Company name, job title, reference code…"
+          placeholder="Company name or job title…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -266,7 +301,7 @@ export const AdminJobsPage: React.FC = () => {
               <>
                 <h3 style={{ margin: '0 0 0.5rem' }}>New company</h3>
                 <CompanyFormFields value={newCompanyForm} onChange={setNewCompanyForm} idPrefix="new-co" />
-                <h3 style={{ margin: '1rem 0 0.5rem' }}>Employer login</h3>
+                <h3 style={{ margin: '1rem 0 0.5rem' }}>Company login</h3>
                 <EmployerCredentialsFields
                   value={newEmployerForm}
                   onChange={setNewEmployerForm}
@@ -326,7 +361,7 @@ export const AdminJobsPage: React.FC = () => {
       >
         <div className="card" style={{ overflowX: 'auto', maxHeight: '520px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Companies</h2>
+            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Filter job list by company</h2>
             {filterCompanyId && (
               <button
                 type="button"
