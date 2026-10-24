@@ -4,11 +4,21 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { candidateApi } from '../api/candidate';
 import { ApiError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { CandidateApplicationsBlockedNotice } from '../components/CandidateApplicationsBlockedNotice';
 import type { ScreeningQuestion } from '../types/api';
 
 export const ApplyJobPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
+
+  const applicationsBlocked =
+    user?.applicationsBlocked === true || user?.accountStatus === 'suspended';
 
   const jobQuery = useQuery({
     queryKey: ['job', slug],
@@ -96,7 +106,9 @@ export const ApplyJobPage: React.FC = () => {
         </p>
       </div>
 
-      {job.applicationMethod !== 'internal' ? (
+      {applicationsBlocked ? (
+        <CandidateApplicationsBlockedNotice />
+      ) : job.applicationMethod !== 'internal' ? (
         <div className="alert-box-error">
           This position accepts applications through external portals and does not process direct platform submissions.
         </div>

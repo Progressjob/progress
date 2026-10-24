@@ -168,7 +168,7 @@ export class AuthService {
         lastName: true,
         accountStatus: true,
         roles: { select: { role: { select: { name: true } } } },
-        candidateProfile: { select: { id: true } },
+        candidateProfile: { select: { id: true, applicationsBlocked: true } },
         companyMemberships: {
           where: { status: 'active' },
           select: { companyId: true, memberRole: true },

@@ -15,6 +15,8 @@ export interface AuthUser {
   lastName: string;
   roles: string[];
   candidateProfileId: string | null;
+  applicationsBlocked: boolean;
+  accountStatus: string;
   companyMemberships: Array<{ companyId: string; memberRole: string }>;
 }
 
@@ -46,6 +48,8 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
     lastName: raw.lastName,
     roles: raw.roles.map((r) => r.role.name),
     candidateProfileId: raw.candidateProfile?.id ?? null,
+    applicationsBlocked: raw.candidateProfile?.applicationsBlocked ?? false,
+    accountStatus: raw.accountStatus,
     companyMemberships: raw.companyMemberships ?? [],
   };
 }

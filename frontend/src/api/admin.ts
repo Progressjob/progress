@@ -116,7 +116,25 @@ export const adminApi = {
       method: 'PATCH',
       body: { status, reason },
     }),
-  listCandidates: () => apiFetch<AdminCandidateUser[]>('/admin/candidates'),
+  listCandidates: (params?: {
+    q?: string;
+    accountStatus?: string;
+    outcome?: string;
+    applicationStatus?: string;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.q?.trim()) qs.set('q', params.q.trim());
+    if (params?.accountStatus) qs.set('accountStatus', params.accountStatus);
+    if (params?.outcome && params.outcome !== 'all') qs.set('outcome', params.outcome);
+    if (params?.applicationStatus) qs.set('applicationStatus', params.applicationStatus);
+    const query = qs.toString();
+    return apiFetch<AdminCandidateUser[]>(`/admin/candidates${query ? `?${query}` : ''}`);
+  },
+  setCandidateApplicationAccess: (userId: string, blocked: boolean) =>
+    apiFetch<{ id: string; userId: string; applicationsBlocked: boolean }>(
+      `/admin/candidates/${userId}/application-access`,
+      { method: 'PATCH', body: { blocked } },
+    ),
   listJobs: (q?: string) => apiFetch<Job[]>(withQuery('/admin/jobs', q)),
   listPendingJobs: (q?: string) => apiFetch<Job[]>(withQuery('/admin/jobs/pending', q)),
   createJob: (payload: CreateAdminJobPayload) =>

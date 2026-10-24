@@ -1,5 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AccountStatus, ApplicationStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+
+const PIPELINE_STATUSES: ApplicationStatus[] = [
+  'submitted',
+  'reviewing',
+  'shortlisted',
+  'interview',
+  'offered',
+];
+
+export interface AdminListCandidatesQuery {
+  q?: string;
+  accountStatus?: string;
+  outcome?: string;
+  applicationStatus?: string;
+}
 import {
   ContactMessageDto,
   JobReportDto,
@@ -43,9 +59,96 @@ export class AdminService {
     };
   }
 
-  candidates() {
-    return this.prisma.user.findMany({
-      where: { roles: { some: { role: { name: 'candidate' } } } },
+  async candidates(query: AdminListCandidatesQuery = {}) {
+    const term = query.q?.trim();
+    const where: Prisma.UserWhereInput = {
+      roles: { some: { role: { name: 'candidate' } } },
+    };
+    const and: Prisma.UserWhereInput[] = [];
+
+    if (term) {
+      and.push({
+        OR: [
+          { firstName: { contains: term, mode: 'insensitive' } },
+          { lastName: { contains: term, mode: 'insensitive' } },
+          { email: { contains: term, mode: 'insensitive' } },
+          { phone: { contains: term, mode: 'insensitive' } },
+          {
+            candidateProfile: {
+              is: { headline: { contains: term, mode: 'insensitive' } },
+            },
+          },
+          {
+            candidateProfile: {
+              is: {
+                applications: {
+                  some: { job: { title: { contains: term, mode: 'insensitive' } } },
+                },
+              },
+            },
+          },
+          {
+            candidateProfile: {
+              is: {
+                applications: {
+                  some: {
+                    job: { company: { name: { contains: term, mode: 'insensitive' } } },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    if (query.accountStatus && ['active', 'pending', 'suspended'].includes(query.accountStatus)) {
+      and.push({ accountStatus: query.accountStatus as AccountStatus });
+    }
+
+    const appStatus = query.applicationStatus as ApplicationStatus | undefined;
+    if (appStatus) {
+      and.push({
+        candidateProfile: { is: { applications: { some: { status: appStatus } } } },
+      });
+    }
+
+    switch (query.outcome) {
+      case 'no_applications':
+        and.push({
+          OR: [
+            { candidateProfile: null },
+            { candidateProfile: { is: { applications: { none: {} } } } },
+          ],
+        });
+        break;
+      case 'placed':
+        and.push({
+          candidateProfile: { is: { applications: { some: { status: 'hired' } } } },
+        });
+        break;
+      case 'offered':
+        and.push({
+          candidateProfile: {
+            is: { applications: { some: { status: 'offered' } } },
+          },
+        });
+        break;
+      case 'in_pipeline':
+        and.push({
+          candidateProfile: {
+            is: { applications: { some: { status: { in: PIPELINE_STATUSES } } } },
+          },
+        });
+        break;
+      default:
+        break;
+    }
+
+    if (and.length) where.AND = and;
+
+    const users = await this.prisma.user.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -55,9 +158,138 @@ export class AdminService {
         lastName: true,
         accountStatus: true,
         createdAt: true,
-        candidateProfile: { select: { id: true, headline: true } },
+        lastLoginAt: true,
+        candidateProfile: {
+          select: {
+            id: true,
+            headline: true,
+            city: true,
+            region: true,
+            country: true,
+            availabilityStatus: true,
+            applicationsBlocked: true,
+            _count: { select: { applications: true, resumes: true } },
+            applications: {
+              orderBy: { appliedAt: 'desc' },
+              select: {
+                id: true,
+                status: true,
+                appliedAt: true,
+                updatedAt: true,
+                job: {
+                  select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    company: { select: { id: true, name: true, slug: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
+
+    return users.map((user) => this.toAdminCandidateRow(user));
+  }
+
+  private toAdminCandidateRow(user: {
+    id: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string;
+    lastName: string;
+    accountStatus: AccountStatus;
+    createdAt: Date;
+    lastLoginAt: Date | null;
+    candidateProfile: {
+      id: string;
+      headline: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
+      availabilityStatus: string | null;
+      applicationsBlocked: boolean;
+      _count: { applications: number; resumes: number };
+      applications: Array<{
+        id: string;
+        status: ApplicationStatus;
+        appliedAt: Date;
+        updatedAt: Date;
+        job: {
+          id: string;
+          title: string;
+          slug: string;
+          company: { id: string; name: string; slug: string };
+        };
+      }>;
+    } | null;
+  }) {
+    const apps = user.candidateProfile?.applications ?? [];
+    const hired = apps.find((a) => a.status === 'hired');
+    const hasOffered = apps.some((a) => a.status === 'offered');
+    const inPipeline = apps.some((a) => PIPELINE_STATUSES.includes(a.status));
+
+    let outcome: 'working' | 'offered' | 'in_pipeline' | 'closed_out' | 'none';
+    if (hired) outcome = 'working';
+    else if (hasOffered) outcome = 'offered';
+    else if (inPipeline) outcome = 'in_pipeline';
+    else if (apps.length > 0) outcome = 'closed_out';
+    else outcome = 'none';
+
+    const activeApplicationsCount = apps.filter(
+      (a) => !['rejected', 'withdrawn', 'hired'].includes(a.status),
+    ).length;
+
+    return {
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      accountStatus: user.accountStatus,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      profile: user.candidateProfile
+        ? {
+            id: user.candidateProfile.id,
+            headline: user.candidateProfile.headline,
+            city: user.candidateProfile.city,
+            region: user.candidateProfile.region,
+            country: user.candidateProfile.country,
+            availabilityStatus: user.candidateProfile.availabilityStatus,
+            applicationsBlocked: user.candidateProfile.applicationsBlocked,
+          }
+        : null,
+      stats: {
+        applicationsCount: apps.length,
+        activeApplicationsCount,
+        resumeCount: user.candidateProfile?._count.resumes ?? 0,
+      },
+      outcome,
+      placement: hired
+        ? {
+            applicationId: hired.id,
+            status: hired.status,
+            appliedAt: hired.appliedAt,
+            updatedAt: hired.updatedAt,
+            jobTitle: hired.job.title,
+            jobSlug: hired.job.slug,
+            jobId: hired.job.id,
+            companyId: hired.job.company.id,
+            companyName: hired.job.company.name,
+            companySlug: hired.job.company.slug,
+          }
+        : null,
+      applications: apps.map((a) => ({
+        id: a.id,
+        status: a.status,
+        appliedAt: a.appliedAt,
+        updatedAt: a.updatedAt,
+        job: a.job,
+      })),
+    };
   }
 
   users() {
@@ -78,6 +310,18 @@ export class AdminService {
 
   updateUser(id: string, dto: UpdateUserStatusDto) {
     return this.prisma.user.update({ where: { id }, data: { accountStatus: dto.status } });
+  }
+
+  async setCandidateApplicationAccess(userId: string, blocked: boolean) {
+    const profile = await this.prisma.candidateProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+    return this.prisma.candidateProfile.update({
+      where: { userId },
+      data: { applicationsBlocked: blocked },
+      select: { id: true, userId: true, applicationsBlocked: true },
+    });
   }
 
   reports() {

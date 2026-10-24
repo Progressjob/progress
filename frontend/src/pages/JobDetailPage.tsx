@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { publicFileUrl } from '../api/files';
 import { useAuth } from '../auth/AuthContext';
+import { CandidateApplicationsBlockedNotice } from '../components/CandidateApplicationsBlockedNotice';
 
 function compensationLabel(job: {
   salaryVisibility?: boolean;
@@ -20,6 +21,8 @@ function compensationLabel(job: {
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, hasRole } = useAuth();
+  const applicationsBlocked =
+    user?.applicationsBlocked === true || user?.accountStatus === 'suspended';
 
   const jobQuery = useQuery({
     queryKey: ['job', slug],
@@ -185,7 +188,9 @@ export const JobDetailPage: React.FC = () => {
             </p>
 
             <div className="apply-actions-stack">
-              {!user ? (
+              {user && hasRole('candidate') && applicationsBlocked ? (
+                <CandidateApplicationsBlockedNotice />
+              ) : !user ? (
                 <>
                   <p className="apply-helper-text">
                     Sign in with your Progress candidate account to submit your credentials and CV.

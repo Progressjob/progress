@@ -19,7 +19,7 @@ export interface AuthMeResponse {
   lastName: string;
   accountStatus: string;
   roles: Array<{ role: { name: string } }>;
-  candidateProfile?: { id: string } | null;
+  candidateProfile?: { id: string; applicationsBlocked?: boolean } | null;
   companyMemberships: Array<{ companyId: string; memberRole: string }>;
 }
 
@@ -234,13 +234,56 @@ export interface AdminDashboard {
   publishedJobs: number;
 }
 
+export interface AdminCandidateApplication {
+  id: string;
+  status: ApplicationStatus;
+  appliedAt: string;
+  updatedAt: string;
+  job: {
+    id: string;
+    title: string;
+    slug: string;
+    company: { id: string; name: string; slug: string };
+  };
+}
+
+export type AdminCandidateOutcome = 'working' | 'offered' | 'in_pipeline' | 'closed_out' | 'none';
+
 export interface AdminCandidateUser {
   id: string;
-  email: string;
+  email: string | null;
   phone?: string | null;
   firstName: string;
   lastName: string;
   accountStatus: string;
   createdAt: string;
-  candidateProfile?: { id: string; headline?: string | null } | null;
+  lastLoginAt?: string | null;
+  profile: {
+    id: string;
+    headline?: string | null;
+    city?: string | null;
+    region?: string | null;
+    country?: string | null;
+    availabilityStatus?: string | null;
+    applicationsBlocked?: boolean;
+  } | null;
+  stats: {
+    applicationsCount: number;
+    activeApplicationsCount: number;
+    resumeCount: number;
+  };
+  outcome: AdminCandidateOutcome;
+  placement: {
+    applicationId: string;
+    status: ApplicationStatus;
+    appliedAt: string;
+    updatedAt: string;
+    jobTitle: string;
+    jobSlug: string;
+    jobId: string;
+    companyId: string;
+    companyName: string;
+    companySlug: string;
+  } | null;
+  applications: AdminCandidateApplication[];
 }

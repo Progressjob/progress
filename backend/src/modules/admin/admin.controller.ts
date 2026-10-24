@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -9,6 +9,7 @@ import {
   RolesGuard,
 } from '../../common/auth';
 import {
+  CandidateApplicationAccessDto,
   ContactMessageDto,
   JobReportDto,
   UpdateContactDto,
@@ -54,13 +55,26 @@ export class AdminController {
   }
 
   @Get('candidates')
-  candidates() {
-    return this.admin.candidates();
+  candidates(
+    @Query('q') q?: string,
+    @Query('accountStatus') accountStatus?: string,
+    @Query('outcome') outcome?: string,
+    @Query('applicationStatus') applicationStatus?: string,
+  ) {
+    return this.admin.candidates({ q, accountStatus, outcome, applicationStatus });
   }
 
   @Patch('users/:id/status')
   updateUser(@Param('id') id: string, @Body() dto: UpdateUserStatusDto) {
     return this.admin.updateUser(id, dto);
+  }
+
+  @Patch('candidates/:userId/application-access')
+  setCandidateApplicationAccess(
+    @Param('userId') userId: string,
+    @Body() dto: CandidateApplicationAccessDto,
+  ) {
+    return this.admin.setCandidateApplicationAccess(userId, dto.blocked);
   }
 
   @Get('reports')

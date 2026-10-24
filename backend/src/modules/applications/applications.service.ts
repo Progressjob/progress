@@ -42,6 +42,17 @@ export class ApplicationsService {
   async apply(userId: string, jobId: string, dto: ApplyDto) {
     const candidate = await this.prisma.candidateProfile.findUnique({ where: { userId } });
     if (!candidate) throw new ForbiddenException('Candidate profile required');
+    if (candidate.applicationsBlocked) {
+      throw new ForbiddenException(
+        'Your ability to submit new applications has been restricted. Please contact the platform administrator.',
+      );
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { accountStatus: true } });
+    if (user?.accountStatus === 'suspended') {
+      throw new ForbiddenException(
+        'Your account access has been restricted. Please contact the platform administrator.',
+      );
+    }
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
       include: {
