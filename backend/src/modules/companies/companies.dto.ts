@@ -1,6 +1,13 @@
-import { CompanyMemberRole, MembershipStatus, VerificationStatus } from '@prisma/client';
-import { PartialType } from '@nestjs/swagger';
 import {
+  CompanyMemberRole,
+  CompanyPortalStatus,
+  MembershipStatus,
+  VerificationStatus,
+} from '@prisma/client';
+import { PartialType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsInt,
@@ -12,6 +19,7 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 
 export class CompanyDto {
@@ -105,4 +113,37 @@ export class UpdateMemberDto {
 export class VerifyCompanyDto {
   @IsEnum(VerificationStatus)
   status!: VerificationStatus;
+}
+
+export class CompanyPostingAccessDto {
+  @IsBoolean()
+  canSelfPublishJobs!: boolean;
+}
+
+export class CompanyPortalStatusDto {
+  @IsEnum(CompanyPortalStatus)
+  status!: CompanyPortalStatus;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  reason?: string;
+}
+
+export class ProvisionCompanyDto {
+  @ValidateNested()
+  @Type(() => CompanyDto)
+  company!: CompanyDto;
+
+  @ValidateNested()
+  @Type(() => CreateEmployerDto)
+  employer!: CreateEmployerDto;
+
+  @IsOptional()
+  @IsBoolean()
+  verify?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  canSelfPublishJobs?: boolean;
 }

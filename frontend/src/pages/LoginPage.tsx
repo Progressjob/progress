@@ -27,7 +27,7 @@ export const LoginPage: React.FC = () => {
       } else if (user.roles.includes('admin') || user.roles.includes('moderator')) {
         navigate('/admin', { replace: true });
       } else if (user.roles.includes('employer')) {
-        navigate('/employer', { replace: true });
+        navigate('/company', { replace: true });
       } else {
         navigate('/jobs', { replace: true });
       }
@@ -56,7 +56,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to access your jobs, applications, or employer portal</p>
+        <p className="auth-subtitle">Sign in to access your jobs, applications, or companies portal</p>
 
         {error && <div className="alert-box-error">{error}</div>}
 
@@ -133,7 +133,7 @@ export const LoginPage: React.FC = () => {
                 className="dev-chip"
                 onClick={() => fillDemo('employer@example.com', 'Employer123!')}
               >
-                Employer Demo
+                Companies demo
               </button>
               <button
                 type="button"

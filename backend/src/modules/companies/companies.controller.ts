@@ -21,7 +21,10 @@ import {
 } from '../../common/auth';
 import {
   CompanyDto,
+  CompanyPortalStatusDto,
+  CompanyPostingAccessDto,
   CreateEmployerDto,
+  ProvisionCompanyDto,
   UpdateCompanyDto,
   UpdateMemberDto,
   VerifyCompanyDto,
@@ -56,8 +59,13 @@ export class AdminCompaniesController {
   constructor(private readonly companies: CompaniesService) {}
 
   @Get()
-  list() {
-    return this.companies.adminList();
+  list(@Query('q') q?: string) {
+    return this.companies.adminList(q);
+  }
+
+  @Post('provision')
+  provision(@CurrentUser() actor: AuthUser, @Body() dto: ProvisionCompanyDto) {
+    return this.companies.provision(actor.id, dto);
   }
 
   @Post()
@@ -92,6 +100,16 @@ export class AdminCompaniesController {
   @Patch(':id/featured')
   feature(@Param('id') id: string, @Query('value', ParseBoolPipe) value: boolean) {
     return this.companies.feature(id, value);
+  }
+
+  @Patch(':id/posting-access')
+  postingAccess(@Param('id') id: string, @Body() dto: CompanyPostingAccessDto) {
+    return this.companies.setPostingAccess(id, dto.canSelfPublishJobs);
+  }
+
+  @Patch(':id/portal-status')
+  portalStatus(@Param('id') id: string, @Body() dto: CompanyPortalStatusDto) {
+    return this.companies.setPortalStatus(id, dto.status, dto.reason);
   }
 }
 

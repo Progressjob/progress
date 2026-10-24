@@ -26,8 +26,8 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <div className="stack">
       <div className="page-header">
-        <h1>Admin Dashboard</h1>
-        <p className="muted">Platform-wide metrics from GET /api/v1/admin/dashboard</p>
+        <h1>Admin dashboard</h1>
+        <p className="muted">Platform activity: companies, jobs, and registered candidates.</p>
       </div>
 
       <div className="grid-stats">
@@ -36,28 +36,40 @@ export const AdminDashboardPage: React.FC = () => {
           <strong className="stat-value">{d.companies}</strong>
         </div>
         <div className="card stat-card">
-          <span className="stat-label">Total Jobs</span>
+          <span className="stat-label">Job postings</span>
           <strong className="stat-value">{d.jobs}</strong>
         </div>
         <div className="card stat-card">
-          <span className="stat-label">Candidates</span>
-          <strong className="stat-value">{d.candidates}</strong>
+          <span className="stat-label">Published live</span>
+          <strong className="stat-value">{d.publishedJobs}</strong>
+        </div>
+        <div className="card stat-card">
+          <span className="stat-label">Pending review</span>
+          <strong className="stat-value">{d.pendingReviewJobs}</strong>
+        </div>
+        <div className="card stat-card">
+          <span className="stat-label">Registered candidates</span>
+          <strong className="stat-value">{d.registeredCandidates ?? d.candidates}</strong>
         </div>
         <div className="card stat-card">
           <span className="stat-label">Applications</span>
           <strong className="stat-value">{d.applications}</strong>
         </div>
-        <div className="card stat-card">
-          <span className="stat-label">Pending Reports</span>
-          <strong className="stat-value">{d.pendingReports}</strong>
-        </div>
       </div>
 
-      <div className="card">
-        <h3>Quick Admin Actions</h3>
-        <Link to="/admin/jobs" className="btn">
-          Manage & Publish Jobs →
-        </Link>
+      <div className="card stack">
+        <h3>Quick actions</h3>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link to="/admin/companies" className="btn">
+            Manage companies →
+          </Link>
+          <Link to="/admin/jobs" className="btn">
+            Jobs & review queue →
+          </Link>
+          <Link to="/admin/candidates" className="btn">
+            View candidates →
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
+import { AdminPortalLayout } from './components/AdminPortalLayout';
+import { CompanyPortalLayout } from './components/CompanyPortalLayout';
 import { RequireRole } from './components/RequireRole';
 import { LandingPage } from './pages/LandingPage';
 import { JobsListPage } from './pages/JobsListPage';
@@ -16,11 +18,14 @@ import { CandidateProfilePage } from './pages/CandidateProfilePage';
 import { CandidateResumesPage } from './pages/CandidateResumesPage';
 import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CandidateApplicationsPage } from './pages/CandidateApplicationsPage';
-import { EmployerHomePage } from './pages/EmployerHomePage';
-import { EmployerJobsPage } from './pages/EmployerJobsPage';
-import { EmployerApplicationsPage } from './pages/EmployerApplicationsPage';
+import { CompanyHomePage } from './pages/CompanyHomePage';
+import { CompanyJobsPage } from './pages/CompanyJobsPage';
+import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
+import { CompanyApplicationsPage } from './pages/CompanyApplicationsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
+import { AdminCompaniesPage } from './pages/AdminCompaniesPage';
+import { AdminCandidatesPage } from './pages/AdminCandidatesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,12 +36,19 @@ const queryClient = new QueryClient({
   },
 });
 
+function EmployerLegacyRedirect(): React.ReactElement {
+  const location = useLocation();
+  const target = location.pathname.replace(/^\/employer/, '/company') + location.search;
+  return <Navigate to={target} replace />;
+}
+
 export function App(): React.ReactElement {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public & candidate site */}
             <Route element={<Layout />}>
               <Route path="/" element={<LandingPage />} />
               <Route path="/jobs" element={<JobsListPage />} />
@@ -55,7 +67,6 @@ export function App(): React.ReactElement {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
 
-              {/* Candidate routes */}
               <Route
                 path="/candidate/profile"
                 element={
@@ -80,51 +91,40 @@ export function App(): React.ReactElement {
                   </RequireRole>
                 }
               />
+            </Route>
 
-              {/* Employer routes */}
-              <Route
-                path="/employer"
-                element={
-                  <RequireRole roles={['employer']}>
-                    <EmployerHomePage />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/employer/:companyId/jobs"
-                element={
-                  <RequireRole roles={['employer']}>
-                    <EmployerJobsPage />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/employer/:companyId/jobs/:jobId/applications"
-                element={
-                  <RequireRole roles={['employer']}>
-                    <EmployerApplicationsPage />
-                  </RequireRole>
-                }
-              />
+            {/* Admin portal */}
+            <Route
+              element={
+                <RequireRole roles={['admin', 'moderator']}>
+                  <AdminPortalLayout />
+                </RequireRole>
+              }
+            >
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/companies" element={<AdminCompaniesPage />} />
+              <Route path="/admin/jobs" element={<AdminJobsPage />} />
+              <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
+            </Route>
 
-              {/* Admin routes */}
+            {/* Companies (hiring) portal */}
+            <Route
+              element={
+                <RequireRole roles={['employer']}>
+                  <CompanyPortalLayout />
+                </RequireRole>
+              }
+            >
+              <Route path="/company" element={<CompanyHomePage />} />
+              <Route path="/company/:companyId/jobs" element={<CompanyJobsPage />} />
+              <Route path="/company/:companyId/jobs/new" element={<CompanyPostJobPage />} />
               <Route
-                path="/admin"
-                element={
-                  <RequireRole roles={['admin', 'moderator']}>
-                    <AdminDashboardPage />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/admin/jobs"
-                element={
-                  <RequireRole roles={['admin', 'moderator']}>
-                    <AdminJobsPage />
-                  </RequireRole>
-                }
+                path="/company/:companyId/jobs/:jobId/applications"
+                element={<CompanyApplicationsPage />}
               />
             </Route>
+
+            <Route path="/employer/*" element={<EmployerLegacyRedirect />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

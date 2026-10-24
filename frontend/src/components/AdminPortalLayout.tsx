@@ -1,0 +1,81 @@
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { ProgressLogo } from './ProgressLogo';
+
+export const AdminPortalLayout: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  return (
+    <div className="app-shell">
+      <header className={`top-nav ${menuOpen ? 'is-menu-open' : ''}`}>
+        <div className="nav-brand">
+          <Link to="/admin" className="brand-logo-link">
+            <ProgressLogo size="sm" />
+          </Link>
+        </div>
+
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span className="nav-toggle-bar" />
+          <span className="nav-toggle-bar" />
+          <span className="nav-toggle-bar" />
+        </button>
+
+        <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
+          <nav className="nav-links">
+            <NavLink to="/admin" end>
+              Dashboard
+            </NavLink>
+            <NavLink to="/admin/companies">Companies</NavLink>
+            <NavLink to="/admin/jobs">Jobs</NavLink>
+            <NavLink to="/admin/candidates">Candidates</NavLink>
+          </nav>
+
+          <div className="nav-auth">
+            {user && (
+              <div className="user-pill">
+                <span className="user-pill-name">
+                  <strong>
+                    {user.firstName} {user.lastName}
+                  </strong>
+                  <small>(admin)</small>
+                </span>
+                <button type="button" className="btn-logout" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="main-container">
+        <Outlet />
+      </main>
+
+      <footer className="site-footer" style={{ padding: '1rem 2rem' }}>
+        <p style={{ margin: 0, textAlign: 'center', opacity: 0.85 }}>
+          © {new Date().getFullYear()} Progress Manpower — Admin portal
+        </p>
+      </footer>
+    </div>
+  );
+};

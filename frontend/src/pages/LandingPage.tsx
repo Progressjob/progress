@@ -488,7 +488,7 @@ export const LandingPage: React.FC = () => {
                 Contact Dukem HQ
               </Link>
               <Link to="/login" className="btn-cta-secondary">
-                Employer Sign In
+                Companies sign in
               </Link>
             </div>
           </div>

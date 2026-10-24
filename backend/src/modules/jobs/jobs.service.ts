@@ -11,19 +11,38 @@ import { slugify } from '../../common/slug';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateJobDto,
+  EmployerCreateJobDto,
+  EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
   UpdateJobDto,
 } from './jobs.dto';
 
+const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = ['draft', 'pending_review', 'rejected'];
+
 @Injectable()
 export class JobPostingPolicy {
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  assertCanPost(_companyId: string): void {
-    // Subscription enforcement is intentionally deferred. This seam becomes the
-    // paid-plan allowance check without changing job creation callers.
-    void this.config.get<boolean>('EMPLOYER_SELF_POSTING', false);
+  async getCompanyPostingContext(companyId: string) {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (company.verificationStatus === 'rejected') {
+      throw new ForbiddenException('This company cannot post jobs until verification is resolved');
+    }
+    if (company.portalStatus === 'suspended') {
+      throw new ForbiddenException('This company cannot post jobs while access is suspended');
+    }
+    const envOverride = this.config.get<boolean>('EMPLOYER_SELF_POSTING', false);
+    const canSelfPublish = company.canSelfPublishJobs || envOverride;
+    return { company, canSelfPublish };
+  }
+
+  async assertCanPost(companyId: string): Promise<void> {
+    await this.getCompanyPostingContext(companyId);
   }
 }
 
@@ -122,9 +141,23 @@ export class JobsService {
     return job;
   }
 
-  adminList(status?: JobStatus) {
+  adminList(status?: JobStatus, q?: string) {
+    const term = q?.trim();
+    const where: Prisma.JobWhereInput = {
+      ...(status ? { status } : {}),
+      ...(term
+        ? {
+            OR: [
+              { title: { contains: term, mode: 'insensitive' } },
+              { referenceCode: { contains: term, mode: 'insensitive' } },
+              { slug: { contains: term, mode: 'insensitive' } },
+              { company: { name: { contains: term, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
     return this.prisma.job.findMany({
-      where: { status },
+      where,
       orderBy: { createdAt: 'desc' },
       include: { company: true, category: true, location: true },
     });
@@ -132,7 +165,7 @@ export class JobsService {
 
   async create(actorId: string, dto: CreateJobDto) {
     this.validateRanges(dto);
-    this.policy.assertCanPost(dto.companyId);
+    await this.policy.assertCanPost(dto.companyId);
     const base = slugify(`${dto.title}-${Date.now()}`);
     return this.prisma.job.create({
       data: {
@@ -183,7 +216,11 @@ export class JobsService {
       await tx.jobScreeningQuestion.deleteMany({ where: { jobId: id } });
       if (dto.questions.length) {
         await tx.jobScreeningQuestion.createMany({
-          data: dto.questions.map((question) => ({ ...question, jobId: id, options: question.options as Prisma.InputJsonValue })),
+          data: dto.questions.map((question) => ({
+            ...question,
+            jobId: id,
+            options: question.options as Prisma.InputJsonValue,
+          })),
         });
       }
       return tx.jobScreeningQuestion.findMany({
@@ -216,6 +253,35 @@ export class JobsService {
     });
   }
 
+  async employerCreate(userId: string, companyId: string, dto: EmployerCreateJobDto) {
+    await this.assertCompanyMember(userId, companyId);
+    await this.policy.assertCanPost(companyId);
+    return this.create(userId, { ...dto, companyId });
+  }
+
+  async employerUpdate(
+    userId: string,
+    companyId: string,
+    jobId: string,
+    dto: EmployerUpdateJobDto,
+  ) {
+    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
+    if (!EMPLOYER_EDITABLE_STATUSES.includes(job.status)) {
+      throw new BadRequestException('This job cannot be edited in its current status');
+    }
+    return this.update(jobId, dto);
+  }
+
+  async employerSubmit(userId: string, companyId: string, jobId: string) {
+    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
+    const { canSelfPublish } = await this.policy.getCompanyPostingContext(companyId);
+    const next: JobStatus = canSelfPublish ? 'published' : 'pending_review';
+    if (!['draft', 'rejected'].includes(job.status)) {
+      throw new BadRequestException('Only draft or rejected jobs can be submitted');
+    }
+    return this.transition(jobId, next, userId);
+  }
+
   async employerStats(userId: string, companyId: string, jobId: string) {
     const job = await this.prisma.job.findFirst({
       where: {
@@ -244,6 +310,25 @@ export class JobsService {
       where: { status: 'published', applicationDeadline: { lt: this.today() } },
       data: { status: 'closed' },
     });
+  }
+
+  private async assertCompanyMember(userId: string, companyId: string): Promise<void> {
+    const member = await this.prisma.companyMember.findFirst({
+      where: { userId, companyId, status: 'active' },
+    });
+    if (!member) throw new ForbiddenException();
+  }
+
+  private async getEmployerManagedJob(userId: string, companyId: string, jobId: string) {
+    const job = await this.prisma.job.findFirst({
+      where: {
+        id: jobId,
+        companyId,
+        company: { members: { some: { userId, status: 'active' } } },
+      },
+    });
+    if (!job) throw new NotFoundException('Job not found');
+    return job;
   }
 
   private validateRanges(dto: UpdateJobDto): void {

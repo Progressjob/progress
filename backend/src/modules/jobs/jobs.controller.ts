@@ -24,6 +24,8 @@ import {
 } from '../../common/auth';
 import {
   CreateJobDto,
+  EmployerCreateJobDto,
+  EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
   UpdateJobDto,
@@ -81,13 +83,13 @@ export class AdminJobsController {
   constructor(private readonly jobs: JobsService) {}
 
   @Get()
-  list() {
-    return this.jobs.adminList();
+  list(@Query('q') q?: string) {
+    return this.jobs.adminList(undefined, q);
   }
 
   @Get('pending')
-  pending() {
-    return this.jobs.adminList('pending_review');
+  pending(@Query('q') q?: string) {
+    return this.jobs.adminList('pending_review', q);
   }
 
   @Post()
@@ -98,6 +100,11 @@ export class AdminJobsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateJobDto) {
     return this.jobs.update(id, dto);
+  }
+
+  @Post(':id/reject')
+  reject(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.jobs.transition(id, 'rejected', user.id);
   }
 
   @Post(':id/:transition')
@@ -145,5 +152,33 @@ export class EmployerJobsController {
     @Param('jobId') jobId: string,
   ) {
     return this.jobs.employerStats(user.id, companyId, jobId);
+  }
+
+  @Post()
+  create(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Body() dto: EmployerCreateJobDto,
+  ) {
+    return this.jobs.employerCreate(user.id, companyId, dto);
+  }
+
+  @Patch(':jobId')
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('jobId') jobId: string,
+    @Body() dto: EmployerUpdateJobDto,
+  ) {
+    return this.jobs.employerUpdate(user.id, companyId, jobId, dto);
+  }
+
+  @Post(':jobId/submit')
+  submit(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('jobId') jobId: string,
+  ) {
+    return this.jobs.employerSubmit(user.id, companyId, jobId);
   }
 }

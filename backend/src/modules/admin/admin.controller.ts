@@ -53,6 +53,11 @@ export class AdminController {
     return this.admin.users();
   }
 
+  @Get('candidates')
+  candidates() {
+    return this.admin.candidates();
+  }
+
   @Patch('users/:id/status')
   updateUser(@Param('id') id: string, @Body() dto: UpdateUserStatusDto) {
     return this.admin.updateUser(id, dto);

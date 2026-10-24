@@ -73,15 +73,14 @@ export const Layout: React.FC = () => {
             {hasRole('employer') && (
               <>
                 <span className="nav-divider">|</span>
-                <NavLink to="/employer">Employer Portal</NavLink>
+                <NavLink to="/company">Companies portal</NavLink>
               </>
             )}
 
             {hasRole('admin', 'moderator') && (
               <>
                 <span className="nav-divider">|</span>
-                <NavLink to="/admin">Admin Dashboard</NavLink>
-                <NavLink to="/admin/jobs">Admin Jobs</NavLink>
+                <NavLink to="/admin">Admin portal</NavLink>
               </>
             )}
           </nav>
@@ -166,10 +165,10 @@ export const Layout: React.FC = () => {
                 <Link to="/login">Account Sign In</Link>
               </li>
               <li>
-                <Link to="/employer">Employer Solutions</Link>
+                <Link to="/company">Companies portal</Link>
               </li>
               <li>
-                <Link to="/admin">Moderation Panel</Link>
+                <Link to="/admin">Admin portal</Link>
               </li>
             </ul>
           </div>

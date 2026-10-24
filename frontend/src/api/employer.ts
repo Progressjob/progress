@@ -1,5 +1,25 @@
 import { apiFetch } from './client';
-import type { Application, ApplicationStatus, Company, Job } from '../types/api';
+import type {
+  Application,
+  ApplicationMethod,
+  ApplicationStatus,
+  Company,
+  EmploymentType,
+  Job,
+  WorkplaceType,
+} from '../types/api';
+
+export interface CreateCompanyJobPayload {
+  categoryId: string;
+  locationId?: string;
+  title: string;
+  description: string;
+  employmentType: EmploymentType;
+  workplaceType: WorkplaceType;
+  applicationMethod: ApplicationMethod;
+  applicationDeadline: string;
+  vacanciesCount: number;
+}
 
 export const employerApi = {
   listCompanies: () => apiFetch<Company[]>('/employer/companies'),
@@ -7,6 +27,10 @@ export const employerApi = {
     apiFetch<Company>(`/employer/companies/${companyId}`),
   listJobs: (companyId: string) =>
     apiFetch<Job[]>(`/employer/companies/${companyId}/jobs`),
+  createJob: (companyId: string, payload: CreateCompanyJobPayload) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs`, { method: 'POST', body: payload }),
+  submitJob: (companyId: string, jobId: string) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/submit`, { method: 'POST' }),
   getJobStats: (companyId: string, jobId: string) =>
     apiFetch<{ views: number; applications: Array<{ status: ApplicationStatus; _count: number }> }>(
       `/employer/companies/${companyId}/jobs/${jobId}/stats`,

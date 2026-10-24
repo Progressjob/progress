@@ -21,15 +21,43 @@ export class AdminService {
   }
 
   async dashboard() {
-    const [companies, jobs, candidates, applications, pendingReports] =
+    const [companies, jobs, candidates, applications, pendingReports, pendingReviewJobs, publishedJobs] =
       await this.prisma.$transaction([
         this.prisma.company.count(),
         this.prisma.job.count(),
         this.prisma.candidateProfile.count(),
         this.prisma.application.count(),
         this.prisma.jobReport.count({ where: { status: 'pending' } }),
+        this.prisma.job.count({ where: { status: 'pending_review' } }),
+        this.prisma.job.count({ where: { status: 'published' } }),
       ]);
-    return { companies, jobs, candidates, applications, pendingReports };
+    return {
+      companies,
+      jobs,
+      candidates,
+      registeredCandidates: candidates,
+      applications,
+      pendingReports,
+      pendingReviewJobs,
+      publishedJobs,
+    };
+  }
+
+  candidates() {
+    return this.prisma.user.findMany({
+      where: { roles: { some: { role: { name: 'candidate' } } } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        accountStatus: true,
+        createdAt: true,
+        candidateProfile: { select: { id: true, headline: true } },
+      },
+    });
   }
 
   users() {

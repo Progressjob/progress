@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/swagger';
+import { OmitType, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ApplicationMethod,
@@ -133,6 +133,11 @@ export class CreateJobDto {
 }
 
 export class UpdateJobDto extends PartialType(CreateJobDto) {}
+
+/** Company portal create — companyId comes from the URL, not the body. */
+export class EmployerCreateJobDto extends OmitType(CreateJobDto, ['companyId'] as const) {}
+
+export class EmployerUpdateJobDto extends OmitType(UpdateJobDto, ['companyId'] as const) {}
 
 export class ScreeningQuestionDto {
   @IsString()

@@ -1,11 +1,18 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { CompanyPortalStatus, Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/auth';
 import { slugify } from '../../common/slug';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CompanyDto,
   CreateEmployerDto,
+  ProvisionCompanyDto,
   UpdateCompanyDto,
   UpdateMemberDto,
   VerifyCompanyDto,
@@ -17,7 +24,7 @@ export class CompaniesService {
 
   listPublic(page = 1, limit = 20) {
     return this.prisma.company.findMany({
-      where: { verificationStatus: 'verified' },
+      where: { verificationStatus: 'verified', portalStatus: 'active' },
       orderBy: [{ isFeatured: 'desc' }, { name: 'asc' }],
       skip: (page - 1) * limit,
       take: Math.min(limit, 100),
@@ -27,7 +34,7 @@ export class CompaniesService {
 
   detail(slug: string) {
     return this.prisma.company.findFirstOrThrow({
-      where: { slug, verificationStatus: 'verified' },
+      where: { slug, verificationStatus: 'verified', portalStatus: 'active' },
       include: {
         logo: true,
         industry: true,
@@ -39,19 +46,83 @@ export class CompaniesService {
     });
   }
 
-  adminList() {
+  adminList(q?: string) {
+    const term = q?.trim();
+    const where: Prisma.CompanyWhereInput = term
+      ? {
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { slug: { contains: term, mode: 'insensitive' } },
+            { email: { contains: term, mode: 'insensitive' } },
+            { city: { contains: term, mode: 'insensitive' } },
+            { phone: { contains: term, mode: 'insensitive' } },
+          ],
+        }
+      : {};
     return this.prisma.company.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: { industry: true, _count: { select: { jobs: true, members: true } } },
     });
   }
 
-  async create(dto: CompanyDto) {
-    const base = slugify(dto.name);
+  private async uniqueSlug(name: string) {
+    const base = slugify(name);
     let slug = base;
     let count = 1;
     while (await this.prisma.company.findUnique({ where: { slug } })) slug = `${base}-${++count}`;
+    return slug;
+  }
+
+  async create(dto: CompanyDto) {
+    const slug = await this.uniqueSlug(dto.name);
     return this.prisma.company.create({ data: { ...dto, slug } });
+  }
+
+  async createAdminVerified(dto: CompanyDto, canSelfPublishJobs = false) {
+    const slug = await this.uniqueSlug(dto.name);
+    const now = new Date();
+    return this.prisma.company.create({
+      data: {
+        ...dto,
+        slug,
+        verificationStatus: 'verified',
+        verifiedAt: now,
+        canSelfPublishJobs,
+      },
+    });
+  }
+
+  async provision(actorId: string, dto: ProvisionCompanyDto) {
+    const verify = dto.verify !== false;
+    const canSelfPublishJobs = dto.canSelfPublishJobs ?? false;
+    const slug = await this.uniqueSlug(dto.company.name);
+    const now = new Date();
+    const temporaryPassword = dto.employer.temporaryPassword;
+
+    return this.prisma.$transaction(async (tx) => {
+      const company = await tx.company.create({
+        data: {
+          ...dto.company,
+          slug,
+          verificationStatus: verify ? 'verified' : 'pending',
+          verifiedAt: verify ? now : null,
+          canSelfPublishJobs,
+        },
+        include: { industry: true },
+      });
+
+      const member = await this.addMemberWithTx(tx, company.id, actorId, dto.employer);
+
+      return {
+        company,
+        member,
+        credentials: {
+          email: dto.employer.email.toLowerCase().trim(),
+          temporaryPassword,
+        },
+      };
+    });
   }
 
   update(id: string, dto: UpdateCompanyDto) {
@@ -59,38 +130,54 @@ export class CompaniesService {
   }
 
   async addMember(companyId: string, actorId: string, dto: CreateEmployerDto) {
+    return this.prisma.$transaction((tx) => this.addMemberWithTx(tx, companyId, actorId, dto));
+  }
+
+  private async addMemberWithTx(
+    tx: Prisma.TransactionClient,
+    companyId: string,
+    actorId: string,
+    dto: CreateEmployerDto,
+  ) {
     const email = dto.email.toLowerCase().trim();
-    const role = await this.prisma.role.findUnique({ where: { name: 'employer' } });
+    const role = await tx.role.findUnique({ where: { name: 'employer' } });
     if (!role) throw new ConflictException('Employer role is not seeded');
     const passwordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id });
-    return this.prisma.$transaction(async (tx) => {
-      let user = await tx.user.findUnique({ where: { email } });
-      if (!user) {
-        user = await tx.user.create({
-          data: {
-            email,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
-            passwordHash,
-            roles: { create: { roleId: role.id } },
-          },
-        });
-      } else {
-        await tx.userRole.upsert({
-          where: { userId_roleId: { userId: user.id, roleId: role.id } },
-          create: { userId: user.id, roleId: role.id },
-          update: {},
-        });
-      }
-      return tx.companyMember.create({
+
+    let user = await tx.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await tx.user.create({
         data: {
-          companyId,
-          userId: user.id,
-          memberRole: dto.memberRole,
-          invitedBy: actorId,
+          email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          passwordHash,
+          roles: { create: { roleId: role.id } },
         },
-        include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
       });
+    } else {
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: role.id } },
+        create: { userId: user.id, roleId: role.id },
+        update: {},
+      });
+    }
+
+    const existing = await tx.companyMember.findUnique({
+      where: { companyId_userId: { companyId, userId: user.id } },
+    });
+    if (existing) {
+      throw new ConflictException('This user is already a member of this company');
+    }
+
+    return tx.companyMember.create({
+      data: {
+        companyId,
+        userId: user.id,
+        memberRole: dto.memberRole,
+        invitedBy: actorId,
+      },
+      include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
     });
   }
 
@@ -112,9 +199,82 @@ export class CompaniesService {
     return this.prisma.company.update({ where: { id }, data: { isFeatured: featured } });
   }
 
+  setPostingAccess(id: string, canSelfPublishJobs: boolean) {
+    return this.prisma.company.update({
+      where: { id },
+      data: { canSelfPublishJobs },
+    });
+  }
+
+  async setPortalStatus(id: string, status: CompanyPortalStatus, reason?: string) {
+    if (status === 'suspended') {
+      return this.suspendCompany(id, reason);
+    }
+    return this.reactivateCompany(id);
+  }
+
+  private async suspendCompany(id: string, reason?: string) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      const members = await tx.companyMember.findMany({
+        where: { companyId: id, status: 'active' },
+        select: { userId: true },
+      });
+      const userIds = members.map((m) => m.userId);
+      if (userIds.length) {
+        await tx.user.updateMany({
+          where: { id: { in: userIds }, accountStatus: 'active' },
+          data: { accountStatus: 'suspended' },
+        });
+      }
+      return tx.company.update({
+        where: { id },
+        data: {
+          portalStatus: 'suspended',
+          suspendedAt: new Date(),
+          suspendedReason: reason?.trim() || null,
+        },
+        include: { industry: true, _count: { select: { jobs: true, members: true } } },
+      });
+    });
+  }
+
+  private async reactivateCompany(id: string) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      const members = await tx.companyMember.findMany({
+        where: { companyId: id },
+        select: { userId: true },
+      });
+      const userIds = members.map((m) => m.userId);
+      if (userIds.length) {
+        await tx.user.updateMany({
+          where: { id: { in: userIds }, accountStatus: 'suspended' },
+          data: { accountStatus: 'active' },
+        });
+      }
+      return tx.company.update({
+        where: { id },
+        data: {
+          portalStatus: 'active',
+          suspendedAt: null,
+          suspendedReason: null,
+        },
+        include: { industry: true, _count: { select: { jobs: true, members: true } } },
+      });
+    });
+  }
+
   employerCompanies(user: AuthUser) {
     return this.prisma.company.findMany({
-      where: { members: { some: { userId: user.id, status: 'active' } } },
+      where: {
+        portalStatus: 'active',
+        members: { some: { userId: user.id, status: 'active' } },
+      },
       include: { industry: true, logo: true },
     });
   }
@@ -132,6 +292,11 @@ export class CompaniesService {
       },
     });
     if (!company) throw new NotFoundException('Company not found');
+    if (company.portalStatus === 'suspended') {
+      throw new ForbiddenException(
+        'Company access has been suspended. Please contact the platform administrator.',
+      );
+    }
     return company;
   }
 

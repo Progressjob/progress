@@ -45,7 +45,7 @@ Public registration creates **candidates only**. Employer and admin accounts com
 | Role | Username (email) | Password | Lands on after login |
 |------|------------------|----------|----------------------|
 | Admin | `admin@example.com` | `ChangeMe123!` | `/admin` |
-| Employer (job releaser) | `employer@example.com` | `Employer123!` | `/employer` (then auto-opens the company jobs page) |
+| Company (hiring) | `employer@example.com` | `Employer123!` | `/company` (then auto-opens the company jobs page) |
 | Candidate | `candidate@example.com` | `Candidate123!` | `/jobs` |
 
 Admin email/password can be overridden by `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `backend/.env`. If those are set, use the `.env` values instead of the defaults above.
@@ -61,7 +61,8 @@ On `/login`, expand **Demo Test Accounts** to auto-fill any of the three seed lo
 | Company | Demo Technology PLC |
 | Company slug | `demo-technology-plc` |
 | Verification | `verified` |
-| Employer membership | `employer@example.com` is **owner** |
+| Company membership | `employer@example.com` is **owner** |
+| Direct posting | **disabled** by default (`canSelfPublishJobs: false`) — company jobs go to admin review |
 | Sample job | Junior Backend Developer |
 | Job slug | `junior-backend-developer-demo` |
 | Job reference | `DEV-001` |
@@ -78,7 +79,7 @@ Run these in this order so later steps have data (a new job, a CV, and an applic
 1. Public browsing (no login)
 2. Admin login → dashboard → create and publish a job
 3. Candidate login (or new register) → profile + CV → apply
-4. Employer login → review pipeline → change status
+4. Company login → post job (review flow) → review pipeline → change status
 5. Candidate checks the updated status (and optionally withdraws a second application)
 6. Access-control and logout checks
 
@@ -198,63 +199,76 @@ Guests hitting apply are sent to `/login` and should return to `/jobs/:slug/appl
 
 Login: `admin@example.com` / `ChangeMe123!`
 
-Nav shows **Admin Dashboard** and **Admin Jobs**. Candidate and employer menus stay hidden.
+Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no public Home/Contact links).
 
 ### 7.1 Dashboard
 
 1. Open `/admin`.
-2. Confirm counts for companies, jobs, candidates, applications, and pending reports.
+2. Confirm counts for companies, jobs, published jobs, pending review, registered candidates, and applications.
 
 **Pass:** After seed, companies ≥ 1 and jobs ≥ 1. Counts increase after later steps.
 
-### 7.2 Create, publish, and close a job
+### 7.1b Register and manage companies
 
-There is **no admin UI to register a company**. The create-job form lists existing companies (including Demo Technology PLC). New companies must be created via API (see section 10).
+1. Open `/admin/companies`.
+2. Use **Search companies** to find **Demo Technology PLC** by name or email.
+3. Confirm job and member counts, verification badge, and posting toggle (🟢 / ⚪).
+4. Click **+ Register company** and complete company profile + employer login (use a unique email, e.g. `e2e.partner@example.com` / generated password).
+5. Copy credentials from the modal; log out admin and log in as the new employer — confirm `/company` loads.
+6. Log back in as admin. Use **✏️ Edit** to change city or industry; set verification if needed.
+7. Toggle direct posting (🟢) on for a test company, then off again.
+
+**Pass:** `POST /admin/companies/provision` creates a verified company and owner member. `PATCH` update and posting-access work from the UI.
+
+### 7.1c Terminate and reactivate a company
+
+1. On `/admin/companies`, click **🚫 Terminate** on a non-production test company (not Demo Technology PLC unless you re-seed).
+2. Confirm optional reason. Employer login for that company should fail with a suspension message.
+3. Confirm the company no longer appears on `/companies` (public directory).
+4. Click **♻️ Reactivate** on the same row. Employer can log in again; company reappears when verified.
+
+**Pass:** `PATCH /admin/companies/:id/portal-status` suspends member logins and hides the company from the public list until reactivated.
+
+### 7.2 Search, post, publish, and close jobs
 
 1. Open `/admin/jobs`.
-2. Click **+ Post New Job Advertisement**.
-3. Fill:
+2. Use **Search jobs and companies** — try a company name and a job title from the seed.
+3. In the **Companies** panel, confirm job counts; click a row to filter the job list, then **Clear filter**.
+4. Click **+ Post new job**.
+5. Test **Existing company**: select **Demo Technology PLC**, fill category, title, description, deadline, etc. Leave **Publish live immediately** checked or unchecked to test draft vs live.
+6. Test **Register new company & post**: fill company + employer + job in one flow; save credentials from the modal.
+7. On the job card, use **Publish live** / **Reject** (pending queue), **View public ad**, and **Close vacancy** as needed.
 
-   | Field | Example |
-   |-------|---------|
-   | Company | Demo Technology PLC |
-   | Category | Information Technology |
-   | Location | Addis Ababa |
-   | Title | E2E QA Engineer |
-   | Description | End-to-end test vacancy. Do not use in production. |
-   | Employment type | full_time |
-   | Workplace | hybrid |
-   | Application method | internal |
-   | Deadline | a future date |
-   | Vacancies | 1 |
-
-4. Save. The job is created as a **draft** (not public yet).
-5. Open the **Pending Review Queue** tab if needed.
-6. Click **Publish Live**.
-7. Open **View Public Ad** and confirm the job is on `/jobs`.
-8. Optionally click **Close Vacancy** and confirm it disappears from the public board.
-
-**Pass:** Draft is not on `/jobs`. After publish, guests and candidates can open it. Closed jobs are no longer listed as open.
+**Pass:** Search hits companies and jobs. Admin can post for existing or newly provisioned companies. Published jobs appear on `/jobs`; closed jobs drop off the open board.
 
 ---
 
-## 8. Employer portal (job releaser)
+## 8. Companies portal (hiring)
 
 Login: `employer@example.com` / `Employer123!`
 
-This is the seeded job-releaser account. It cannot create a company from the UI.
+This is the seeded company account. It cannot create a company from the UI.
 
 ### 8.1 Company home
 
-1. After login, `/employer` loads memberships.
-2. With one company, the app should redirect to `/employer/:companyId/jobs`.
-3. Confirm **Demo Technology PLC** and the job list (seed job plus any admin-published jobs).
+1. After login, `/company` loads memberships (or redirects to `/company/:companyId/jobs` when there is one company).
+2. Confirm **Demo Technology PLC** and the job list (seed job plus any admin-published jobs).
+3. Admin contact details appear when direct posting is disabled.
 
 **Pass:** Applicant counts match applications submitted in section 6.
 
-### 8.2 Applicant pipeline
+### 8.2 Post a job (review vs direct)
 
-1. Click **Review Pipeline** on a job that has applications.
+1. Open **Post opportunity** (`/company/:companyId/jobs/new`).
+2. Fill the form and submit.
+3. With default settings, status is **pending_review** and the job is **not** on `/jobs` until admin publishes.
+4. (Optional) Admin enables **Direct posting** on `/admin/companies`, then repeat — job should become **published** immediately.
+
+**Pass:** Review flow and direct-post flow match company `canSelfPublishJobs`.
+
+### 8.3 Applicant pipeline
+
+1. Click **View candidates** on a **published** job that has applications.
 2. Search by candidate name or email.
 3. Filter by status.
 4. Open an application: screening answers and CV download should work (authenticated).
@@ -271,7 +285,7 @@ This is the seeded job-releaser account. It cannot create a company from the UI.
 
 **Pass:** Illegal jumps are rejected. Candidate `/candidate/applications` shows the new status after refresh.
 
-Employers can update company profile fields via API (`PATCH /employer/companies/:companyId`). There is no dedicated company-edit screen in the current UI.
+Company users can update company profile fields via API (`PATCH /employer/companies/:companyId`). There is no dedicated company-edit screen in the current UI.
 
 ---
 
@@ -283,21 +297,24 @@ Use three browser sessions (or logout/login between roles).
 |------|-------|---------|--------|----------|
 | 1 | Admin | `admin@example.com` / `ChangeMe123!` | Create + publish “E2E QA Engineer” | Job visible on `/jobs` |
 | 2 | Candidate | `candidate@example.com` / `Candidate123!` | Upload CV if needed, apply | Application `submitted` |
-| 3 | Employer | `employer@example.com` / `Employer123!` | Open pipeline, set **reviewing** then **shortlisted** | Status updates |
+| 3 | Company | `employer@example.com` / `Employer123!` | Open pipeline, set **reviewing** then **shortlisted** | Status updates |
 | 4 | Candidate | same | Open My Applications | Status is `shortlisted` |
-| 5 | Employer | same | Set **interview** → **offered** → **hired** | Terminal; no further moves |
+| 5 | Company | same | Set **interview** → **offered** → **hired** | Terminal; no further moves |
 | 6 | Admin | same | Dashboard applications count increased | Metrics updated |
 
 Optional second candidate (`tesfa.lemma@example.com` / `Tester123!`): apply to the same job, then withdraw, and confirm the employer still sees `withdrawn`.
 
 ---
 
-## 10. Company onboarding (API only)
+## 10. Company onboarding (admin UI or API)
 
-Companies cannot self-register in the UI. Admins create companies and employer logins via API (Swagger or curl). Use the admin JWT from `POST /api/v1/auth/login`.
+Companies cannot self-register publicly. Prefer **`/admin/companies` → Register company** (section 7.1b), which calls `POST /api/v1/admin/companies/provision` and returns one-time credentials.
 
-1. `POST /api/v1/admin/companies` — create the company (`name` required; slug is generated).
-2. `POST /api/v1/admin/companies/:id/members` — create/link an employer user:
+For API-only setup (Swagger or curl), use the admin JWT from `POST /api/v1/auth/login`:
+
+1. `POST /api/v1/admin/companies/provision` — company + owner in one step (auto-verified by default), **or** split:
+2. `POST /api/v1/admin/companies` — create the company (`name` required; slug is generated).
+3. `POST /api/v1/admin/companies/:id/members` — create/link an employer user:
 
    ```json
    {
@@ -309,10 +326,10 @@ Companies cannot self-register in the UI. Admins create companies and employer l
    }
    ```
 
-3. `PATCH /api/v1/admin/companies/:id/verification` with `{ "status": "verified" }` so the company appears in `/companies`.
-4. Log in as the new employer and confirm `/employer` lists the company.
+4. If not using provision, `PATCH /api/v1/admin/companies/:id/verification` with `{ "status": "verified" }` so the company appears in `/companies`.
+5. Log in as the new company user and confirm `/company` lists the company.
 
-Until verification, the public directory hides the company. The admin job form can still select it because `GET /admin/companies` returns all companies.
+Until verification, the public directory hides the company. Suspended companies are hidden even when verified. `GET /admin/companies` returns all companies for admin search and job posting.
 
 ---
 
@@ -321,8 +338,9 @@ Until verification, the public directory hides the company. The admin job form c
 | Action | Expected |
 |--------|----------|
 | Visit `/candidate/profile` logged out | Redirect to login |
-| Visit `/employer` as candidate | Blocked (role guard) |
-| Visit `/admin` as employer or candidate | Blocked |
+| Visit `/company` as candidate | Blocked (role guard) |
+| Visit `/admin` as company user or candidate | Blocked |
+| Old `/employer/...` URLs | Redirect to `/company/...` |
 | Admin or employer opens an internal job apply page | Message that only candidates can apply |
 | Logout | Return to `/login`; protected routes fail until login again |
 | Wrong password | Error on `/login` |
@@ -334,7 +352,7 @@ Until verification, the public directory hides the company. The admin job form c
 These exist on the backend (see [frontend_api_guide.md](./frontend_api_guide.md)) but are **not** end-to-end testable in the current frontend:
 
 - Public company registration / employer self-signup
-- Admin company create/verify screens
+- Admin featured-company toggle, member-role management, and verification-document workflow UI
 - Saved jobs
 - In-app notifications inbox
 - Forgot / reset password pages
@@ -353,8 +371,8 @@ Do not treat missing UI as a failed E2E case unless you are testing the API dire
 - [ ] Contact form submits
 - [ ] New candidate can register and log in
 - [ ] `candidate@example.com` / `Candidate123!` can edit profile, upload CV, apply, withdraw
-- [ ] `admin@example.com` / `ChangeMe123!` can create, publish, and close jobs
-- [ ] `employer@example.com` / `Employer123!` can review applicants and change status
-- [ ] Candidate sees employer status changes
+- [ ] `admin@example.com` / `ChangeMe123!` can manage companies, approve pending jobs, publish, and close jobs
+- [ ] `employer@example.com` / `Employer123!` can post jobs (review flow), review applicants, and change status
+- [ ] Candidate sees company status changes
 - [ ] Wrong-role URLs are blocked
 - [ ] Logout clears the session

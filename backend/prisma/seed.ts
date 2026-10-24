@@ -158,7 +158,7 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
       verificationStatus: 'verified',
       verifiedAt: new Date(),
     },
-    update: {},
+    update: { canSelfPublishJobs: false },
   });
   await prisma.companyMember.upsert({
     where: { companyId_userId: { companyId: company.id, userId: employer.id } },

@@ -52,11 +52,15 @@ export class AuthService {
       where: { OR: [{ email: identifier }, { phone: dto.identifier.trim() }] },
       include: { roles: { include: { role: true } } },
     });
-    if (
-      !user ||
-      user.accountStatus !== 'active' ||
-      !(await argon2.verify(user.passwordHash, dto.password))
-    ) {
+    if (!user || !(await argon2.verify(user.passwordHash, dto.password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (user.accountStatus === 'suspended') {
+      throw new UnauthorizedException(
+        'Your account access has been suspended. Please contact the platform administrator.',
+      );
+    }
+    if (user.accountStatus !== 'active') {
       throw new UnauthorizedException('Invalid credentials');
     }
     await this.prisma.user.update({

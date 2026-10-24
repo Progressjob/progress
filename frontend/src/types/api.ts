@@ -51,6 +51,10 @@ export interface Skill {
   name: string;
 }
 
+export type CompanyPortalStatus = 'active' | 'suspended';
+
+export type CompanyMemberRole = 'owner' | 'recruiter' | 'hiring_manager';
+
 export interface Company {
   id: string;
   name: string;
@@ -59,11 +63,17 @@ export interface Company {
   websiteUrl?: string | null;
   email?: string | null;
   phone?: string | null;
+  country?: string;
   region?: string | null;
   city?: string | null;
   address?: string | null;
   companySize?: string | null;
+  foundedYear?: number | null;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  canSelfPublishJobs?: boolean;
+  portalStatus?: CompanyPortalStatus;
+  suspendedAt?: string | null;
+  suspendedReason?: string | null;
   isFeatured: boolean;
   industry?: Industry | null;
   logo?: { id: string } | null;
@@ -214,6 +224,20 @@ export interface AdminDashboard {
   companies: number;
   jobs: number;
   candidates: number;
+  registeredCandidates?: number;
   applications: number;
   pendingReports: number;
+  pendingReviewJobs: number;
+  publishedJobs: number;
+}
+
+export interface AdminCandidateUser {
+  id: string;
+  email: string;
+  phone?: string | null;
+  firstName: string;
+  lastName: string;
+  accountStatus: string;
+  createdAt: string;
+  candidateProfile?: { id: string; headline?: string | null } | null;
 }
