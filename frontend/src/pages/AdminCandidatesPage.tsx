@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api/admin';
+import { AdminCandidateApplicationsModal } from '../components/admin/AdminCandidateApplicationsModal';
 import type { AdminCandidateUser } from '../types/api';
 
 export const AdminCandidatesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [applicationsFor, setApplicationsFor] = useState<AdminCandidateUser | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -100,7 +102,25 @@ export const AdminCandidatesPage: React.FC = () => {
                   </td>
                   <td style={{ padding: '0.75rem' }}>{c.phone ?? '—'}</td>
                   <td style={{ padding: '0.75rem' }}>{c.email ?? '—'}</td>
-                  <td style={{ padding: '0.75rem' }}>{c.stats.applicationsCount}</td>
+                  <td style={{ padding: '0.75rem' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {c.stats.applicationsCount}
+                      <button
+                        type="button"
+                        className="btn-clear-filters"
+                        style={{ padding: '0.25rem 0.65rem', fontSize: '0.85rem' }}
+                        disabled={c.stats.applicationsCount === 0}
+                        title={
+                          c.stats.applicationsCount === 0
+                            ? 'No applications'
+                            : 'View jobs this candidate applied to'
+                        }
+                        onClick={() => setApplicationsFor(c)}
+                      >
+                        View
+                      </button>
+                    </span>
+                  </td>
                   <td style={{ padding: '0.75rem' }}>
                     {blocked ? (
                       <span className="tag-pill" style={{ background: '#fee2e2', color: '#b91c1c' }}>
@@ -148,6 +168,13 @@ export const AdminCandidatesPage: React.FC = () => {
           <p className="muted" style={{ padding: '1rem' }}>No candidates match your search.</p>
         )}
       </div>
+
+      {applicationsFor && (
+        <AdminCandidateApplicationsModal
+          candidate={applicationsFor}
+          onClose={() => setApplicationsFor(null)}
+        />
+      )}
     </div>
   );
 };
