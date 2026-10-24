@@ -101,6 +101,7 @@ export const ProgressLogo: React.FC<ProgressLogoProps> = ({
         </span>
         {showSubtitle && (
           <span
+            className="logo-subtitle"
             style={{
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
               fontSize: subtitleSize,

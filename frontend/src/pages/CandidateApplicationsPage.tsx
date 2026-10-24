@@ -53,7 +53,7 @@ export const CandidateApplicationsPage: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <div className="card">
+        <div className="card table-scroll">
           <table className="table">
             <thead>
               <tr>
