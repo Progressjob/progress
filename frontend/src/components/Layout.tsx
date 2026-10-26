@@ -21,7 +21,7 @@ export const Layout: React.FC = () => {
   const handleLogout = async () => {
     setMenuOpen(false);
     await logout();
-    navigate('/login');
+    navigate('/login', { replace: true, state: {} });
   };
 
   return (

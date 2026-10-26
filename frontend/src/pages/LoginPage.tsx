@@ -4,8 +4,51 @@ import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
 import { ProgressLogo } from '../components/ProgressLogo';
 
+export function getValidRedirect(from: string | null | undefined, roles: string[]): string {
+  if (from) {
+    const isPublic =
+      from === '/' ||
+      from === '/jobs' ||
+      (from.startsWith('/jobs/') && !from.endsWith('/apply')) ||
+      from === '/companies' ||
+      from.startsWith('/companies/') ||
+      from === '/contact';
+
+    if (isPublic) {
+      return from;
+    }
+
+    if (from.startsWith('/admin') && (roles.includes('admin') || roles.includes('moderator'))) {
+      return from;
+    }
+
+    if (
+      (from.startsWith('/company') || from.startsWith('/employer')) &&
+      roles.includes('employer')
+    ) {
+      return from;
+    }
+
+    if (
+      (from.startsWith('/candidate') || from.endsWith('/apply')) &&
+      roles.includes('candidate')
+    ) {
+      return from;
+    }
+  }
+
+  // Fallback to role-specific default portal
+  if (roles.includes('admin') || roles.includes('moderator')) {
+    return '/admin';
+  }
+  if (roles.includes('employer')) {
+    return '/company';
+  }
+  return '/jobs';
+}
+
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { user: currentUser, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -14,7 +57,8 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showDevAccounts, setShowDevAccounts] = useState(false);
+  const [activeDemo, setActiveDemo] = useState<string | null>(null);
+  const [showDevAccounts, setShowDevAccounts] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,15 +66,8 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       const user = await login(identifier, password);
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (user.roles.includes('admin') || user.roles.includes('moderator')) {
-        navigate('/admin', { replace: true });
-      } else if (user.roles.includes('employer')) {
-        navigate('/company', { replace: true });
-      } else {
-        navigate('/jobs', { replace: true });
-      }
+      const target = getValidRedirect(from, user.roles);
+      navigate(target, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -42,10 +79,27 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const fillDemo = (demoEmail: string, demoPass: string) => {
+  const loginAsDemo = async (demoEmail: string, demoPass: string, label: string) => {
     setIdentifier(demoEmail);
     setPassword(demoPass);
     setError(null);
+    setSubmitting(true);
+    setActiveDemo(label);
+    try {
+      const user = await login(demoEmail, demoPass);
+      // When explicitly clicking a demo profile, clear mismatched 'from' and go to that role's home
+      const target = getValidRedirect(null, user.roles);
+      navigate(target, { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError((err as Error).message || 'Invalid email or password.');
+      }
+    } finally {
+      setSubmitting(false);
+      setActiveDemo(null);
+    }
   };
 
   return (
@@ -57,6 +111,43 @@ export const LoginPage: React.FC = () => {
 
         <h1 className="auth-title">Welcome Back</h1>
         <p className="auth-subtitle">Sign in to access your jobs, applications, or companies portal</p>
+
+        {currentUser && (
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem',
+              fontSize: '0.85rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              Signed in: <strong>{currentUser.email}</strong> ({currentUser.roles.join(', ')})
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await logout();
+                setError(null);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#dc2626',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '0 0.25rem',
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        )}
 
         {error && <div className="alert-box-error">{error}</div>}
 
@@ -124,23 +215,29 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 className="dev-chip"
-                onClick={() => fillDemo('candidate@example.com', 'Candidate123!')}
+                disabled={submitting}
+                onClick={() => loginAsDemo('candidate@example.com', 'Candidate123!', 'candidate')}
+                title="Click to sign in instantly as Candidate"
               >
-                Candidate Demo
+                {activeDemo === 'candidate' ? 'Signing in…' : 'Candidate Demo ⚡'}
               </button>
               <button
                 type="button"
                 className="dev-chip"
-                onClick={() => fillDemo('employer@example.com', 'Employer123!')}
+                disabled={submitting}
+                onClick={() => loginAsDemo('employer@example.com', 'Employer123!', 'employer')}
+                title="Click to sign in instantly as Employer"
               >
-                Companies demo
+                {activeDemo === 'employer' ? 'Signing in…' : 'Companies Demo ⚡'}
               </button>
               <button
                 type="button"
                 className="dev-chip"
-                onClick={() => fillDemo('admin@example.com', 'ChangeMe123!')}
+                disabled={submitting}
+                onClick={() => loginAsDemo('admin@example.com', 'ChangeMe123!', 'admin')}
+                title="Click to sign in instantly as Admin"
               >
-                Admin Demo
+                {activeDemo === 'admin' ? 'Signing in…' : 'Admin Demo ⚡'}
               </button>
             </div>
           )}

@@ -49,7 +49,7 @@ export const CompanyPortalLayout: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/login', { replace: true, state: {} });
   };
 
   return (

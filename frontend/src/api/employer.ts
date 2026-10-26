@@ -15,6 +15,7 @@ export interface CreateCompanyJobPayload {
   description: string;
   responsibilities?: string;
   requirements?: string;
+  educationRequirement?: string;
   experienceMinYears?: number;
   employmentType: EmploymentType;
   workplaceType: WorkplaceType;
