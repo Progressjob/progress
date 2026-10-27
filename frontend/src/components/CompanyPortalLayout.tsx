@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
+import {
+  isCompanyEditJob,
+  isCompanyJobsList,
+  isCompanyPostJob,
+  isExactPath,
+  navActive,
+} from '../auth/nav';
 import { employerApi } from '../api/employer';
 import { ProgressLogo } from './ProgressLogo';
 import { AdminContactCard } from './AdminContactCard';
@@ -12,6 +19,7 @@ export const CompanyPortalLayout: React.FC = () => {
   const location = useLocation();
   const { companyId } = useParams<{ companyId?: string }>();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   const companiesQuery = useQuery({
     queryKey: ['company', 'memberships'],
@@ -51,11 +59,16 @@ export const CompanyPortalLayout: React.FC = () => {
   };
 
   const handleFindWork = async () => {
-    if (!user?.roles.includes('candidate')) {
-      await enableCandidate();
+    setSwitching(true);
+    try {
+      if (!user?.roles.includes('candidate')) {
+        await enableCandidate();
+      }
+      setWorkspace('candidate');
+      navigate('/jobs');
+    } finally {
+      setSwitching(false);
     }
-    setWorkspace('candidate');
-    navigate('/jobs');
   };
 
   return (
@@ -81,33 +94,62 @@ export const CompanyPortalLayout: React.FC = () => {
 
         <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
           <nav className="nav-links">
-            <NavLink to="/company" end>
-              Employer
-            </NavLink>
-            {companyId && (
+            {companyId ? (
               <>
-                <NavLink to={`/company/${companyId}/jobs`}>Job postings</NavLink>
-                <NavLink to={`/company/${companyId}/jobs/new`}>Post a job</NavLink>
+                <NavLink
+                  to={`/company/${companyId}/jobs`}
+                  end
+                  className={() =>
+                    navActive(
+                      isCompanyJobsList(location.pathname, companyId) ||
+                        isCompanyEditJob(location.pathname, companyId),
+                    )
+                  }
+                >
+                  Job postings
+                </NavLink>
+                <NavLink
+                  to={`/company/${companyId}/jobs/new`}
+                  end
+                  className={() => navActive(isCompanyPostJob(location.pathname, companyId))}
+                >
+                  Post a job
+                </NavLink>
               </>
+            ) : (
+              <NavLink
+                to="/company"
+                end
+                className={() => navActive(isExactPath(location.pathname, '/company'))}
+              >
+                Hiring home
+              </NavLink>
             )}
-            <button type="button" className="nav-text-button" onClick={() => void handleFindWork()}>
-              Find work
-            </button>
           </nav>
 
           <div className="nav-auth">
             {user && (
-              <div className="user-pill">
-                <span className="user-pill-name">
-                  <strong>
-                    {user.firstName} {user.lastName}
-                  </strong>
-                  <small>(hiring)</small>
-                </span>
-                <button type="button" className="btn-logout" onClick={handleLogout}>
-                  Logout
+              <>
+                <button
+                  type="button"
+                  className="nav-switch-mode"
+                  onClick={() => void handleFindWork()}
+                  disabled={switching}
+                >
+                  {switching ? 'Switching…' : 'Switch to finding work'}
                 </button>
-              </div>
+                <div className="user-pill">
+                  <span className="user-pill-name">
+                    <strong>
+                      {user.firstName} {user.lastName}
+                    </strong>
+                    <small>Hiring</small>
+                  </span>
+                  <button type="button" className="btn-logout" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

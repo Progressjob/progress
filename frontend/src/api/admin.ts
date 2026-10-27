@@ -2,6 +2,7 @@ import { apiFetch } from './client';
 import type {
   AdminCandidateUser,
   AdminDashboard,
+  ApplicationMethod,
   Company,
   CompanyPortalStatus,
   EmploymentType,
@@ -68,6 +69,9 @@ export interface CreateAdminJobPayload {
   salaryVisibility?: boolean;
   applicationDeadline: string;
   vacanciesCount: number;
+  applicationMethod?: ApplicationMethod;
+  applicationEmail?: string;
+  applicationInstructions?: string;
 }
 
 export interface ScreeningQuestionInput {
@@ -145,6 +149,11 @@ export const adminApi = {
     apiFetch<Job>(`/admin/jobs/${jobId}/reject`, { method: 'POST' }),
   closeJob: (jobId: string) =>
     apiFetch<Job>(`/admin/jobs/${jobId}/close`, { method: 'POST' }),
+  resolveDeadlineChange: (jobId: string, action: 'approve' | 'dismiss') =>
+    apiFetch<Job>(`/admin/jobs/${jobId}/deadline-change`, {
+      method: 'POST',
+      body: { action },
+    }),
   archiveJob: (jobId: string) =>
     apiFetch<Job>(`/admin/jobs/${jobId}/archive`, { method: 'POST' }),
   replaceScreeningQuestions: (jobId: string, questions: ScreeningQuestionInput[]) =>

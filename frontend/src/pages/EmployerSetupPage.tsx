@@ -68,10 +68,10 @@ export const EmployerSetupPage: React.FC = () => {
           <ProgressLogo size="md" />
         </div>
 
-        <h1 className="auth-title">Set up hiring</h1>
+        <h1 className="auth-title">Switch this account to hiring</h1>
         <p className="auth-subtitle">
-          Tell candidates who is hiring. Use your name or a business name. You can return to finding
-          work at any time.
+          You keep the same login. After this, use <strong>Switch to hiring</strong> in the nav to
+          post jobs, and <strong>Switch to finding work</strong> to go back to searching.
         </p>
 
         {error && <div className="alert-box-error">{error}</div>}

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { PROGRESS_HIRE_EMAIL } from '../src/common/progress-contact';
 
 const prisma = new PrismaClient();
 
@@ -201,6 +202,10 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
   const sample = await prisma.job.findFirst({
     where: { companyId: company.id, referenceCode: 'DEV-001' },
   });
+  const hireThroughProgress = {
+    applicationMethod: 'admin' as const,
+    applicationEmail: PROGRESS_HIRE_EMAIL,
+  };
   if (!sample) {
     const deadline = new Date();
     deadline.setUTCDate(deadline.getUTCDate() + 30);
@@ -216,13 +221,18 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
         description: 'Development-only sample vacancy.',
         employmentType: 'full_time',
         workplaceType: 'hybrid',
-        applicationMethod: 'internal',
+        ...hireThroughProgress,
         applicationDeadline: deadline,
         status: 'published',
         postedAt: new Date(),
         approvedBy: adminId,
         approvedAt: new Date(),
       },
+    });
+  } else {
+    await prisma.job.update({
+      where: { id: sample.id },
+      data: hireThroughProgress,
     });
   }
 }

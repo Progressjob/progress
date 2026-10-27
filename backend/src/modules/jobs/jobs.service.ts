@@ -5,8 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { EmploymentType, JobStatus, Prisma, WorkplaceType } from '@prisma/client';
+import { ApplicationMethod, EmploymentType, JobStatus, Prisma, WorkplaceType } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { PROGRESS_HIRE_EMAIL } from '../../common/progress-contact';
 import { slugify } from '../../common/slug';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -15,10 +16,18 @@ import {
   EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
+  RequestDeadlineChangeDto,
+  ResolveDeadlineChangeDto,
   UpdateJobDto,
 } from './jobs.dto';
 
-const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = ['draft', 'pending_review', 'rejected'];
+const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = [
+  'draft',
+  'pending_review',
+  'rejected',
+  'published',
+];
+const CATEGORY_LOCKED_STATUSES: JobStatus[] = ['pending_review', 'published', 'closed'];
 
 @Injectable()
 export class JobPostingPolicy {
@@ -166,10 +175,12 @@ export class JobsService {
   async create(actorId: string, dto: CreateJobDto) {
     this.validateRanges(dto);
     await this.policy.assertCanPost(dto.companyId);
+    const hire = this.normalizeHireContact(dto);
     const base = slugify(`${dto.title}-${Date.now()}`);
     return this.prisma.job.create({
       data: {
         ...dto,
+        ...hire,
         applicationDeadline: new Date(dto.applicationDeadline),
         createdBy: actorId,
         slug: base,
@@ -182,10 +193,12 @@ export class JobsService {
     const job = await this.prisma.job.findUnique({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
     if (job.status === 'archived') throw new BadRequestException('Archived jobs cannot be edited');
+    const hire = dto.applicationMethod ? this.normalizeHireContact(dto) : {};
     return this.prisma.job.update({
       where: { id },
       data: {
         ...dto,
+        ...hire,
         applicationDeadline: dto.applicationDeadline
           ? new Date(dto.applicationDeadline)
           : undefined,
@@ -259,6 +272,10 @@ export class JobsService {
     return this.create(userId, { ...dto, companyId });
   }
 
+  async employerGet(userId: string, companyId: string, jobId: string) {
+    return this.getEmployerManagedJob(userId, companyId, jobId);
+  }
+
   async employerUpdate(
     userId: string,
     companyId: string,
@@ -269,7 +286,75 @@ export class JobsService {
     if (!EMPLOYER_EDITABLE_STATUSES.includes(job.status)) {
       throw new BadRequestException('This job cannot be edited in its current status');
     }
-    return this.update(jobId, dto);
+    const {
+      applicationDeadline: _deadline,
+      categoryId,
+      ...content
+    } = dto;
+    const next: EmployerUpdateJobDto = { ...content };
+    if (!CATEGORY_LOCKED_STATUSES.includes(job.status) && categoryId) {
+      next.categoryId = categoryId;
+    }
+    return this.update(jobId, next);
+  }
+
+  async employerRequestDeadlineChange(
+    userId: string,
+    companyId: string,
+    jobId: string,
+    dto: RequestDeadlineChangeDto,
+  ) {
+    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
+    if (!['published', 'pending_review'].includes(job.status)) {
+      throw new BadRequestException('Deadline changes can only be requested for submitted jobs');
+    }
+    const requested = new Date(dto.requestedDeadline);
+    if (Number.isNaN(requested.getTime())) {
+      throw new BadRequestException('Provide a valid deadline date');
+    }
+    if (requested < this.today()) {
+      throw new BadRequestException('Requested deadline must be today or later');
+    }
+    const current = job.applicationDeadline.toISOString().slice(0, 10);
+    const next = requested.toISOString().slice(0, 10);
+    if (current === next) {
+      throw new BadRequestException('Requested deadline is the same as the current deadline');
+    }
+    return this.prisma.job.update({
+      where: { id: job.id },
+      data: {
+        requestedDeadline: requested,
+        deadlineChangeNote: dto.note?.trim() || null,
+        deadlineChangeRequestedAt: new Date(),
+      },
+    });
+  }
+
+  async resolveDeadlineChange(id: string, dto: ResolveDeadlineChangeDto) {
+    const job = await this.prisma.job.findUnique({ where: { id } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (!job.requestedDeadline) {
+      throw new BadRequestException('This job has no pending deadline change request');
+    }
+    if (dto.action === 'approve') {
+      return this.prisma.job.update({
+        where: { id },
+        data: {
+          applicationDeadline: job.requestedDeadline,
+          requestedDeadline: null,
+          deadlineChangeNote: null,
+          deadlineChangeRequestedAt: null,
+        },
+      });
+    }
+    return this.prisma.job.update({
+      where: { id },
+      data: {
+        requestedDeadline: null,
+        deadlineChangeNote: null,
+        deadlineChangeRequestedAt: null,
+      },
+    });
   }
 
   async employerSubmit(userId: string, companyId: string, jobId: string) {
@@ -329,6 +414,36 @@ export class JobsService {
     });
     if (!job) throw new NotFoundException('Job not found');
     return job;
+  }
+
+  private normalizeHireContact(dto: Pick<UpdateJobDto, 'applicationMethod' | 'applicationEmail' | 'applicationInstructions'>): {
+    applicationMethod: ApplicationMethod;
+    applicationEmail: string | null;
+    applicationInstructions: string | null;
+    applicationUrl: null;
+  } {
+    if (dto.applicationMethod === 'admin') {
+      return {
+        applicationMethod: 'admin',
+        applicationEmail: PROGRESS_HIRE_EMAIL,
+        applicationInstructions: dto.applicationInstructions?.trim() || null,
+        applicationUrl: null,
+      };
+    }
+    if (dto.applicationMethod === 'email') {
+      const email = dto.applicationEmail?.trim() || null;
+      const instructions = dto.applicationInstructions?.trim() || null;
+      if (!email && !instructions) {
+        throw new BadRequestException('Provide a hiring email or how-to-hire instructions');
+      }
+      return {
+        applicationMethod: 'email',
+        applicationEmail: email,
+        applicationInstructions: instructions,
+        applicationUrl: null,
+      };
+    }
+    throw new BadRequestException('Choose company contact or hire through Progress');
   }
 
   private validateRanges(dto: UpdateJobDto): void {

@@ -306,7 +306,7 @@ The core vacancy table.
 | `salary_currency` | CHAR(3) | Optional, e.g. `ETB` |
 | `salary_visibility` | BOOLEAN | Default false |
 | `vacancies_count` | INTEGER | Default 1; must be >= 1 |
-| `application_method` | VARCHAR(30) | `internal`, `external_url`, `email` |
+| `application_method` | VARCHAR(30) | `internal`, `external_url`, `email`, `admin` |
 | `application_url` | TEXT | Nullable |
 | `application_email` | VARCHAR(255) | Nullable |
 | `application_instructions` | TEXT | Optional |

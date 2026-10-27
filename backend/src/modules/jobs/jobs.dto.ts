@@ -13,11 +13,11 @@ import {
   IsDateString,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   IsUUID,
   Max,
   Min,
@@ -105,14 +105,10 @@ export class CreateJobDto {
   @Max(10000)
   vacanciesCount = 1;
 
-  @IsEnum(ApplicationMethod)
-  applicationMethod: ApplicationMethod = 'internal';
+  @IsIn(['email', 'admin'])
+  applicationMethod!: Extract<ApplicationMethod, 'email' | 'admin'>;
 
-  @ValidateIf((o: CreateJobDto) => o.applicationMethod === 'external_url')
-  @IsUrl()
-  applicationUrl?: string;
-
-  @ValidateIf((o: CreateJobDto) => o.applicationMethod === 'email')
+  @ValidateIf((o: CreateJobDto) => o.applicationMethod === 'email' && Boolean(o.applicationEmail?.trim()))
   @IsEmail()
   applicationEmail?: string;
 
@@ -138,6 +134,20 @@ export class UpdateJobDto extends PartialType(CreateJobDto) {}
 export class EmployerCreateJobDto extends OmitType(CreateJobDto, ['companyId'] as const) {}
 
 export class EmployerUpdateJobDto extends OmitType(UpdateJobDto, ['companyId'] as const) {}
+
+export class RequestDeadlineChangeDto {
+  @IsDateString()
+  requestedDeadline!: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
+export class ResolveDeadlineChangeDto {
+  @IsIn(['approve', 'dismiss'])
+  action!: 'approve' | 'dismiss';
+}
 
 export class ScreeningQuestionDto {
   @IsString()

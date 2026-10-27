@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CreateAdminJobPayload } from '../../api/admin';
 import { taxonomyApi } from '../../api/taxonomy';
+import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
 import type { Category, EmploymentType, WorkplaceType } from '../../types/api';
 
 const selectStyle: React.CSSProperties = {
@@ -27,6 +28,8 @@ export interface AdminJobFormFieldsProps {
   onChange: (next: CreateAdminJobPayload) => void;
   hideCompanySelect?: boolean;
   companySelect?: React.ReactNode;
+  lockCategory?: boolean;
+  lockDeadline?: boolean;
 }
 
 export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
@@ -34,6 +37,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   onChange,
   hideCompanySelect,
   companySelect,
+  lockCategory,
+  lockDeadline,
 }) => {
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -96,6 +101,7 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           <select
             id="adm-cat"
             required
+            disabled={lockCategory}
             value={value.categoryId}
             onChange={(e) => set({ categoryId: e.target.value })}
             style={selectStyle}
@@ -107,6 +113,11 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
               </option>
             ))}
           </select>
+          {lockCategory && (
+            <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
+              Role area is locked after submit. Post a new job to hire for a different vacancy.
+            </p>
+          )}
         </div>
         <div className="form-input-group">
           <label htmlFor="adm-loc">Location</label>
@@ -290,14 +301,87 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
       </div>
 
       <div className="form-input-group">
+        <span style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+          How to hire *
+        </span>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <input
+              type="radio"
+              name="adm-hire-method"
+              required
+              checked={value.applicationMethod === 'email'}
+              onChange={() => set({ applicationMethod: 'email' })}
+            />
+            Contact the company
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <input
+              type="radio"
+              name="adm-hire-method"
+              required
+              checked={value.applicationMethod === 'admin'}
+              onChange={() =>
+                set({
+                  applicationMethod: 'admin',
+                  applicationEmail: undefined,
+                  applicationInstructions: undefined,
+                })
+              }
+            />
+            Hire through Progress (admin)
+          </label>
+        </div>
+        {value.applicationMethod === 'email' && (
+          <>
+            <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
+              Leave an email, or write how candidates should apply (phone, Telegram, office
+              address). At least one is required.
+            </p>
+            <div className="form-input-group">
+              <label htmlFor="adm-hire-email">Hiring email</label>
+              <input
+                id="adm-hire-email"
+                type="email"
+                value={value.applicationEmail ?? ''}
+                onChange={(e) => set({ applicationEmail: e.target.value || undefined })}
+                placeholder="hiring@company.com"
+              />
+            </div>
+            <div className="form-input-group">
+              <label htmlFor="adm-hire-instructions">How to hire</label>
+              <textarea
+                id="adm-hire-instructions"
+                rows={3}
+                value={value.applicationInstructions ?? ''}
+                onChange={(e) => set({ applicationInstructions: e.target.value || undefined })}
+                placeholder="Email, phone, Telegram, or other instructions"
+              />
+            </div>
+          </>
+        )}
+        {value.applicationMethod === 'admin' && (
+          <p className="muted" style={{ margin: 0, fontSize: '0.9rem' }}>
+            Candidates will be told to contact Progress at <strong>{PROGRESS_HIRE_EMAIL}</strong>.
+          </p>
+        )}
+      </div>
+
+      <div className="form-input-group">
         <label htmlFor="adm-deadline">Application deadline *</label>
         <input
           id="adm-deadline"
           type="date"
-          required
+          required={!lockDeadline}
+          disabled={lockDeadline}
           value={value.applicationDeadline}
           onChange={(e) => set({ applicationDeadline: e.target.value })}
         />
+        {lockDeadline && (
+          <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
+            Deadline cannot be changed here. Request a new date below so an admin can update it.
+          </p>
+        )}
       </div>
     </div>
   );

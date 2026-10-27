@@ -197,10 +197,11 @@ Common codes:
 
 ### Application method (`applicationMethod`)
 
-`internal` | `external_url` | `email`
+`email` | `admin` on create (legacy rows may still be `internal` or `external_url`)
 
-- **`internal`:** candidate applies via `POST /jobs/:jobId/applications`.
-- **`external_url` / `email`:** show link or email on job detail; no in-app apply.
+- **`email`:** company contact. Require `applicationEmail` and/or `applicationInstructions`. Show them on job detail. No in-app apply.
+- **`admin`:** Progress handles hiring. Server sets `applicationEmail` to `progressjobs8@gmail.com`. Show that on job detail.
+- **`POST /jobs/:jobId/applications`:** rejected for every method; use the posted contact.
 
 ### Application status (`status`)
 
@@ -504,7 +505,7 @@ Dashboard counts: companies, jobs, candidates, applications, pendingReports.
   "description": "Full description HTML or plain text",
   "employmentType": "full_time",
   "workplaceType": "on_site",
-  "applicationMethod": "internal",
+  "applicationMethod": "admin",
   "applicationDeadline": "2026-12-31",
   "vacanciesCount": 1
 }
@@ -565,23 +566,20 @@ Types include e.g. `application_update`, `new_application`, `system`.
 
 1. `GET /categories`, `GET /locations` → build filter UI (use **slugs** in job search query).
 2. `GET /jobs?...` → list cards.
-3. `GET /jobs/:slug` → detail; if `applicationMethod !== internal`, show external apply UI.
-4. If internal apply → redirect to login/register → apply flow.
+3. `GET /jobs/:slug` → detail; show `applicationEmail` / `applicationInstructions` (or Progress email when `applicationMethod` is `admin`).
+4. Do not send candidates to an in-app apply form. Leftover `/jobs/:slug/apply` URLs should redirect to the job detail.
 
-### Candidate registration & apply
+### Candidate registration
 
 1. `POST /auth/register` → store tokens.
 2. `POST /candidate/resumes` (or upload CV first).
-3. `POST /jobs/:jobId/applications` with screening `answers`.
-4. `GET /candidate/applications` for history.
+3. Use the hire contact on the job posting. `POST /jobs/:jobId/applications` is rejected.
 
 ### Employer dashboard
 
 1. `GET /auth/me` → pick `companyId` from `companyMemberships`.
 2. `GET /employer/companies/:companyId/jobs` → job list.
-3. `GET .../jobs/:jobId/applications?status=submitted` → pipeline.
-4. `PATCH .../applications/:id/status` → move candidate; candidate gets notification.
-5. `GET /files/:id/download` for CV.
+3. `POST /employer/companies/:companyId/jobs` with `applicationMethod` `email` or `admin`, then submit for review or publish.
 
 ### Admin — post a job for a company
 
@@ -614,7 +612,7 @@ Use **`POST /auth/login`** then **`GET /auth/me`** to confirm roles before wirin
 - [ ] Refresh token flow before access token expires
 - [ ] Handle 401 → login redirect
 - [ ] Job list filters use taxonomy **slugs**
-- [ ] Job detail URL uses **slug**; apply uses job **id**
+- [ ] Job detail URL uses **slug**; how-to-apply uses posted email/instructions
 - [ ] Employer routes always include correct **`companyId`**
 - [ ] Multipart uploads for CVs (field name `file`)
 - [ ] Optional `x-session-id` on job detail for analytics

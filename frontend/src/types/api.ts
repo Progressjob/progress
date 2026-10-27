@@ -93,7 +93,7 @@ export type EmploymentType =
   | 'volunteer';
 
 export type WorkplaceType = 'on_site' | 'hybrid' | 'remote';
-export type ApplicationMethod = 'internal' | 'external_url' | 'email';
+export type ApplicationMethod = 'internal' | 'external_url' | 'email' | 'admin';
 export type JobStatus = 'draft' | 'pending_review' | 'published' | 'rejected' | 'closed' | 'archived';
 export type ApplicationStatus =
   | 'submitted'
@@ -145,6 +145,9 @@ export interface Job {
   applicationEmail?: string | null;
   applicationInstructions?: string | null;
   applicationDeadline: string;
+  requestedDeadline?: string | null;
+  deadlineChangeNote?: string | null;
+  deadlineChangeRequestedAt?: string | null;
   status: JobStatus;
   postedAt?: string | null;
   createdAt?: string;

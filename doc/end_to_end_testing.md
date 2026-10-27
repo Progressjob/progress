@@ -67,21 +67,21 @@ On `/login`, expand **Demo Test Accounts** to auto-fill any of the three seed lo
 | Job slug | `junior-backend-developer-demo` |
 | Job reference | `DEV-001` |
 | Job status | `published` |
-| Apply method | `internal` (in-app apply) |
+| Apply method | `admin` (hire through Progress at `progressjobs8@gmail.com`) |
 | Location | Addis Ababa |
 
 ---
 
 ## 3. Recommended test order
 
-Run these in this order so later steps have data (a new job, a CV, and an application):
+Run these in this order so later steps have data (a new job and a hiring profile):
 
-1. Public browsing (no login)
-2. Admin login → dashboard → create and publish a job
-3. New register → land on `/jobs` → profile + CV → apply to someone else’s job
-4. Same account → **Post a job** → employer setup → submit a vacancy (review flow)
-5. Switch back with **Find work** → confirm you cannot apply to your own post
-6. Seed employer login → review pipeline → change status
+1. Public browsing (no login) — job detail shows **How to apply** contact, not in-app apply
+2. Admin login → dashboard → create and publish a job (choose how to hire)
+3. New register → land on `/jobs` → profile + CV
+4. Same account → **Post a job** / **Switch to hiring** next to the profile → employer setup → submit a vacancy with how-to-hire (review flow)
+5. Switch back with **Switch to finding work** → confirm your own post shows “You posted this job”
+6. Seed employer login → postings list has **Edit post**, not View candidates
 7. Access-control and logout checks
 
 ---
@@ -151,17 +151,17 @@ Suggested test user:
 
 ### 5.1 Switch to hiring and back
 
-1. While signed in as Tesfa, click **Post a job**.
+1. While signed in as Tesfa, click **Post a job** next to the profile (switches this account to hiring).
 2. On `/employer/setup`, enter a hiring name (person or business), optional city/contact, and continue.
 3. Confirm `POST /auth/enable-employer` is idempotent: visiting setup again skips a second org and opens the job form.
 4. Submit a job. Default status is **pending_review** (not on `/jobs` until admin publishes).
-5. Click **Find work**. Confirm candidate profile, CVs, and applications are still there.
-6. Open the public page for a job Tesfa posted (after admin publishes) and confirm Apply is hidden (“You posted this job”).
-7. Apply to **Junior Backend Developer** (or another job Tesfa did not post).
+5. Click **Switch to finding work** next to the profile. Confirm candidate profile, CVs, and applications are still there.
+6. Open the public page for a job Tesfa posted (after admin publishes) and confirm it shows “You posted this job” with **Switch to hiring and edit**.
+7. Open **Junior Backend Developer** (or another job Tesfa did not post) and confirm **How to apply** shows Progress contact (`progressjobs8@gmail.com`).
 
-**Pass:** One account holds both roles. Own-job apply is blocked in the UI and by the API (`403`). Repeat **Post a job** does not create a second hiring profile.
+**Pass:** One account holds both roles. Repeat **Post a job** / **Switch to hiring** does not create a second hiring profile.
 
-Seed `employer@example.com` starts employer-only. **Find work** calls `POST /auth/enable-candidate` and then shows the candidate pages.
+Seed `employer@example.com` starts employer-only. **Switch to finding work** calls `POST /auth/enable-candidate` and then shows the candidate pages.
 
 ---
 
@@ -185,28 +185,19 @@ Login: `candidate@example.com` / `Candidate123!`
 4. Download it.
 5. Optionally upload a second file and delete one.
 
-**Pass:** Default CV is selected automatically on the apply form.
+**Pass:** Upload succeeds and a default CV can be selected.
 
 **Fail checks:** Non-document files and files over 5 MB are rejected.
 
-### 6.3 Apply to a job
+### 6.3 How to apply on a public job
 
 1. Open `/jobs/junior-backend-developer-demo` (or a job you published in section 7).
-2. Click **Submit Application**.
-3. Choose a resume, add a cover letter, answer any screening questions.
-4. Submit.
+2. Confirm the sidebar is **How to apply**, not **Submit Application**.
+3. For the seed job (hire through Progress), the contact email is `progressjobs8@gmail.com`.
+4. `/jobs/:slug/apply` redirects to `/jobs/:slug`.
+5. `POST /api/v1/jobs/:jobId/applications` is rejected (use the posted contact instead).
 
-**Pass:** Redirect to `/candidate/applications` with status `submitted`. Applying twice to the same job is rejected.
-
-Guests hitting apply are sent to `/login` and should return to `/jobs/:slug/apply` after candidate login.
-
-### 6.4 Application history
-
-1. Open `/candidate/applications`.
-2. Confirm job title, company, status, and applied date.
-3. On a non-terminal application, click **Withdraw**.
-
-**Pass:** Status becomes `withdrawn`. Withdraw is hidden for `hired`, `rejected`, and `withdrawn`.
+**Pass:** Candidates contact the listed email or follow the how-to-hire note. There is no in-app apply form.
 
 ---
 
@@ -268,57 +259,49 @@ This is the seeded hiring account. Self-serve users reach the same portal after 
 
 1. After login, `/company` loads memberships (or redirects to `/company/:companyId/jobs` when there is one company).
 2. Confirm **Demo Technology PLC** and the job list (seed job plus any admin-published jobs).
-3. Nav includes **Find work** to switch back to seeking jobs.
-4. Admin contact appears only when a hiring profile or job was **rejected**, not on first-time pending review.
+3. Next to the profile, **Switch to finding work** returns to seeking jobs.
+4. From the public site, **Switch to hiring** next to the profile opens the employer portal.
+5. Admin contact appears only when a hiring profile or job was **rejected**, not on first-time pending review.
 
-**Pass:** Applicant counts match applications submitted in section 6.
+**Pass:** Jobs show **Edit post**. There is no **View live**, **View candidates**, or applicant count.
 
 ### 8.2 Post a job (review vs direct)
 
 1. Open **Post opportunity** (`/company/:companyId/jobs/new`).
-2. Fill the form and submit.
-3. With default settings, status is **pending_review** and the job is **not** on `/jobs` until admin publishes.
-4. (Optional) Admin enables **Direct posting** on `/admin/companies`, then repeat — job should become **published** immediately.
+2. Fill the form, including required **How to hire**:
+   - **Contact the company** — email and/or how-to-hire note, or
+   - **Hire through Progress (admin)** — no employer email; candidates see `progressjobs8@gmail.com`.
+3. Submit.
+4. With default settings, status is **pending_review** and the job is **not** on `/jobs` until admin publishes.
+5. After publish, the public job shows the contact chosen above.
+6. (Optional) Admin enables **Direct posting** on `/admin/companies`, then repeat — job should become **published** immediately.
 
-**Pass:** Review flow and direct-post flow match company `canSelfPublishJobs`.
+**Pass:** Review flow and direct-post flow match company `canSelfPublishJobs`. Submit is rejected if how-to-hire is missing, or if company contact has neither email nor instructions.
 
-### 8.3 Applicant pipeline
+### 8.3 Edit a posted job
 
-1. Click **View candidates** on a **published** job that has applications.
-2. Search by candidate name or email.
-3. Filter by status.
-4. Open an application: screening answers and CV download should work (authenticated).
-5. Move status along the allowed path:
+1. Click **Edit post** on a submitted or published job (`/company/:companyId/jobs/:jobId/edit`).
+2. Change description, how-to-hire, salary, or title and save.
+3. Confirm the deadline field is locked. Use **Request deadline change** instead.
+4. On a published job, the role/category select is locked (a different vacancy needs a new post).
+5. Admin opens `/admin/jobs`, sees the requested deadline, and **Apply new deadline** or **Dismiss request**.
 
-   | From | Allowed next |
-   |------|----------------|
-   | submitted | reviewing, shortlisted, rejected |
-   | reviewing | shortlisted, interview, rejected |
-   | shortlisted | interview, offered, rejected |
-   | interview | offered, rejected |
-   | offered | hired, rejected |
-   | hired / rejected / withdrawn | none |
-
-**Pass:** Illegal jumps are rejected. Candidate `/candidate/applications` shows the new status after refresh.
+**Pass:** Content updates. Deadline and (after submit) category do not change without admin. Changing engineers to accounting requires posting a new job.
 
 Company users can update company profile fields via API (`PATCH /employer/companies/:companyId`). There is no dedicated company-edit screen in the current UI.
 
 ---
 
-## 9. Full hiring pipeline (one pass)
+## 9. Hire-by-contact (one pass)
 
-Use three browser sessions (or logout/login between roles).
+Use two browser sessions (or logout/login between roles).
 
 | Step | Actor | Account | Action | Expected |
 |------|-------|---------|--------|----------|
-| 1 | Admin | `admin@example.com` / `ChangeMe123!` | Create + publish “E2E QA Engineer” | Job visible on `/jobs` |
-| 2 | Candidate | `candidate@example.com` / `Candidate123!` | Upload CV if needed, apply | Application `submitted` |
-| 3 | Company | `employer@example.com` / `Employer123!` | Open pipeline, set **reviewing** then **shortlisted** | Status updates |
-| 4 | Candidate | same | Open My Applications | Status is `shortlisted` |
-| 5 | Company | same | Set **interview** → **offered** → **hired** | Terminal; no further moves |
-| 6 | Admin | same | Dashboard applications count increased | Metrics updated |
-
-Optional second candidate (`tesfa.lemma@example.com` / `Tester123!`): apply to the same job, then withdraw, and confirm the employer still sees `withdrawn`.
+| 1 | Admin | `admin@example.com` / `ChangeMe123!` | Create + publish a job with **Hire through Progress** | Job visible on `/jobs`; how to apply shows `progressjobs8@gmail.com` |
+| 2 | Company | `employer@example.com` / `Employer123!` | Post a job with **Contact the company** (email or note) | After publish, public job shows that contact |
+| 3 | Guest / candidate | none required | Open both jobs | Contact is visible; no Submit Application |
+| 4 | Company | same | Open employer job list | **Edit post**; no View live or View candidates |
 
 ---
 
@@ -357,7 +340,7 @@ Until verification, the public directory hides the company. Suspended companies 
 | Visit `/employer/setup` while already a member | Redirect to the job post form |
 | Visit `/admin` as employer or candidate | Blocked |
 | Old `/employer/...` URLs except `/employer/setup` | Redirect to `/company/...` |
-| Member opens apply on their own job | Apply hidden; API returns 403 |
+| Member opens their own job | “You posted this job”; manage link if employer |
 | Logout | Return to `/login`; protected routes fail until login again |
 | Wrong password | Error on `/login` |
 
@@ -387,10 +370,9 @@ Do not treat missing UI as a failed E2E case unless you are testing the API dire
 - [ ] Contact form submits
 - [ ] New user can register, land on `/jobs`, and switch to hiring via **Post a job**
 - [ ] Employer setup is idempotent; jobs stay in admin review
-- [ ] Same user cannot apply to their own post; can apply to someone else’s job
-- [ ] `candidate@example.com` / `Candidate123!` can edit profile, upload CV, apply, withdraw
+- [ ] Own job shows “You posted this job”; other jobs show how-to-apply contact
+- [ ] `candidate@example.com` / `Candidate123!` can edit profile and upload a CV
 - [ ] `admin@example.com` / `ChangeMe123!` can manage companies, approve pending jobs, publish, and close jobs
-- [ ] `employer@example.com` / `Employer123!` can post jobs (review flow), review applicants, and change status
-- [ ] Candidate sees employer status changes
+- [ ] `employer@example.com` / `Employer123!` can post jobs (review flow) with how-to-hire; no View candidates inbox
 - [ ] Wrong-role URLs are blocked
 - [ ] Logout clears the session

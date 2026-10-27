@@ -1,5 +1,7 @@
 import type { CompanyPayload, CreateEmployerPayload } from '../../api/admin';
 import type { CreateAdminJobPayload } from '../../api/admin';
+import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
+import type { Job } from '../../types/api';
 
 export function emptyCompanyForm(): CompanyPayload {
   return {
@@ -111,6 +113,35 @@ export function companyFromRecord(c: {
   };
 }
 
+export function jobFromRecord(job: Job, companyId: string): CreateAdminJobPayload {
+  const deadline = job.applicationDeadline.slice(0, 10);
+  const method =
+    job.applicationMethod === 'email' || job.applicationMethod === 'admin'
+      ? job.applicationMethod
+      : 'admin';
+  return {
+    companyId,
+    categoryId: job.categoryId,
+    locationId: job.locationId ?? undefined,
+    title: job.title,
+    responsibilities: job.responsibilities ?? job.description ?? '',
+    requirements: job.requirements ?? '',
+    educationRequirement: job.educationRequirement ?? '',
+    experienceMinYears: job.experienceMinYears != null ? Number(job.experienceMinYears) : undefined,
+    employmentType: job.employmentType,
+    workplaceType: job.workplaceType,
+    salaryMin: job.salaryMin != null ? Number(job.salaryMin) : undefined,
+    salaryMax: job.salaryMax != null ? Number(job.salaryMax) : undefined,
+    salaryCurrency: job.salaryCurrency ?? 'ETB',
+    salaryVisibility: job.salaryVisibility ?? false,
+    applicationDeadline: deadline,
+    vacanciesCount: job.vacanciesCount,
+    applicationMethod: method,
+    applicationEmail: job.applicationEmail ?? undefined,
+    applicationInstructions: job.applicationInstructions ?? undefined,
+  };
+}
+
 /** Normalize job form values before API create. */
 export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobPayload {
   const trim = (s?: string) => {
@@ -118,6 +149,16 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     return t ? t : undefined;
   };
   const responsibilities = trim(form.responsibilities);
+  const applicationEmail = trim(form.applicationEmail);
+  const applicationInstructions = trim(form.applicationInstructions);
+
+  if (form.applicationMethod !== 'email' && form.applicationMethod !== 'admin') {
+    throw new Error('Choose how candidates should apply.');
+  }
+  if (form.applicationMethod === 'email' && !applicationEmail && !applicationInstructions) {
+    throw new Error('Enter a hiring email or how-to-hire instructions.');
+  }
+
   return {
     ...form,
     description: responsibilities ?? '',
@@ -125,5 +166,10 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     requirements: trim(form.requirements),
     educationRequirement: trim(form.educationRequirement),
     locationId: form.locationId || undefined,
+    applicationMethod: form.applicationMethod,
+    applicationEmail:
+      form.applicationMethod === 'admin' ? PROGRESS_HIRE_EMAIL : applicationEmail,
+    applicationInstructions:
+      form.applicationMethod === 'admin' ? undefined : applicationInstructions,
   };
 }

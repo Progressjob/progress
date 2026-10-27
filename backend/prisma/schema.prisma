@@ -64,6 +64,7 @@ enum ApplicationMethod {
   internal
   external_url
   email
+  admin
 }
 
 enum QuestionType {
@@ -463,6 +464,9 @@ model Job {
   applicationInstructions String?                  @map("application_instructions")
   postedAt                DateTime?                @map("posted_at") @db.Timestamptz
   applicationDeadline     DateTime                 @map("application_deadline") @db.Date
+  requestedDeadline       DateTime?                @map("requested_deadline") @db.Date
+  deadlineChangeNote      String?                  @map("deadline_change_note")
+  deadlineChangeRequestedAt DateTime?              @map("deadline_change_requested_at") @db.Timestamptz
   status                  JobStatus                @default(draft)
   isFeatured              Boolean                  @default(false) @map("is_featured")
   isEasyApply             Boolean                  @default(false) @map("is_easy_apply")

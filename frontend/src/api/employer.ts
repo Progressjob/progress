@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import type {
   Application,
+  ApplicationMethod,
   ApplicationStatus,
   Company,
   EmploymentType,
@@ -25,6 +26,9 @@ export interface CreateCompanyJobPayload {
   salaryVisibility?: boolean;
   applicationDeadline: string;
   vacanciesCount: number;
+  applicationMethod: ApplicationMethod;
+  applicationEmail?: string;
+  applicationInstructions?: string;
 }
 
 export const employerApi = {
@@ -35,6 +39,22 @@ export const employerApi = {
     apiFetch<Job[]>(`/employer/companies/${companyId}/jobs`),
   createJob: (companyId: string, payload: CreateCompanyJobPayload) =>
     apiFetch<Job>(`/employer/companies/${companyId}/jobs`, { method: 'POST', body: payload }),
+  getJob: (companyId: string, jobId: string) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}`),
+  updateJob: (companyId: string, jobId: string, payload: Partial<CreateCompanyJobPayload>) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}`, {
+      method: 'PATCH',
+      body: payload,
+    }),
+  requestDeadlineChange: (
+    companyId: string,
+    jobId: string,
+    payload: { requestedDeadline: string; note?: string },
+  ) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/deadline-request`, {
+      method: 'POST',
+      body: payload,
+    }),
   submitJob: (companyId: string, jobId: string) =>
     apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/submit`, { method: 'POST' }),
   getJobStats: (companyId: string, jobId: string) =>

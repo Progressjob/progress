@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { isExactPath, navActive } from '../auth/nav';
 import { ProgressLogo } from './ProgressLogo';
 
 export const AdminPortalLayout: React.FC = () => {
@@ -41,12 +42,34 @@ export const AdminPortalLayout: React.FC = () => {
 
         <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
           <nav className="nav-links">
-            <NavLink to="/admin" end>
+            <NavLink
+              to="/admin"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/admin'))}
+            >
               Dashboard
             </NavLink>
-            <NavLink to="/admin/companies">Companies</NavLink>
-            <NavLink to="/admin/jobs">Jobs</NavLink>
-            <NavLink to="/admin/candidates">Candidates</NavLink>
+            <NavLink
+              to="/admin/companies"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/admin/companies'))}
+            >
+              Companies
+            </NavLink>
+            <NavLink
+              to="/admin/jobs"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/admin/jobs'))}
+            >
+              Jobs
+            </NavLink>
+            <NavLink
+              to="/admin/candidates"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/admin/candidates'))}
+            >
+              Candidates
+            </NavLink>
           </nav>
 
           <div className="nav-auth">

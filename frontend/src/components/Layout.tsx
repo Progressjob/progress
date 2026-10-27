@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { employerHomeDestination, hiringDestination } from '../auth/workspace';
+import { isExactPath, isSectionPath, navActive } from '../auth/nav';
+import { hiringDestination } from '../auth/workspace';
 import { ProgressLogo } from './ProgressLogo';
 
 export const Layout: React.FC = () => {
@@ -56,12 +57,6 @@ export const Layout: React.FC = () => {
     navigate(hiringDestination(firstCompanyId));
   };
 
-  const handleEmployerHome = () => {
-    setWorkspace('employer');
-    setMenuOpen(false);
-    navigate(employerHomeDestination(firstCompanyId));
-  };
-
   return (
     <div className="app-shell">
       <header className={`top-nav ${menuOpen ? 'is-menu-open' : ''}`}>
@@ -92,71 +87,110 @@ export const Layout: React.FC = () => {
 
         <div id="site-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
           <nav className="nav-links">
-            <NavLink to="/" end>
+            <NavLink
+              to="/"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/'))}
+            >
               Home
             </NavLink>
-            <NavLink to="/jobs">Find Jobs</NavLink>
-            <NavLink to="/companies">Companies</NavLink>
-            <NavLink to="/contact">Contact</NavLink>
+            <NavLink
+              to="/jobs"
+              end
+              className={() => navActive(isSectionPath(location.pathname, '/jobs'))}
+            >
+              Find Jobs
+            </NavLink>
+            <NavLink
+              to="/companies"
+              end
+              className={() => navActive(isSectionPath(location.pathname, '/companies'))}
+            >
+              Companies
+            </NavLink>
+            <NavLink
+              to="/contact"
+              end
+              className={() => navActive(isExactPath(location.pathname, '/contact'))}
+            >
+              Contact
+            </NavLink>
 
             {user && inCandidateWorkspace && hasRole('candidate') && (
               <>
                 <span className="nav-divider">|</span>
-                <NavLink to="/candidate/profile">My Profile</NavLink>
-                <NavLink to="/candidate/resumes">My CVs</NavLink>
-                <NavLink to="/candidate/applications">My Applications</NavLink>
-              </>
-            )}
-
-            {user && (
-              <>
-                <span className="nav-divider">|</span>
-                {workspace === 'employer' ? (
-                  <>
-                    <button type="button" className="nav-text-button" onClick={handleFindWork} disabled={switching}>
-                      {switching ? 'Switching…' : 'Find work'}
-                    </button>
-                    <button type="button" className="nav-text-button" onClick={handleEmployerHome}>
-                      Employer
-                    </button>
-                    <button type="button" className="nav-text-button" onClick={handlePostJob}>
-                      Post a job
-                    </button>
-                  </>
-                ) : (
-                  <button type="button" className="nav-text-button" onClick={handlePostJob}>
-                    Post a job
-                  </button>
-                )}
+                <NavLink
+                  to="/candidate/profile"
+                  end
+                  className={() => navActive(isExactPath(location.pathname, '/candidate/profile'))}
+                >
+                  My Profile
+                </NavLink>
+                <NavLink
+                  to="/candidate/resumes"
+                  end
+                  className={() => navActive(isExactPath(location.pathname, '/candidate/resumes'))}
+                >
+                  My CVs
+                </NavLink>
+                <NavLink
+                  to="/candidate/applications"
+                  end
+                  className={() => navActive(isExactPath(location.pathname, '/candidate/applications'))}
+                >
+                  My Applications
+                </NavLink>
               </>
             )}
 
             {hasRole('admin', 'moderator') && (
               <>
                 <span className="nav-divider">|</span>
-                <NavLink to="/admin">Admin portal</NavLink>
+                <NavLink
+                  to="/admin"
+                  end
+                  className={() => navActive(isExactPath(location.pathname, '/admin'))}
+                >
+                  Admin portal
+                </NavLink>
               </>
             )}
           </nav>
 
           <div className="nav-auth">
             {user ? (
-              <div className="user-pill">
-                <div className="user-avatar-initial">
-                  {user.firstName?.charAt(0) || 'U'}
-                </div>
-                <span className="user-pill-name">
-                  <strong>
-                    {user.firstName} {user.lastName}
-                  </strong>
-                    <small>
-                      ({workspace === 'employer' ? 'hiring' : 'looking for work'})
-                    </small>
-                </span>
-                <button type="button" className="btn-logout" onClick={handleLogout}>
-                  Logout
+              <>
+                <button
+                  type="button"
+                  className="nav-switch-mode"
+                  onClick={workspace === 'employer' ? handleFindWork : handlePostJob}
+                  disabled={switching}
+                >
+                  {switching
+                    ? 'Switching…'
+                    : workspace === 'employer'
+                      ? 'Switch to finding work'
+                      : hasRole('employer')
+                        ? 'Switch to hiring'
+                        : 'Post a job'}
                 </button>
-              </div>
+                <div className="user-pill">
+                  <div className="user-avatar-initial">
+                    {user.firstName?.charAt(0) || 'U'}
+                  </div>
+                  <span className="user-pill-name">
+                    <strong>
+                      {user.firstName} {user.lastName}
+                    </strong>
+                    <small>
+                      {workspace === 'employer' ? 'Hiring' : 'Looking for work'}
+                    </small>
+                  </span>
+                  <button type="button" className="btn-logout" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="auth-buttons">
                 <Link to="/login" className="btn-nav-login">

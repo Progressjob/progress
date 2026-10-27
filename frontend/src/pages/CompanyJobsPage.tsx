@@ -33,7 +33,6 @@ export const CompanyJobsPage: React.FC = () => {
 
   const companies = companiesQuery.data ?? [];
   const jobs = jobsQuery.data ?? [];
-  const totalApplications = jobs.reduce((acc, j) => acc + (j._count?.applications ?? 0), 0);
 
   return (
     <div className="jobs-list-container">
@@ -90,10 +89,6 @@ export const CompanyJobsPage: React.FC = () => {
           <span className="stat-number">{jobs.length}</span>
           <span className="stat-label">Job postings</span>
         </div>
-        <div className="stat-card">
-          <span className="stat-number">{totalApplications}</span>
-          <span className="stat-label">Candidate applications</span>
-        </div>
       </div>
 
       {jobsQuery.isLoading && <div className="card">Loading jobs...</div>}
@@ -101,7 +96,7 @@ export const CompanyJobsPage: React.FC = () => {
       {!jobsQuery.isLoading && jobs.length === 0 && (
         <div className="empty-results-box">
           <h3>No job postings yet</h3>
-          <p>Create your first opportunity to start receiving candidate applications.</p>
+          <p>Create your first opportunity to list on the public board.</p>
           <Link to={`/company/${companyId}/jobs/new`} className="btn">
             Post opportunity
           </Link>
@@ -116,7 +111,6 @@ export const CompanyJobsPage: React.FC = () => {
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Title</th>
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Status</th>
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Deadline</th>
-                <th style={{ padding: '1rem', textAlign: 'left' }}>Applicants</th>
                 <th style={{ padding: '1rem', textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
@@ -134,22 +128,26 @@ export const CompanyJobsPage: React.FC = () => {
                   <td style={{ padding: '1rem' }}>
                     {new Date(job.applicationDeadline).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: '1rem' }}>{job._count?.applications ?? 0}</td>
                   <td style={{ padding: '1rem', textAlign: 'right' }}>
-                    {job.status === 'published' ? (
-                      <Link
-                        to={`/company/${companyId}/jobs/${job.id}/applications`}
-                        className="btn-card-apply"
-                      >
-                        View candidates ({job._count?.applications ?? 0})
-                      </Link>
-                    ) : (
-                      <span className="muted" style={{ fontSize: '0.85rem' }}>
-                        {job.status === 'pending_review'
-                          ? 'Waiting for admin approval'
-                          : 'Not on public board yet'}
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {['draft', 'pending_review', 'rejected', 'published'].includes(job.status) ? (
+                        <Link
+                          to={`/company/${companyId}/jobs/${job.id}/edit`}
+                          className="btn-card-apply"
+                        >
+                          Edit post
+                        </Link>
+                      ) : (
+                        <span className="muted" style={{ fontSize: '0.85rem' }}>
+                          Closed
+                        </span>
+                      )}
+                      {job.status === 'pending_review' && (
+                        <span className="muted" style={{ fontSize: '0.85rem', alignSelf: 'center' }}>
+                          Under review
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

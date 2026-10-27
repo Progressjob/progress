@@ -22,7 +22,6 @@ import { CandidateApplicationsPage } from './pages/CandidateApplicationsPage';
 import { CompanyHomePage } from './pages/CompanyHomePage';
 import { CompanyJobsPage } from './pages/CompanyJobsPage';
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
-import { CompanyApplicationsPage } from './pages/CompanyApplicationsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
 import { AdminCompaniesPage } from './pages/AdminCompaniesPage';
@@ -54,14 +53,7 @@ export function App(): React.ReactElement {
               <Route path="/" element={<LandingPage />} />
               <Route path="/jobs" element={<JobsListPage />} />
               <Route path="/jobs/:slug" element={<JobDetailPage />} />
-              <Route
-                path="/jobs/:slug/apply"
-                element={
-                  <RequireRole roles={['candidate']}>
-                    <ApplyJobPage />
-                  </RequireRole>
-                }
-              />
+              <Route path="/jobs/:slug/apply" element={<ApplyJobPage />} />
               <Route path="/companies" element={<CompaniesListPage />} />
               <Route path="/companies/:slug" element={<CompanyDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
@@ -127,10 +119,7 @@ export function App(): React.ReactElement {
               <Route path="/company" element={<CompanyHomePage />} />
               <Route path="/company/:companyId/jobs" element={<CompanyJobsPage />} />
               <Route path="/company/:companyId/jobs/new" element={<CompanyPostJobPage />} />
-              <Route
-                path="/company/:companyId/jobs/:jobId/applications"
-                element={<CompanyApplicationsPage />}
-              />
+              <Route path="/company/:companyId/jobs/:jobId/edit" element={<CompanyPostJobPage />} />
             </Route>
 
             <Route path="/employer/*" element={<EmployerLegacyRedirect />} />

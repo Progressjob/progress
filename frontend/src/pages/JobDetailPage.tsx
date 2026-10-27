@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { publicFileUrl } from '../api/files';
 import { useAuth } from '../auth/AuthContext';
-import { CandidateApplicationsBlockedNotice } from '../components/CandidateApplicationsBlockedNotice';
+import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
+import type { ApplicationMethod } from '../types/api';
 
 function compensationLabel(job: {
   salaryVisibility?: boolean;
@@ -18,11 +19,30 @@ function compensationLabel(job: {
   return 'Negotiable';
 }
 
+function hireContact(job: {
+  applicationMethod: ApplicationMethod;
+  applicationEmail?: string | null;
+  applicationInstructions?: string | null;
+}): { viaProgress: boolean; email?: string; instructions?: string } {
+  const viaProgress = job.applicationMethod === 'admin' || job.applicationMethod === 'internal';
+  if (viaProgress) {
+    return {
+      viaProgress: true,
+      email: job.applicationEmail?.trim() || PROGRESS_HIRE_EMAIL,
+      instructions: 'Progress Manpower handles hiring for this role. Contact Progress to apply.',
+    };
+  }
+  return {
+    viaProgress: false,
+    email: job.applicationEmail?.trim() || undefined,
+    instructions: job.applicationInstructions?.trim() || undefined,
+  };
+}
+
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { user, hasRole } = useAuth();
-  const applicationsBlocked =
-    user?.applicationsBlocked === true || user?.accountStatus === 'suspended';
+  const navigate = useNavigate();
+  const { user, hasRole, setWorkspace } = useAuth();
 
   const jobQuery = useQuery({
     queryKey: ['job', slug],
@@ -57,6 +77,7 @@ export const JobDetailPage: React.FC = () => {
   const ownsJob = Boolean(
     user?.companyMemberships.some((membership) => membership.companyId === job.companyId),
   );
+  const contact = hireContact(job);
 
   return (
     <div className="job-detail-container">
@@ -185,7 +206,7 @@ export const JobDetailPage: React.FC = () => {
 
         <aside className="job-sidebar-specs">
           <div className="sticky-apply-card">
-            <h3>Ready to Apply?</h3>
+            <h3>How to apply</h3>
             <p className="apply-deadline-note">
               Application closes on <strong>{new Date(job.applicationDeadline).toLocaleDateString()}</strong>
             </p>
@@ -193,44 +214,41 @@ export const JobDetailPage: React.FC = () => {
             <div className="apply-actions-stack">
               {ownsJob ? (
                 <div className="role-note-card">
-                  You posted this job. Switch to hiring to review applicants instead of applying.
+                  You posted this job. Switch to hiring in the nav to edit it.
                   {hasRole('employer') && (
                     <div style={{ marginTop: '0.75rem' }}>
-                      <Link to={`/company/${job.companyId}/jobs`} className="btn-apply-secondary">
-                        Manage this post
-                      </Link>
+                      <button
+                        type="button"
+                        className="btn-apply-primary"
+                        style={{ width: '100%', border: 'none', cursor: 'pointer' }}
+                        onClick={() => {
+                          setWorkspace('employer');
+                          navigate(`/company/${job.companyId}/jobs/${job.id}/edit`);
+                        }}
+                      >
+                        Switch to hiring and edit
+                      </button>
                     </div>
                   )}
                 </div>
-              ) : user && hasRole('candidate') && applicationsBlocked ? (
-                <CandidateApplicationsBlockedNotice />
-              ) : !user ? (
-                <>
-                  <p className="apply-helper-text">
-                    Sign in with your Progress account to submit your credentials and CV.
-                  </p>
-                  <Link
-                    to="/login"
-                    state={{ from: `/jobs/${job.slug}/apply` }}
-                    className="btn-apply-primary"
-                  >
-                    Sign In to Apply
-                  </Link>
-                  <Link to="/register" className="btn-apply-secondary">
-                    Create account
-                  </Link>
-                </>
-              ) : hasRole('candidate') ? (
-                <Link to={`/jobs/${job.slug}/apply`} className="btn-apply-primary">
-                  <span>Submit Application</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </Link>
               ) : (
-                <div className="role-note-card">
-                  Signed in as <strong>{user.roles.join(', ')}</strong>. Use Find work on this account to apply.
-                </div>
+                <>
+                  {contact.instructions && (
+                    <p className="apply-helper-text" style={{ whiteSpace: 'pre-wrap' }}>
+                      {contact.instructions}
+                    </p>
+                  )}
+                  {contact.email && (
+                    <a href={`mailto:${contact.email}`} className="btn-apply-primary">
+                      {contact.email}
+                    </a>
+                  )}
+                  {!contact.email && !contact.instructions && (
+                    <p className="apply-helper-text">
+                      Contact details were not provided for this posting.
+                    </p>
+                  )}
+                </>
               )}
             </div>
 

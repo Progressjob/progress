@@ -1,12 +1,11 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ApplicationStatus, Prisma } from '@prisma/client';
+import { ApplicationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   ApplyDto,
@@ -46,87 +45,12 @@ export function assertApplicationTransition(
 export class ApplicationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async apply(userId: string, jobId: string, dto: ApplyDto) {
-    const candidate = await this.prisma.candidateProfile.findUnique({ where: { userId } });
-    if (!candidate) throw new ForbiddenException('Candidate profile required');
-    if (candidate.applicationsBlocked) {
-      throw new ForbiddenException(
-        'Your ability to submit new applications has been restricted. Please contact the platform administrator.',
-      );
-    }
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { accountStatus: true } });
-    if (user?.accountStatus === 'suspended') {
-      throw new ForbiddenException(
-        'Your account access has been restricted. Please contact the platform administrator.',
-      );
-    }
-    const job = await this.prisma.job.findUnique({
-      where: { id: jobId },
-      include: {
-        screeningQuestions: true,
-        company: { include: { members: { where: { status: 'active' } } } },
-      },
-    });
+  async apply(_userId: string, jobId: string, _dto: ApplyDto) {
+    const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     if (!job || job.status !== 'published') throw new UnprocessableEntityException('Job is not open');
-    if (job.applicationMethod !== 'internal') {
-      throw new UnprocessableEntityException('This job accepts applications externally');
-    }
-    if (job.applicationDeadline < this.today()) {
-      throw new UnprocessableEntityException('Application deadline has passed');
-    }
-    if (isOwnCompanyJob(userId, job.company.members)) {
-      throw new ForbiddenException('You cannot apply to a job posted by your own organization');
-    }
-    if (dto.resumeId) {
-      const resume = await this.prisma.candidateResume.findFirst({
-        where: { id: dto.resumeId, candidateId: candidate.id },
-      });
-      if (!resume) throw new BadRequestException('Resume does not belong to this candidate');
-    }
-    const questionIds = new Set(job.screeningQuestions.map((q) => q.id));
-    if (dto.answers.some((answer) => !questionIds.has(answer.questionId))) {
-      throw new BadRequestException('An answer references a question from another job');
-    }
-    const answered = new Set(dto.answers.filter((a) => a.answerText.trim()).map((a) => a.questionId));
-    const missing = job.screeningQuestions.filter((q) => q.isRequired && !answered.has(q.id));
-    if (missing.length) throw new BadRequestException('Required screening answers are missing');
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const application = await tx.application.create({
-          data: {
-            jobId,
-            candidateId: candidate.id,
-            resumeId: dto.resumeId,
-            coverLetter: dto.coverLetter,
-            answers: { create: dto.answers },
-            events: {
-              create: { changedBy: userId, oldStatus: null, newStatus: 'submitted' },
-            },
-          },
-          include: { answers: true, events: true },
-        });
-        const recipients = job.company.members.map((member) => member.userId);
-        if (recipients.length) {
-          await tx.notification.createMany({
-            data: recipients.map((memberUserId) => ({
-              userId: memberUserId,
-              title: 'New job application',
-              message: `A candidate applied for ${job.title}`,
-              type: 'new_application',
-              referenceType: 'application',
-              referenceId: application.id,
-            })),
-          });
-        }
-        return application;
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('You have already applied for this job');
-      }
-      throw error;
-    }
+    throw new UnprocessableEntityException(
+      'This job does not accept in-app applications. Use the contact details on the job posting.',
+    );
   }
 
   async candidateList(userId: string) {

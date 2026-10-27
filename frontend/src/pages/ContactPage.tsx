@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supportApi } from '../api/support';
 import { ApiError } from '../api/client';
+import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
 
 export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -88,7 +89,7 @@ export const ContactPage: React.FC = () => {
               </div>
               <div className="contact-text-wrap">
                 <strong>Electronic Mail & Web</strong>
-                <span>progressjobs8@gmail.com</span>
+                <span>{PROGRESS_HIRE_EMAIL}</span>
                 <span>progressjobsplc.com</span>
               </div>
             </div>

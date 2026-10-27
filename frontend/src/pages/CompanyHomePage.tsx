@@ -46,7 +46,7 @@ export const CompanyHomePage: React.FC = () => {
       <div className="page-header">
         <h1>Employer</h1>
         <p className="muted">
-          Manage job postings and review candidates (
+          Manage job postings (
           {user?.companyMemberships.length ?? 0} hiring profile
           {(user?.companyMemberships.length ?? 0) === 1 ? '' : 's'}).
         </p>
@@ -69,7 +69,7 @@ export const CompanyHomePage: React.FC = () => {
                 {c.canSelfPublishJobs ? ' • Direct posting enabled' : ' • Jobs reviewed by admin'}
               </p>
               <Link to={`/company/${c.id}/jobs`} className="btn btn-sm">
-                Job postings & applicants →
+                Job postings →
               </Link>
             </div>
           ))}
