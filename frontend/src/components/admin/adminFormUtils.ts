@@ -1,5 +1,6 @@
 import type { CompanyPayload, CreateEmployerPayload } from '../../api/admin';
 import type { CreateAdminJobPayload } from '../../api/admin';
+import { normalizeEducationRequirement } from '../../constants/educationLevels';
 import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
 import type { Job } from '../../types/api';
 
@@ -126,7 +127,7 @@ export function jobFromRecord(job: Job, companyId: string): CreateAdminJobPayloa
     title: job.title,
     responsibilities: job.responsibilities ?? job.description ?? '',
     requirements: job.requirements ?? '',
-    educationRequirement: job.educationRequirement ?? '',
+    educationRequirement: normalizeEducationRequirement(job.educationRequirement),
     experienceMinYears: job.experienceMinYears != null ? Number(job.experienceMinYears) : undefined,
     employmentType: job.employmentType,
     workplaceType: job.workplaceType,
@@ -156,7 +157,7 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     throw new Error('Choose how candidates should apply.');
   }
   if (form.applicationMethod === 'email' && !applicationEmail && !applicationInstructions) {
-    throw new Error('Enter a hiring email or how-to-hire instructions.');
+    throw new Error('Enter how candidates should contact you.');
   }
 
   return {
@@ -164,7 +165,7 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     description: responsibilities ?? '',
     responsibilities,
     requirements: trim(form.requirements),
-    educationRequirement: trim(form.educationRequirement),
+    educationRequirement: trim(normalizeEducationRequirement(form.educationRequirement)),
     locationId: form.locationId || undefined,
     applicationMethod: form.applicationMethod,
     applicationEmail:

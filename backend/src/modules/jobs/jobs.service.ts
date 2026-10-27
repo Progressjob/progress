@@ -431,10 +431,11 @@ export class JobsService {
       };
     }
     if (dto.applicationMethod === 'email') {
-      const email = dto.applicationEmail?.trim() || null;
       const instructions = dto.applicationInstructions?.trim() || null;
+      const fromBox = instructions?.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? null;
+      const email = dto.applicationEmail?.trim() || fromBox;
       if (!email && !instructions) {
-        throw new BadRequestException('Provide a hiring email or how-to-hire instructions');
+        throw new BadRequestException('Provide how candidates should get in touch');
       }
       return {
         applicationMethod: 'email',

@@ -60,4 +60,8 @@ export const candidateApi = {
     apiFetch<Application>(`/candidate/applications/${id}/withdraw`, {
       method: 'POST',
     }),
+
+  listSavedJobs: () => apiFetch<Array<{ jobId: string; job?: { id: string } }>>('/candidate/saved-jobs'),
+  saveJob: (jobId: string) => apiFetch(`/candidate/saved-jobs/${jobId}`, { method: 'POST' }),
+  unsaveJob: (jobId: string) => apiFetch(`/candidate/saved-jobs/${jobId}`, { method: 'DELETE' }),
 };

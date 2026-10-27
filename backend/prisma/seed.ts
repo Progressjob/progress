@@ -199,6 +199,11 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
   const location = await prisma.location.findUniqueOrThrow({
     where: { slug: 'addis-ababa-addis-ababa' },
   });
+  await prisma.job.updateMany({
+    where: { educationRequirement: { in: ['Bachelor degree', 'Bachelors degree'] } },
+    data: { educationRequirement: "Bachelor's Degree" },
+  });
+
   const sample = await prisma.job.findFirst({
     where: { companyId: company.id, referenceCode: 'DEV-001' },
   });
@@ -219,6 +224,7 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
         slug: 'junior-backend-developer-demo',
         referenceCode: 'DEV-001',
         description: 'Development-only sample vacancy.',
+        educationRequirement: "Bachelor's Degree",
         employmentType: 'full_time',
         workplaceType: 'hybrid',
         ...hireThroughProgress,
@@ -232,7 +238,10 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
   } else {
     await prisma.job.update({
       where: { id: sample.id },
-      data: hireThroughProgress,
+      data: {
+        ...hireThroughProgress,
+        educationRequirement: sample.educationRequirement ?? "Bachelor's Degree",
+      },
     });
   }
 }

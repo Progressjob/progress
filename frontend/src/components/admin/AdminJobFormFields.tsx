@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CreateAdminJobPayload } from '../../api/admin';
 import { taxonomyApi } from '../../api/taxonomy';
+import { educationRequirementOptions } from '../../constants/educationLevels';
 import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
+import { hireBoxDisplay, parseHireBox } from '../../utils/hireContact';
 import type { Category, EmploymentType, WorkplaceType } from '../../types/api';
 
 const selectStyle: React.CSSProperties = {
@@ -21,6 +23,25 @@ function flattenCategories(categories: Category[]): Category[] {
     }
   }
   return out;
+}
+
+function FieldViewToggle({
+  expanded,
+  onToggle,
+}: {
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="btn-field-view"
+      onClick={onToggle}
+      aria-pressed={expanded}
+    >
+      {expanded ? 'Short view' : 'Full view'}
+    </button>
+  );
 }
 
 export interface AdminJobFormFieldsProps {
@@ -56,6 +77,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   );
 
   const selectedCategory = categoryOptions.find((c) => c.id === value.categoryId);
+  const [respFullView, setRespFullView] = useState(false);
+  const [reqFullView, setReqFullView] = useState(false);
 
   const salaryMode: 'negotiable' | 'range' =
     value.salaryVisibility || value.salaryMin != null || value.salaryMax != null
@@ -139,10 +162,16 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
 
       {value.categoryId && (
         <div className="form-input-group">
-          <label htmlFor="adm-resp-desc">
-            Responsibility description *
-            {selectedCategory ? ` (${selectedCategory.name})` : ''}
-          </label>
+          <div className="form-field-heading">
+            <label htmlFor="adm-resp-desc">
+              Responsibility description *
+              {selectedCategory ? ` (${selectedCategory.name})` : ''}
+            </label>
+            <FieldViewToggle
+              expanded={respFullView}
+              onToggle={() => setRespFullView((open) => !open)}
+            />
+          </div>
           {selectedCategory?.description && (
             <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>
               {selectedCategory.description}
@@ -150,7 +179,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           )}
           <textarea
             id="adm-resp-desc"
-            rows={3}
+            className={respFullView ? 'textarea-full-view' : 'textarea-short-view'}
+            rows={respFullView ? 16 : 3}
             required
             value={value.responsibilities ?? ''}
             onChange={(e) => set({ responsibilities: e.target.value })}
@@ -160,10 +190,17 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
       )}
 
       <div className="form-input-group">
-        <label htmlFor="adm-req">Required Qualifications and Skills</label>
+        <div className="form-field-heading">
+          <label htmlFor="adm-req">Required Qualifications and Skills</label>
+          <FieldViewToggle
+            expanded={reqFullView}
+            onToggle={() => setReqFullView((open) => !open)}
+          />
+        </div>
         <textarea
           id="adm-req"
-          rows={3}
+          className={reqFullView ? 'textarea-full-view' : 'textarea-short-view'}
+          rows={reqFullView ? 16 : 3}
           value={value.requirements ?? ''}
           onChange={(e) => set({ requirements: e.target.value || undefined })}
         />
@@ -172,11 +209,19 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
       <div className="form-row-two">
         <div className="form-input-group">
           <label htmlFor="adm-edu">Education requirement</label>
-          <input
+          <select
             id="adm-edu"
             value={value.educationRequirement ?? ''}
             onChange={(e) => set({ educationRequirement: e.target.value || undefined })}
-          />
+            style={selectStyle}
+          >
+            <option value="">— Optional —</option>
+            {educationRequirementOptions(value.educationRequirement).map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="form-input-group">
           <label htmlFor="adm-exp">Required Work Experience (years)</label>
@@ -333,32 +378,20 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           </label>
         </div>
         {value.applicationMethod === 'email' && (
-          <>
-            <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
-              Leave an email, or write how candidates should apply (phone, Telegram, office
-              address). At least one is required.
+          <div className="form-input-group">
+            <label htmlFor="adm-hire-contact">How should candidates contact you? *</label>
+            <textarea
+              id="adm-hire-contact"
+              rows={3}
+              required
+              value={hireBoxDisplay(value.applicationEmail, value.applicationInstructions)}
+              onChange={(e) => set(parseHireBox(e.target.value))}
+              placeholder="Phone, Telegram, WhatsApp, email, office visit — any way to reach you"
+            />
+            <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
+              Email is optional. Write whatever candidates should use to get in touch.
             </p>
-            <div className="form-input-group">
-              <label htmlFor="adm-hire-email">Hiring email</label>
-              <input
-                id="adm-hire-email"
-                type="email"
-                value={value.applicationEmail ?? ''}
-                onChange={(e) => set({ applicationEmail: e.target.value || undefined })}
-                placeholder="hiring@company.com"
-              />
-            </div>
-            <div className="form-input-group">
-              <label htmlFor="adm-hire-instructions">How to hire</label>
-              <textarea
-                id="adm-hire-instructions"
-                rows={3}
-                value={value.applicationInstructions ?? ''}
-                onChange={(e) => set({ applicationInstructions: e.target.value || undefined })}
-                placeholder="Email, phone, Telegram, or other instructions"
-              />
-            </div>
-          </>
+          </div>
         )}
         {value.applicationMethod === 'admin' && (
           <p className="muted" style={{ margin: 0, fontSize: '0.9rem' }}>
