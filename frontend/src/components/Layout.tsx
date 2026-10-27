@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { employerHomeDestination, hiringDestination } from '../auth/workspace';
 import { ProgressLogo } from './ProgressLogo';
 
 export const Layout: React.FC = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, workspace, setWorkspace, enableCandidate } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const firstCompanyId = user?.companyMemberships[0]?.companyId;
+  const inCandidateWorkspace = !user || workspace === 'candidate';
 
   useEffect(() => {
     setMenuOpen(false);
@@ -22,6 +26,40 @@ export const Layout: React.FC = () => {
     setMenuOpen(false);
     await logout();
     navigate('/login', { replace: true, state: {} });
+  };
+
+  const handleFindWork = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: '/jobs' } });
+      return;
+    }
+    setSwitching(true);
+    try {
+      if (!hasRole('candidate')) {
+        await enableCandidate();
+      }
+      setWorkspace('candidate');
+      setMenuOpen(false);
+      navigate('/jobs');
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  const handlePostJob = () => {
+    if (!user) {
+      navigate('/login', { state: { from: '/employer/setup' } });
+      return;
+    }
+    setWorkspace('employer');
+    setMenuOpen(false);
+    navigate(hiringDestination(firstCompanyId));
+  };
+
+  const handleEmployerHome = () => {
+    setWorkspace('employer');
+    setMenuOpen(false);
+    navigate(employerHomeDestination(firstCompanyId));
   };
 
   return (
@@ -61,7 +99,7 @@ export const Layout: React.FC = () => {
             <NavLink to="/companies">Companies</NavLink>
             <NavLink to="/contact">Contact</NavLink>
 
-            {hasRole('candidate') && (
+            {user && inCandidateWorkspace && hasRole('candidate') && (
               <>
                 <span className="nav-divider">|</span>
                 <NavLink to="/candidate/profile">My Profile</NavLink>
@@ -70,10 +108,26 @@ export const Layout: React.FC = () => {
               </>
             )}
 
-            {hasRole('employer') && (
+            {user && (
               <>
                 <span className="nav-divider">|</span>
-                <NavLink to="/company">Companies portal</NavLink>
+                {workspace === 'employer' ? (
+                  <>
+                    <button type="button" className="nav-text-button" onClick={handleFindWork} disabled={switching}>
+                      {switching ? 'Switching…' : 'Find work'}
+                    </button>
+                    <button type="button" className="nav-text-button" onClick={handleEmployerHome}>
+                      Employer
+                    </button>
+                    <button type="button" className="nav-text-button" onClick={handlePostJob}>
+                      Post a job
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="nav-text-button" onClick={handlePostJob}>
+                    Post a job
+                  </button>
+                )}
               </>
             )}
 
@@ -95,7 +149,9 @@ export const Layout: React.FC = () => {
                   <strong>
                     {user.firstName} {user.lastName}
                   </strong>
-                  <small>({user.roles.join(', ')})</small>
+                    <small>
+                      ({workspace === 'employer' ? 'hiring' : 'looking for work'})
+                    </small>
                 </span>
                 <button type="button" className="btn-logout" onClick={handleLogout}>
                   Logout
@@ -159,13 +215,13 @@ export const Layout: React.FC = () => {
             <h4>Portals</h4>
             <ul>
               <li>
-                <Link to="/register">Candidate Registration</Link>
+                <Link to="/register">Create account</Link>
               </li>
               <li>
                 <Link to="/login">Account Sign In</Link>
               </li>
               <li>
-                <Link to="/company">Companies portal</Link>
+                <Link to="/employer/setup">Post a job</Link>
               </li>
               <li>
                 <Link to="/admin">Admin portal</Link>

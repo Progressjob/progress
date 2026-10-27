@@ -7,6 +7,25 @@ interface RequireRoleProps {
   children: React.ReactNode;
 }
 
+export const RequireSignedIn: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="card" style={{ maxWidth: '400px', margin: '4rem auto', textAlign: 'center' }}>
+        Checking session...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
 export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => {
   const { user, loading, hasRole, logout, login } = useAuth();
   const location = useLocation();
@@ -22,6 +41,10 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
   }
 
   if (!hasRole(...roles)) {
+    if (roles.includes('employer')) {
+      return <Navigate to="/employer/setup" replace />;
+    }
+
     const handleSwitchAccount = async () => {
       await logout();
       navigate('/login', { replace: true, state: {} });
@@ -105,7 +128,7 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
                 onClick={() => handleQuickDemoSwitch('employer@example.com', 'Employer123!', '/company')}
                 style={{ background: '#eff6ff', borderColor: '#3b82f6', color: '#1d4ed8' }}
               >
-                {switching ? 'Switching…' : 'Switch to Companies Demo ⚡'}
+                {switching ? 'Switching…' : 'Switch to Employer Demo ⚡'}
               </button>
             )}
             {roles.includes('candidate') && (

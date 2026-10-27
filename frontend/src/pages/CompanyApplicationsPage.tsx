@@ -89,7 +89,7 @@ export const CompanyApplicationsPage: React.FC = () => {
       </nav>
 
       <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
-        <span className="section-eyebrow">Companies portal</span>
+        <span className="section-eyebrow">Employer</span>
         <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
           Candidates who applied
         </h1>

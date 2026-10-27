@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { getStoredWorkspace, resolveWorkspace } from '../auth/workspace';
 import { ApiError } from '../api/client';
 import { ProgressLogo } from '../components/ProgressLogo';
 
@@ -41,7 +42,8 @@ export function getValidRedirect(from: string | null | undefined, roles: string[
   if (roles.includes('admin') || roles.includes('moderator')) {
     return '/admin';
   }
-  if (roles.includes('employer')) {
+  const workspace = resolveWorkspace(roles, getStoredWorkspace());
+  if (workspace === 'employer' && roles.includes('employer')) {
     return '/company';
   }
   return '/jobs';
@@ -110,7 +112,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to access your jobs, applications, or companies portal</p>
+        <p className="auth-subtitle">Sign in to find work or post a job from the same account</p>
 
         {currentUser && (
           <div
@@ -196,7 +198,7 @@ export const LoginPage: React.FC = () => {
         <div className="auth-footer-prompt">
           <span>Don't have an account yet?</span>
           <Link to="/register" className="auth-link">
-            Register as Candidate
+            Create account
           </Link>
         </div>
 
@@ -228,7 +230,7 @@ export const LoginPage: React.FC = () => {
                 onClick={() => loginAsDemo('employer@example.com', 'Employer123!', 'employer')}
                 title="Click to sign in instantly as Employer"
               >
-                {activeDemo === 'employer' ? 'Signing in…' : 'Companies Demo ⚡'}
+                {activeDemo === 'employer' ? 'Signing in…' : 'Employer Demo ⚡'}
               </button>
               <button
                 type="button"

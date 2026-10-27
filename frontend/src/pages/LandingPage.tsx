@@ -467,7 +467,7 @@ export const LandingPage: React.FC = () => {
             </p>
             <div className="cta-actions">
               <Link to="/register" className="btn-cta-primary">
-                Register as Candidate
+                Create account
               </Link>
               <Link to="/jobs" className="btn-cta-secondary">
                 Browse Vacancies
@@ -477,18 +477,18 @@ export const LandingPage: React.FC = () => {
 
           {/* Employers CTA */}
           <div className="cta-box cta-employer">
-            <span className="cta-eyebrow">For Enterprise</span>
-            <h3>Partner with Progress Manpower PLC</h3>
+            <span className="cta-eyebrow">For Employers</span>
+            <h3>Post a job from the same account</h3>
             <p>
-              Need certified technical workforce, executive search, or specialized workforce training?
-              Our recruitment specialists are ready to support your enterprise.
+              Create one account to look for work. When you want to hire, add who is hiring and post
+              the vacancy on the site. New posts still go to admin review before they go live.
             </p>
             <div className="cta-actions">
-              <Link to="/contact" className="btn-cta-primary">
-                Contact Dukem HQ
+              <Link to="/register" className="btn-cta-primary">
+                Post a job
               </Link>
               <Link to="/login" className="btn-cta-secondary">
-                Companies sign in
+                Sign in
               </Link>
             </div>
           </div>

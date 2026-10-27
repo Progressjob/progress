@@ -5,7 +5,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { AdminPortalLayout } from './components/AdminPortalLayout';
 import { CompanyPortalLayout } from './components/CompanyPortalLayout';
-import { RequireRole } from './components/RequireRole';
+import { RequireRole, RequireSignedIn } from './components/RequireRole';
 import { LandingPage } from './pages/LandingPage';
 import { JobsListPage } from './pages/JobsListPage';
 import { JobDetailPage } from './pages/JobDetailPage';
@@ -14,6 +14,7 @@ import { CompanyDetailPage } from './pages/CompanyDetailPage';
 import { ContactPage } from './pages/ContactPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { EmployerSetupPage } from './pages/EmployerSetupPage';
 import { CandidateProfilePage } from './pages/CandidateProfilePage';
 import { CandidateResumesPage } from './pages/CandidateResumesPage';
 import { ApplyJobPage } from './pages/ApplyJobPage';
@@ -66,6 +67,14 @@ export function App(): React.ReactElement {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/employer/setup"
+                element={
+                  <RequireSignedIn>
+                    <EmployerSetupPage />
+                  </RequireSignedIn>
+                }
+              />
 
               <Route
                 path="/candidate/profile"
@@ -107,7 +116,7 @@ export function App(): React.ReactElement {
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
             </Route>
 
-            {/* Companies (hiring) portal */}
+            {/* Employer (hiring) portal */}
             <Route
               element={
                 <RequireRole roles={['employer']}>

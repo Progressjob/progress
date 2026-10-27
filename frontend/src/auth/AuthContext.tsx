@@ -6,7 +6,14 @@ import {
   setOnUnauthorized,
   setStoredTokens,
 } from '../api/client';
+import { authApi, type EnableEmployerInput, type EnableEmployerResponse } from '../api/auth';
 import type { AuthMeResponse, TokenResponse } from '../types/api';
+import {
+  getStoredWorkspace,
+  resolveWorkspace,
+  setStoredWorkspace,
+  type Workspace,
+} from './workspace';
 
 export interface AuthUser {
   id: string;
@@ -31,10 +38,14 @@ export interface RegisterInput {
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
+  workspace: Workspace;
+  setWorkspace: (workspace: Workspace) => void;
   login: (identifier: string, password: string) => Promise<AuthUser>;
   register: (input: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<AuthUser | null>;
+  enableCandidate: () => Promise<AuthUser | null>;
+  enableEmployer: (input: EnableEmployerInput) => Promise<EnableEmployerResponse>;
   hasRole: (...roles: string[]) => boolean;
 }
 
@@ -57,6 +68,14 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [workspace, setWorkspaceState] = useState<Workspace>(
+    () => getStoredWorkspace() ?? 'candidate',
+  );
+
+  const setWorkspace = useCallback((next: Workspace) => {
+    setWorkspaceState(next);
+    setStoredWorkspace(next);
+  }, []);
 
   const refreshUser = useCallback(async (): Promise<AuthUser | null> => {
     const { accessToken, refreshToken } = getStoredTokens();
@@ -67,7 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const me = await apiFetch<AuthMeResponse>('/auth/me');
       const normalized = normalizeMe(me);
+      const nextWorkspace = resolveWorkspace(normalized.roles, getStoredWorkspace());
       setUser(normalized);
+      setWorkspaceState(nextWorkspace);
+      setStoredWorkspace(nextWorkspace);
       return normalized;
     } catch {
       clearStoredTokens();
@@ -120,6 +142,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [refreshUser],
   );
 
+  const enableCandidate = useCallback(async (): Promise<AuthUser | null> => {
+    await authApi.enableCandidate();
+    return refreshUser();
+  }, [refreshUser]);
+
+  const enableEmployer = useCallback(
+    async (input: EnableEmployerInput): Promise<EnableEmployerResponse> => {
+      const result = await authApi.enableEmployer(input);
+      setWorkspace('employer');
+      await refreshUser();
+      return result;
+    },
+    [refreshUser, setWorkspace],
+  );
+
   const logout = useCallback(async (): Promise<void> => {
     const { refreshToken } = getStoredTokens();
     if (refreshToken) {
@@ -147,7 +184,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, refreshUser, hasRole }}
+      value={{
+        user,
+        loading,
+        workspace,
+        setWorkspace,
+        login,
+        register,
+        logout,
+        refreshUser,
+        enableCandidate,
+        enableEmployer,
+        hasRole,
+      }}
     >
       {children}
     </AuthContext.Provider>

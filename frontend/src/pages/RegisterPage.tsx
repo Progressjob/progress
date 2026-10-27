@@ -28,7 +28,7 @@ export const RegisterPage: React.FC = () => {
         phone: phone.trim() || undefined,
         password,
       });
-      navigate('/candidate/profile', { replace: true });
+      navigate('/jobs', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -47,9 +47,9 @@ export const RegisterPage: React.FC = () => {
           <ProgressLogo size="md" />
         </div>
 
-        <h1 className="auth-title">Create Candidate Account</h1>
+        <h1 className="auth-title">Create Account</h1>
         <p className="auth-subtitle">
-          Join thousands of professionals matched with top Ethiopian employers across Adama, Bishoftu, and nationwide.
+          One account to find work and, when you are ready, post a job. Start with a name, email, and password.
         </p>
 
         {error && <div className="alert-box-error">{error}</div>}
@@ -138,7 +138,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <button type="submit" className="btn-auth-submit" disabled={submitting}>
-            {submitting ? 'Creating Candidate Profile...' : 'Create Account & Continue →'}
+            {submitting ? 'Creating account...' : 'Create Account & Continue →'}
           </button>
         </form>
 

@@ -1,11 +1,12 @@
 import React from 'react';
 
-/** Progress Manpower HQ — shown to company portal users when they need admin help. */
+/** Progress Manpower HQ — shown when a hiring profile is rejected or a job was rejected. */
 export const AdminContactCard: React.FC = () => (
   <aside className="card" style={{ marginTop: '1.5rem', borderLeft: '4px solid var(--primary, #0a2540)' }}>
-    <h3 style={{ marginTop: 0 }}>Contact Progress (Admin)</h3>
+    <h3 style={{ marginTop: 0 }}>Need a review?</h3>
     <p className="muted" style={{ marginBottom: '1rem' }}>
-      For company verification, job review, or posting access, reach our team directly.
+      New jobs still go to admin review before they go live. If a post or hiring profile was rejected,
+      reach the team below.
     </p>
     <div className="stack" style={{ gap: '0.5rem', fontSize: '0.95rem' }}>
       <div>

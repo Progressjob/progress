@@ -48,7 +48,7 @@ export const CompanyJobsPage: React.FC = () => {
           }}
         >
           <div>
-            <span className="section-eyebrow">Companies portal</span>
+            <span className="section-eyebrow">Employer</span>
             <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
               {companyQuery.data?.name ?? 'Company'} — job postings
             </h1>

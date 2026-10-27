@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthUser, CurrentUser, JwtAuthGuard } from '../../common/auth';
 import {
+  EnableEmployerDto,
   ForgotPasswordDto,
   LoginDto,
   RefreshDto,
@@ -52,6 +53,22 @@ export class AuthController {
   @HttpCode(204)
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.auth.resetPassword(dto);
+  }
+
+  @Post('enable-candidate')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  enableCandidate(@CurrentUser() user: AuthUser) {
+    return this.auth.enableCandidate(user.id);
+  }
+
+  @Post('enable-employer')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  enableEmployer(@CurrentUser() user: AuthUser, @Body() dto: EnableEmployerDto) {
+    return this.auth.enableEmployer(user.id, dto);
   }
 
   @Get('me')

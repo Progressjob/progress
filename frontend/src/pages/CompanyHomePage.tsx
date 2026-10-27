@@ -44,17 +44,20 @@ export const CompanyHomePage: React.FC = () => {
   return (
     <div className="stack">
       <div className="page-header">
-        <h1>Companies portal</h1>
+        <h1>Employer</h1>
         <p className="muted">
-          Select your organization to manage job postings and review candidates (
-          {user?.companyMemberships.length ?? 0} membership
+          Manage job postings and review candidates (
+          {user?.companyMemberships.length ?? 0} hiring profile
           {(user?.companyMemberships.length ?? 0) === 1 ? '' : 's'}).
         </p>
       </div>
 
       {companies.length === 0 ? (
-        <div className="card">
-          <p>Your account is not linked to a hiring company yet. Use the admin contact details below to request access.</p>
+        <div className="card stack">
+          <p>Set up who is hiring, then post a job from this same account.</p>
+          <Link to="/employer/setup" className="btn btn-sm">
+            Set up employer profile →
+          </Link>
         </div>
       ) : (
         <div className="grid-cards">

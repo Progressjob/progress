@@ -79,7 +79,7 @@ export const CompanyPostJobPage: React.FC = () => {
         <nav className="detail-breadcrumbs" style={{ marginBottom: '1rem' }}>
           <Link to={`/company/${companyId}/jobs`}>← Back to job postings</Link>
         </nav>
-        <span className="section-eyebrow">Companies portal</span>
+        <span className="section-eyebrow">Employer</span>
         <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
           Post job opportunity
         </h1>

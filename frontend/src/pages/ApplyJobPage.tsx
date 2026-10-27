@@ -86,6 +86,9 @@ export const ApplyJobPage: React.FC = () => {
   const resumes = resumesQuery.data ?? [];
   const questions: ScreeningQuestion[] = job.screeningQuestions ?? [];
   const err = applyMutation.error as ApiError | null;
+  const ownsJob = Boolean(
+    user?.companyMemberships.some((membership) => membership.companyId === job.companyId),
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +109,12 @@ export const ApplyJobPage: React.FC = () => {
         </p>
       </div>
 
-      {applicationsBlocked ? (
+      {ownsJob ? (
+        <div className="alert-box-error">
+          You cannot apply to a job posted by your own hiring profile.{' '}
+          <Link to={`/company/${job.companyId}/jobs`}>Manage this post</Link>
+        </div>
+      ) : applicationsBlocked ? (
         <CandidateApplicationsBlockedNotice />
       ) : job.applicationMethod !== 'internal' ? (
         <div className="alert-box-error">

@@ -7,7 +7,7 @@ import {
 import * as argon2 from 'argon2';
 import { CompanyPortalStatus, Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/auth';
-import { slugify } from '../../common/slug';
+import { nextUniqueSlug } from '../../common/slug';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CompanyDto,
@@ -90,12 +90,10 @@ export class CompaniesService {
     });
   }
 
-  private async uniqueSlug(name: string) {
-    const base = slugify(name);
-    let slug = base;
-    let count = 1;
-    while (await this.prisma.company.findUnique({ where: { slug } })) slug = `${base}-${++count}`;
-    return slug;
+  async uniqueSlug(name: string) {
+    return nextUniqueSlug(name, async (slug) =>
+      Boolean(await this.prisma.company.findUnique({ where: { slug } })),
+    );
   }
 
   async create(dto: CompanyDto) {

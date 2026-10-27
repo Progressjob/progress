@@ -54,6 +54,9 @@ export const JobDetailPage: React.FC = () => {
 
   const job = jobQuery.data;
   const logoId = job.company?.logo?.id;
+  const ownsJob = Boolean(
+    user?.companyMemberships.some((membership) => membership.companyId === job.companyId),
+  );
 
   return (
     <div className="job-detail-container">
@@ -188,12 +191,23 @@ export const JobDetailPage: React.FC = () => {
             </p>
 
             <div className="apply-actions-stack">
-              {user && hasRole('candidate') && applicationsBlocked ? (
+              {ownsJob ? (
+                <div className="role-note-card">
+                  You posted this job. Switch to hiring to review applicants instead of applying.
+                  {hasRole('employer') && (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <Link to={`/company/${job.companyId}/jobs`} className="btn-apply-secondary">
+                        Manage this post
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : user && hasRole('candidate') && applicationsBlocked ? (
                 <CandidateApplicationsBlockedNotice />
               ) : !user ? (
                 <>
                   <p className="apply-helper-text">
-                    Sign in with your Progress candidate account to submit your credentials and CV.
+                    Sign in with your Progress account to submit your credentials and CV.
                   </p>
                   <Link
                     to="/login"
@@ -203,7 +217,7 @@ export const JobDetailPage: React.FC = () => {
                     Sign In to Apply
                   </Link>
                   <Link to="/register" className="btn-apply-secondary">
-                    Register as Candidate
+                    Create account
                   </Link>
                 </>
               ) : hasRole('candidate') ? (
@@ -215,7 +229,7 @@ export const JobDetailPage: React.FC = () => {
                 </Link>
               ) : (
                 <div className="role-note-card">
-                  Signed in as <strong>{user.roles.join(', ')}</strong>. Job applications are open to candidate accounts.
+                  Signed in as <strong>{user.roles.join(', ')}</strong>. Use Find work on this account to apply.
                 </div>
               )}
             </div>

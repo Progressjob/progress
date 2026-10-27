@@ -8,7 +8,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { nextUniqueSlug } from '../../common/slug';
 import {
+  EnableEmployerDto,
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
@@ -155,6 +157,97 @@ export class AuthService {
         data: { revokedAt: new Date() },
       }),
     ]);
+  }
+
+  async enableCandidate(userId: string) {
+    const candidateRole = await this.prisma.role.findUnique({ where: { name: 'candidate' } });
+    if (!candidateRole) throw new ConflictException('Roles have not been seeded');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId, roleId: candidateRole.id } },
+        create: { userId, roleId: candidateRole.id },
+        update: {},
+      });
+      const profile = await tx.candidateProfile.findUnique({ where: { userId } });
+      if (!profile) {
+        await tx.candidateProfile.create({ data: { userId } });
+      }
+    });
+
+    return this.me(userId);
+  }
+
+  async enableEmployer(userId: string, dto: EnableEmployerDto) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: {
+        companyMemberships: {
+          where: { status: 'active' },
+          include: { company: { include: { industry: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    const existing = user.companyMemberships[0];
+    if (existing) {
+      await this.ensureRole(userId, 'employer');
+      return { company: existing.company, created: false };
+    }
+
+    const employerRole = await this.prisma.role.findUnique({ where: { name: 'employer' } });
+    if (!employerRole) throw new ConflictException('Roles have not been seeded');
+
+    const slug = await nextUniqueSlug(dto.name, async (value) =>
+      Boolean(await this.prisma.company.findUnique({ where: { slug: value } })),
+    );
+    const contactPerson =
+      dto.contactPerson?.trim() || `${user.firstName} ${user.lastName}`.trim() || undefined;
+    const email = dto.email?.trim().toLowerCase() || user.email || undefined;
+
+    return this.prisma.$transaction(async (tx) => {
+      const company = await tx.company.create({
+        data: {
+          name: dto.name.trim(),
+          slug,
+          city: dto.city?.trim() || undefined,
+          phone: dto.phone?.trim() || undefined,
+          email,
+          contactPerson,
+          description: dto.description?.trim() || undefined,
+          verificationStatus: 'pending',
+          canSelfPublishJobs: false,
+        },
+        include: { industry: true },
+      });
+
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId, roleId: employerRole.id } },
+        create: { userId, roleId: employerRole.id },
+        update: {},
+      });
+
+      await tx.companyMember.create({
+        data: {
+          companyId: company.id,
+          userId,
+          memberRole: 'owner',
+        },
+      });
+
+      return { company, created: true };
+    });
+  }
+
+  private async ensureRole(userId: string, roleName: string): Promise<void> {
+    const role = await this.prisma.role.findUnique({ where: { name: roleName } });
+    if (!role) throw new ConflictException('Roles have not been seeded');
+    await this.prisma.userRole.upsert({
+      where: { userId_roleId: { userId, roleId: role.id } },
+      create: { userId, roleId: role.id },
+      update: {},
+    });
   }
 
   async me(userId: string) {

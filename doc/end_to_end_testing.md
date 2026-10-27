@@ -40,12 +40,12 @@ Confirm the API is up: `GET /api/v1/health` should return 200.
 
 ## 2. Test accounts (username + password)
 
-Public registration creates **candidates only**. Employer and admin accounts come from seed data (or admin API). There is no public company registration.
+Public registration creates **one user account** with the `candidate` role. That same account can later add an employer profile and switch modes. Seed employer/admin accounts still exist for the existing hiring and admin portals.
 
 | Role | Username (email) | Password | Lands on after login |
 |------|------------------|----------|----------------------|
 | Admin | `admin@example.com` | `ChangeMe123!` | `/admin` |
-| Company (hiring) | `employer@example.com` | `Employer123!` | `/company` (then auto-opens the company jobs page) |
+| Employer (hiring) | `employer@example.com` | `Employer123!` | `/company` (then auto-opens the employer jobs page) |
 | Candidate | `candidate@example.com` | `Candidate123!` | `/jobs` |
 
 Admin email/password can be overridden by `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `backend/.env`. If those are set, use the `.env` values instead of the defaults above.
@@ -78,10 +78,11 @@ Run these in this order so later steps have data (a new job, a CV, and an applic
 
 1. Public browsing (no login)
 2. Admin login → dashboard → create and publish a job
-3. Candidate login (or new register) → profile + CV → apply
-4. Company login → post job (review flow) → review pipeline → change status
-5. Candidate checks the updated status (and optionally withdraws a second application)
-6. Access-control and logout checks
+3. New register → land on `/jobs` → profile + CV → apply to someone else’s job
+4. Same account → **Post a job** → employer setup → submit a vacancy (review flow)
+5. Switch back with **Find work** → confirm you cannot apply to your own post
+6. Seed employer login → review pipeline → change status
+7. Access-control and logout checks
 
 ---
 
@@ -103,7 +104,7 @@ Run these in this order so later steps have data (a new job, a CV, and an applic
 4. Reset filters and confirm the job list returns.
 5. Open `/jobs/junior-backend-developer-demo`.
 
-**Pass:** Job detail shows title, company, deadline, and **Sign In to Apply** / **Register as Candidate** for guests.
+**Pass:** Job detail shows title, company, deadline, and **Sign In to Apply** / **Create account** for guests.
 
 ### 4.3 Company directory
 
@@ -123,9 +124,9 @@ Run these in this order so later steps have data (a new job, a CV, and an applic
 
 ---
 
-## 5. Candidate registration (new user)
+## 5. Account registration (new user)
 
-`/register` is candidate-only. It does **not** create a company or employer account.
+`/register` creates one account (candidate by default). It does **not** ask the user to pick a role. Hiring is added later from **Post a job**.
 
 1. Open `/register` (or **Get Started**).
 2. Fill first name, last name, unique email, optional phone, password (min 8 characters).
@@ -141,12 +142,26 @@ Suggested test user:
 | Phone | `+251911000000` |
 | Password | `Tester123!` |
 
-**Pass:** Redirect to `/candidate/profile`. Nav shows My Profile, My CVs, My Applications.
+**Pass:** Redirect to `/jobs`. Nav shows Find Jobs, **Post a job**, My Profile, My CVs, and My Applications.
 
 **Fail checks:**
 
 - Reusing `candidate@example.com` shows “already registered”.
 - Password shorter than 8 characters is rejected.
+
+### 5.1 Switch to hiring and back
+
+1. While signed in as Tesfa, click **Post a job**.
+2. On `/employer/setup`, enter a hiring name (person or business), optional city/contact, and continue.
+3. Confirm `POST /auth/enable-employer` is idempotent: visiting setup again skips a second org and opens the job form.
+4. Submit a job. Default status is **pending_review** (not on `/jobs` until admin publishes).
+5. Click **Find work**. Confirm candidate profile, CVs, and applications are still there.
+6. Open the public page for a job Tesfa posted (after admin publishes) and confirm Apply is hidden (“You posted this job”).
+7. Apply to **Junior Backend Developer** (or another job Tesfa did not post).
+
+**Pass:** One account holds both roles. Own-job apply is blocked in the UI and by the API (`403`). Repeat **Post a job** does not create a second hiring profile.
+
+Seed `employer@example.com` starts employer-only. **Find work** calls `POST /auth/enable-candidate` and then shows the candidate pages.
 
 ---
 
@@ -243,17 +258,18 @@ Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no pu
 
 ---
 
-## 8. Companies portal (hiring)
+## 8. Employer portal (hiring)
 
 Login: `employer@example.com` / `Employer123!`
 
-This is the seeded company account. It cannot create a company from the UI.
+This is the seeded hiring account. Self-serve users reach the same portal after `/employer/setup`.
 
-### 8.1 Company home
+### 8.1 Employer home
 
 1. After login, `/company` loads memberships (or redirects to `/company/:companyId/jobs` when there is one company).
 2. Confirm **Demo Technology PLC** and the job list (seed job plus any admin-published jobs).
-3. Admin contact details appear when direct posting is disabled.
+3. Nav includes **Find work** to switch back to seeking jobs.
+4. Admin contact appears only when a hiring profile or job was **rejected**, not on first-time pending review.
 
 **Pass:** Applicant counts match applications submitted in section 6.
 
@@ -308,7 +324,9 @@ Optional second candidate (`tesfa.lemma@example.com` / `Tester123!`): apply to t
 
 ## 10. Company onboarding (admin UI or API)
 
-Companies cannot self-register publicly. Prefer **`/admin/companies` → Register company** (section 7.1b), which calls `POST /api/v1/admin/companies/provision` and returns one-time credentials.
+Signed-in users can self-serve a hiring profile with `POST /api/v1/auth/enable-employer` (section 5.1). Admin provision is still available for staff-created employers.
+
+Prefer **`/admin/companies` → Register company** (section 7.1b) when an admin should create the employer, which calls `POST /api/v1/admin/companies/provision` and returns one-time credentials.
 
 For API-only setup (Swagger or curl), use the admin JWT from `POST /api/v1/auth/login`:
 
@@ -335,10 +353,11 @@ Until verification, the public directory hides the company. Suspended companies 
 | Action | Expected |
 |--------|----------|
 | Visit `/candidate/profile` logged out | Redirect to login |
-| Visit `/company` as candidate | Blocked (role guard) |
-| Visit `/admin` as company user or candidate | Blocked |
-| Old `/employer/...` URLs | Redirect to `/company/...` |
-| Admin or employer opens an internal job apply page | Message that only candidates can apply |
+| Visit `/company` as a candidate with no hiring profile | Redirect to `/employer/setup` |
+| Visit `/employer/setup` while already a member | Redirect to the job post form |
+| Visit `/admin` as employer or candidate | Blocked |
+| Old `/employer/...` URLs except `/employer/setup` | Redirect to `/company/...` |
+| Member opens apply on their own job | Apply hidden; API returns 403 |
 | Logout | Return to `/login`; protected routes fail until login again |
 | Wrong password | Error on `/login` |
 
@@ -348,7 +367,7 @@ Until verification, the public directory hides the company. Suspended companies 
 
 These exist on the backend (see [frontend_api_guide.md](./frontend_api_guide.md)) but are **not** end-to-end testable in the current frontend:
 
-- Public company registration / employer self-signup
+- Google / social signup
 - Admin featured-company toggle, member-role management, and verification-document workflow UI
 - Saved jobs
 - In-app notifications inbox
@@ -366,10 +385,12 @@ Do not treat missing UI as a failed E2E case unless you are testing the API dire
 - [ ] Health endpoint returns 200
 - [ ] Seed job and Demo Technology PLC appear publicly
 - [ ] Contact form submits
-- [ ] New candidate can register and log in
+- [ ] New user can register, land on `/jobs`, and switch to hiring via **Post a job**
+- [ ] Employer setup is idempotent; jobs stay in admin review
+- [ ] Same user cannot apply to their own post; can apply to someone else’s job
 - [ ] `candidate@example.com` / `Candidate123!` can edit profile, upload CV, apply, withdraw
 - [ ] `admin@example.com` / `ChangeMe123!` can manage companies, approve pending jobs, publish, and close jobs
 - [ ] `employer@example.com` / `Employer123!` can post jobs (review flow), review applicants, and change status
-- [ ] Candidate sees company status changes
+- [ ] Candidate sees employer status changes
 - [ ] Wrong-role URLs are blocked
 - [ ] Logout clears the session

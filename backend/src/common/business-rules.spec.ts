@@ -1,7 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
-import { assertApplicationTransition } from '../modules/applications/applications.service';
+import {
+  assertApplicationTransition,
+  isOwnCompanyJob,
+} from '../modules/applications/applications.service';
 import { assertJobTransition } from '../modules/jobs/jobs.service';
-import { slugify } from './slug';
+import { nextUniqueSlug, slugify } from './slug';
 
 describe('business rules', () => {
   it('normalizes URL slugs', () => {
@@ -27,5 +30,15 @@ describe('business rules', () => {
     expect(() => assertApplicationTransition('withdrawn', 'submitted')).toThrow(
       BadRequestException,
     );
+  });
+
+  it('blocks applying to a job from the same employer membership', () => {
+    expect(isOwnCompanyJob('user-1', [{ userId: 'user-1' }, { userId: 'user-2' }])).toBe(true);
+    expect(isOwnCompanyJob('user-3', [{ userId: 'user-1' }])).toBe(false);
+  });
+
+  it('increments taken employer slugs', async () => {
+    const taken = new Set(['acme', 'acme-2']);
+    await expect(nextUniqueSlug('Acme', async (slug) => taken.has(slug))).resolves.toBe('acme-3');
   });
 });

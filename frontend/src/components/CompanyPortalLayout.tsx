@@ -7,7 +7,7 @@ import { ProgressLogo } from './ProgressLogo';
 import { AdminContactCard } from './AdminContactCard';
 
 export const CompanyPortalLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, setWorkspace, enableCandidate } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { companyId } = useParams<{ companyId?: string }>();
@@ -40,16 +40,22 @@ export const CompanyPortalLayout: React.FC = () => {
 
   const showAdminContact = useMemo(() => {
     if (companiesQuery.isLoading) return false;
-    if (companies.length === 0) return true;
-    if (!companyId || !company) return true;
-    if (company.verificationStatus !== 'verified') return true;
-    if (!company.canSelfPublishJobs) return true;
+    if (companies.length === 0) return false;
+    if (company?.verificationStatus === 'rejected') return true;
     return jobs.some((j) => j.status === 'rejected');
-  }, [companies.length, companiesQuery.isLoading, company, companyId, jobs]);
+  }, [companies.length, companiesQuery.isLoading, company, jobs]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true, state: {} });
+  };
+
+  const handleFindWork = async () => {
+    if (!user?.roles.includes('candidate')) {
+      await enableCandidate();
+    }
+    setWorkspace('candidate');
+    navigate('/jobs');
   };
 
   return (
@@ -76,14 +82,17 @@ export const CompanyPortalLayout: React.FC = () => {
         <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
           <nav className="nav-links">
             <NavLink to="/company" end>
-              Companies
+              Employer
             </NavLink>
             {companyId && (
               <>
                 <NavLink to={`/company/${companyId}/jobs`}>Job postings</NavLink>
-                <NavLink to={`/company/${companyId}/jobs/new`}>Post opportunity</NavLink>
+                <NavLink to={`/company/${companyId}/jobs/new`}>Post a job</NavLink>
               </>
             )}
+            <button type="button" className="nav-text-button" onClick={() => void handleFindWork()}>
+              Find work
+            </button>
           </nav>
 
           <div className="nav-auth">
@@ -93,7 +102,7 @@ export const CompanyPortalLayout: React.FC = () => {
                   <strong>
                     {user.firstName} {user.lastName}
                   </strong>
-                  <small>(company)</small>
+                  <small>(hiring)</small>
                 </span>
                 <button type="button" className="btn-logout" onClick={handleLogout}>
                   Logout
@@ -111,7 +120,7 @@ export const CompanyPortalLayout: React.FC = () => {
 
       <footer className="site-footer" style={{ padding: '1rem 2rem' }}>
         <p style={{ margin: 0, textAlign: 'center', opacity: 0.85 }}>
-          © {new Date().getFullYear()} Progress Manpower — Companies portal
+          © {new Date().getFullYear()} Progress Manpower — Employer
         </p>
       </footer>
     </div>

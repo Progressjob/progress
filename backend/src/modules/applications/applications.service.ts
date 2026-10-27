@@ -15,6 +15,13 @@ import {
   UpdateInterviewDto,
 } from './applications.dto';
 
+export function isOwnCompanyJob(
+  userId: string,
+  members: Array<{ userId: string }>,
+): boolean {
+  return members.some((member) => member.userId === userId);
+}
+
 const APPLICATION_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   submitted: ['reviewing', 'shortlisted', 'rejected', 'withdrawn'],
   reviewing: ['shortlisted', 'interview', 'rejected', 'withdrawn'],
@@ -66,6 +73,9 @@ export class ApplicationsService {
     }
     if (job.applicationDeadline < this.today()) {
       throw new UnprocessableEntityException('Application deadline has passed');
+    }
+    if (isOwnCompanyJob(userId, job.company.members)) {
+      throw new ForbiddenException('You cannot apply to a job posted by your own organization');
     }
     if (dto.resumeId) {
       const resume = await this.prisma.candidateResume.findFirst({

@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Length, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -46,4 +46,32 @@ export class ResetPasswordDto {
   @IsString()
   @MinLength(8)
   password!: string;
+}
+
+export class EnableEmployerDto {
+  @IsString()
+  @Length(2, 255)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => Boolean(typeof value === 'string' ? value.trim() : value))
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 200)
+  contactPerson?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
