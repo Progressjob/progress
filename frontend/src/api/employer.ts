@@ -46,15 +46,6 @@ export const employerApi = {
       method: 'PATCH',
       body: payload,
     }),
-  requestDeadlineChange: (
-    companyId: string,
-    jobId: string,
-    payload: { requestedDeadline: string; note?: string },
-  ) =>
-    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/deadline-request`, {
-      method: 'POST',
-      body: payload,
-    }),
   submitJob: (companyId: string, jobId: string) =>
     apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/submit`, { method: 'POST' }),
   getJobStats: (companyId: string, jobId: string) =>

@@ -135,20 +135,6 @@ export class EmployerCreateJobDto extends OmitType(CreateJobDto, ['companyId'] a
 
 export class EmployerUpdateJobDto extends OmitType(UpdateJobDto, ['companyId'] as const) {}
 
-export class RequestDeadlineChangeDto {
-  @IsDateString()
-  requestedDeadline!: string;
-
-  @IsOptional()
-  @IsString()
-  note?: string;
-}
-
-export class ResolveDeadlineChangeDto {
-  @IsIn(['approve', 'dismiss'])
-  action!: 'approve' | 'dismiss';
-}
-
 export class ScreeningQuestionDto {
   @IsString()
   questionText!: string;

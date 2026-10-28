@@ -49,8 +49,6 @@ export interface AdminJobFormFieldsProps {
   onChange: (next: CreateAdminJobPayload) => void;
   hideCompanySelect?: boolean;
   companySelect?: React.ReactNode;
-  lockCategory?: boolean;
-  lockDeadline?: boolean;
 }
 
 export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
@@ -58,8 +56,6 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   onChange,
   hideCompanySelect,
   companySelect,
-  lockCategory,
-  lockDeadline,
 }) => {
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -124,7 +120,6 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           <select
             id="adm-cat"
             required
-            disabled={lockCategory}
             value={value.categoryId}
             onChange={(e) => set({ categoryId: e.target.value })}
             style={selectStyle}
@@ -136,11 +131,6 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
               </option>
             ))}
           </select>
-          {lockCategory && (
-            <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
-              Role area is locked after submit. Post a new job to hire for a different vacancy.
-            </p>
-          )}
         </div>
         <div className="form-input-group">
           <label htmlFor="adm-loc">Location</label>
@@ -405,16 +395,10 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
         <input
           id="adm-deadline"
           type="date"
-          required={!lockDeadline}
-          disabled={lockDeadline}
+          required
           value={value.applicationDeadline}
           onChange={(e) => set({ applicationDeadline: e.target.value })}
         />
-        {lockDeadline && (
-          <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
-            Deadline cannot be changed here. Request a new date below so an admin can update it.
-          </p>
-        )}
       </div>
     </div>
   );

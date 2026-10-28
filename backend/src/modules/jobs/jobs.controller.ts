@@ -28,8 +28,6 @@ import {
   EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
-  RequestDeadlineChangeDto,
-  ResolveDeadlineChangeDto,
   UpdateJobDto,
 } from './jobs.dto';
 import { JobsService } from './jobs.service';
@@ -109,11 +107,6 @@ export class AdminJobsController {
     return this.jobs.transition(id, 'rejected', user.id);
   }
 
-  @Post(':id/deadline-change')
-  resolveDeadline(@Param('id') id: string, @Body() dto: ResolveDeadlineChangeDto) {
-    return this.jobs.resolveDeadlineChange(id, dto);
-  }
-
   @Post(':id/:transition')
   transition(
     @Param('id') id: string,
@@ -187,16 +180,6 @@ export class EmployerJobsController {
     @Body() dto: EmployerUpdateJobDto,
   ) {
     return this.jobs.employerUpdate(user.id, companyId, jobId, dto);
-  }
-
-  @Post(':jobId/deadline-request')
-  requestDeadline(
-    @CurrentUser() user: AuthUser,
-    @Param('companyId') companyId: string,
-    @Param('jobId') jobId: string,
-    @Body() dto: RequestDeadlineChangeDto,
-  ) {
-    return this.jobs.employerRequestDeadlineChange(user.id, companyId, jobId, dto);
   }
 
   @Post(':jobId/submit')

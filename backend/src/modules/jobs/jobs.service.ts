@@ -16,8 +16,6 @@ import {
   EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
-  RequestDeadlineChangeDto,
-  ResolveDeadlineChangeDto,
   UpdateJobDto,
 } from './jobs.dto';
 
@@ -27,7 +25,6 @@ const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = [
   'rejected',
   'published',
 ];
-const CATEGORY_LOCKED_STATUSES: JobStatus[] = ['pending_review', 'published', 'closed'];
 
 @Injectable()
 export class JobPostingPolicy {
@@ -286,75 +283,7 @@ export class JobsService {
     if (!EMPLOYER_EDITABLE_STATUSES.includes(job.status)) {
       throw new BadRequestException('This job cannot be edited in its current status');
     }
-    const {
-      applicationDeadline: _deadline,
-      categoryId,
-      ...content
-    } = dto;
-    const next: EmployerUpdateJobDto = { ...content };
-    if (!CATEGORY_LOCKED_STATUSES.includes(job.status) && categoryId) {
-      next.categoryId = categoryId;
-    }
-    return this.update(jobId, next);
-  }
-
-  async employerRequestDeadlineChange(
-    userId: string,
-    companyId: string,
-    jobId: string,
-    dto: RequestDeadlineChangeDto,
-  ) {
-    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
-    if (!['published', 'pending_review'].includes(job.status)) {
-      throw new BadRequestException('Deadline changes can only be requested for submitted jobs');
-    }
-    const requested = new Date(dto.requestedDeadline);
-    if (Number.isNaN(requested.getTime())) {
-      throw new BadRequestException('Provide a valid deadline date');
-    }
-    if (requested < this.today()) {
-      throw new BadRequestException('Requested deadline must be today or later');
-    }
-    const current = job.applicationDeadline.toISOString().slice(0, 10);
-    const next = requested.toISOString().slice(0, 10);
-    if (current === next) {
-      throw new BadRequestException('Requested deadline is the same as the current deadline');
-    }
-    return this.prisma.job.update({
-      where: { id: job.id },
-      data: {
-        requestedDeadline: requested,
-        deadlineChangeNote: dto.note?.trim() || null,
-        deadlineChangeRequestedAt: new Date(),
-      },
-    });
-  }
-
-  async resolveDeadlineChange(id: string, dto: ResolveDeadlineChangeDto) {
-    const job = await this.prisma.job.findUnique({ where: { id } });
-    if (!job) throw new NotFoundException('Job not found');
-    if (!job.requestedDeadline) {
-      throw new BadRequestException('This job has no pending deadline change request');
-    }
-    if (dto.action === 'approve') {
-      return this.prisma.job.update({
-        where: { id },
-        data: {
-          applicationDeadline: job.requestedDeadline,
-          requestedDeadline: null,
-          deadlineChangeNote: null,
-          deadlineChangeRequestedAt: null,
-        },
-      });
-    }
-    return this.prisma.job.update({
-      where: { id },
-      data: {
-        requestedDeadline: null,
-        deadlineChangeNote: null,
-        deadlineChangeRequestedAt: null,
-      },
-    });
+    return this.update(jobId, dto);
   }
 
   async employerSubmit(userId: string, companyId: string, jobId: string) {

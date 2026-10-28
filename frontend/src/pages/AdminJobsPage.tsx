@@ -132,16 +132,6 @@ export const AdminJobsPage: React.FC = () => {
     onError: (err: Error) => setActionError(err.message),
   });
 
-  const deadlineMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'approve' | 'dismiss' }) =>
-      adminApi.resolveDeadlineChange(id, action),
-    onSuccess: () => {
-      setActionError(null);
-      invalidateJobs();
-    },
-    onError: (err: Error) => setActionError(err.message),
-  });
-
   const rawJobs = tab === 'all' ? (allJobsQuery.data ?? []) : (pendingJobsQuery.data ?? []);
   const jobs = filterCompanyId
     ? rawJobs.filter((j) => j.companyId === filterCompanyId)
@@ -482,12 +472,6 @@ export const AdminJobsPage: React.FC = () => {
                   <span className="job-deadline">
                     Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
                   </span>
-                  {job.requestedDeadline && (
-                    <span className="job-deadline" style={{ color: '#b45309', fontWeight: 700 }}>
-                      Requested: {new Date(job.requestedDeadline).toLocaleDateString()}
-                      {job.deadlineChangeNote ? ` — ${job.deadlineChangeNote}` : ''}
-                    </span>
-                  )}
 
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {job.status === 'pending_review' && (
@@ -534,29 +518,6 @@ export const AdminJobsPage: React.FC = () => {
                       >
                         Close vacancy
                       </button>
-                    )}
-
-                    {job.requestedDeadline && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn-card-apply"
-                          style={{ background: '#16a34a', color: '#ffffff', cursor: 'pointer', border: 'none' }}
-                          onClick={() => deadlineMutation.mutate({ id: job.id, action: 'approve' })}
-                          disabled={deadlineMutation.isPending}
-                        >
-                          Apply new deadline
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-clear-filters"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => deadlineMutation.mutate({ id: job.id, action: 'dismiss' })}
-                          disabled={deadlineMutation.isPending}
-                        >
-                          Dismiss request
-                        </button>
-                      </>
                     )}
 
                     <Link to={`/jobs/${job.slug}`} className="btn-card-apply">

@@ -32,8 +32,6 @@ export const CompanyPostJobPage: React.FC = () => {
   );
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [requestedDeadline, setRequestedDeadline] = useState('');
-  const [deadlineNote, setDeadlineNote] = useState('');
 
   useEffect(() => {
     if (companyId && !isEdit) {
@@ -46,15 +44,6 @@ export const CompanyPostJobPage: React.FC = () => {
       setJobForm(jobFromRecord(jobQuery.data, companyId));
     }
   }, [companyId, jobQuery.data]);
-
-  const lockCategory =
-    isEdit &&
-    Boolean(
-      jobQuery.data &&
-        (jobQuery.data.status === 'pending_review' ||
-          jobQuery.data.status === 'published' ||
-          jobQuery.data.status === 'closed'),
-    );
 
   const toPayload = (sanitized: CreateAdminJobPayload) => ({
     categoryId: sanitized.categoryId,
@@ -84,8 +73,7 @@ export const CompanyPostJobPage: React.FC = () => {
       const sanitized = sanitizeJobPayload({ ...jobForm, companyId });
       const payload = toPayload(sanitized);
       if (isEdit && jobId) {
-        const { applicationDeadline: _d, ...content } = payload;
-        return employerApi.updateJob(companyId, jobId, lockCategory ? { ...content, categoryId: undefined } : content);
+        return employerApi.updateJob(companyId, jobId, payload);
       }
       const job = await employerApi.createJob(companyId, payload);
       return employerApi.submitJob(companyId, job.id);
@@ -106,24 +94,6 @@ export const CompanyPostJobPage: React.FC = () => {
     onError: (err: Error) => setError(err.message),
   });
 
-  const deadlineMutation = useMutation({
-    mutationFn: async () => {
-      if (!companyId || !jobId) throw new Error('Job is required');
-      if (!requestedDeadline) throw new Error('Choose a new deadline date.');
-      return employerApi.requestDeadlineChange(companyId, jobId, {
-        requestedDeadline,
-        note: deadlineNote.trim() || undefined,
-      });
-    },
-    onSuccess: () => {
-      setError(null);
-      setMessage('Deadline change sent to admin for review.');
-      setDeadlineNote('');
-      void jobQuery.refetch();
-    },
-    onError: (err: Error) => setError(err.message),
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -132,8 +102,6 @@ export const CompanyPostJobPage: React.FC = () => {
   };
 
   const company = companyQuery.data;
-  const existing = jobQuery.data;
-  const pendingDeadline = existing?.requestedDeadline?.slice(0, 10);
 
   return (
     <div className="jobs-list-container">
@@ -148,7 +116,7 @@ export const CompanyPostJobPage: React.FC = () => {
         <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
           {company?.name ?? 'Company'} —{' '}
           {isEdit
-            ? 'Update the listing details. Deadline changes need admin approval so a vacancy cannot be reused as a different post.'
+            ? 'Update any listing details, including the deadline and role area, then save.'
             : company?.canSelfPublishJobs
               ? 'Your organization has direct posting permissions. Posts go live immediately.'
               : 'New job postings are submitted for administrator review before going live on the public board.'}
@@ -192,8 +160,6 @@ export const CompanyPostJobPage: React.FC = () => {
               value={jobForm}
               onChange={setJobForm}
               hideCompanySelect={true}
-              lockDeadline={isEdit}
-              lockCategory={lockCategory}
             />
 
             <div
@@ -229,60 +195,6 @@ export const CompanyPostJobPage: React.FC = () => {
               </Link>
             </div>
           </form>
-
-          {isEdit && existing && ['published', 'pending_review'].includes(existing.status) && (
-            <div
-              style={{
-                marginTop: '2rem',
-                paddingTop: '1.5rem',
-                borderTop: '1px solid #e2e8f0',
-              }}
-            >
-              <h3 style={{ margin: '0 0 0.5rem' }}>Request deadline change</h3>
-              <p className="muted" style={{ margin: '0 0 1rem' }}>
-                Admins review this so one vacancy cannot be extended or reused as a different role.
-              </p>
-              {pendingDeadline && (
-                <p style={{ margin: '0 0 1rem', fontWeight: 600, color: '#b45309' }}>
-                  Pending request: {new Date(pendingDeadline).toLocaleDateString()}
-                  {existing.deadlineChangeNote ? ` — ${existing.deadlineChangeNote}` : ''}
-                </p>
-              )}
-              <div className="form-row-two">
-                <div className="form-input-group">
-                  <label htmlFor="req-deadline">New deadline</label>
-                  <input
-                    id="req-deadline"
-                    type="date"
-                    value={requestedDeadline}
-                    onChange={(e) => setRequestedDeadline(e.target.value)}
-                  />
-                </div>
-                <div className="form-input-group">
-                  <label htmlFor="req-deadline-note">Note for admin</label>
-                  <input
-                    id="req-deadline-note"
-                    value={deadlineNote}
-                    onChange={(e) => setDeadlineNote(e.target.value)}
-                    placeholder="Why this date needs to change"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                className="btn-card-apply"
-                style={{ marginTop: '0.75rem', cursor: 'pointer', border: 'none' }}
-                disabled={deadlineMutation.isPending}
-                onClick={() => {
-                  setMessage(null);
-                  setError(null);
-                  deadlineMutation.mutate();
-                }}
-              >
-                {deadlineMutation.isPending ? 'Sending…' : 'Send request to admin'}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>

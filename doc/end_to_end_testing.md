@@ -281,12 +281,11 @@ This is the seeded hiring account. Self-serve users reach the same portal after 
 ### 8.3 Edit a posted job
 
 1. Click **Edit post** on a submitted or published job (`/company/:companyId/jobs/:jobId/edit`).
-2. Change description, how-to-hire, salary, or title and save.
-3. Confirm the deadline field is locked. Use **Request deadline change** instead.
-4. On a published job, the role/category select is locked (a different vacancy needs a new post).
-5. Admin opens `/admin/jobs`, sees the requested deadline, and **Apply new deadline** or **Dismiss request**.
+2. Change description, how-to-hire, salary, title, role/category, or deadline and save.
+3. Confirm **Save changes** is the last action at the bottom of the form.
+4. Reload the edit page and confirm the new deadline and other fields persisted. No admin approval is required.
 
-**Pass:** Content updates. Deadline and (after submit) category do not change without admin. Changing engineers to accounting requires posting a new job.
+**Pass:** Employers can update every listing field, including deadline and category, in one save.
 
 Company users can update company profile fields via API (`PATCH /employer/companies/:companyId`). There is no dedicated company-edit screen in the current UI.
 
