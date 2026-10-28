@@ -6,6 +6,9 @@ import type {
   Company,
   EmploymentType,
   Job,
+  TalentDetail,
+  TalentSearchResponse,
+  TalentSpotlightResponse,
   WorkplaceType,
 } from '../types/api';
 
@@ -79,4 +82,18 @@ export const employerApi = {
         body: payload,
       },
     ),
+  talentSpotlight: (companyId: string) =>
+    apiFetch<TalentSpotlightResponse>(`/employer/companies/${companyId}/talent/spotlight`),
+  searchTalent: (companyId: string, params: { q: string; page?: number; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.q.trim()) qs.set('q', params.q.trim());
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const query = qs.toString();
+    return apiFetch<TalentSearchResponse>(
+      `/employer/companies/${companyId}/talent${query ? `?${query}` : ''}`,
+    );
+  },
+  getTalent: (companyId: string, candidateId: string) =>
+    apiFetch<TalentDetail>(`/employer/companies/${companyId}/talent/${candidateId}`),
 };

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { taxonomyApi } from '../api/taxonomy';
 import type { Category, EmploymentType, WorkplaceType } from '../types/api';
 import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
+import { useAuth } from '../auth/AuthContext';
+import { GuestJobAccessNote, JobDetailLink } from '../components/JobDetailLink';
 
 function flattenCategories(categories: Category[]): Category[] {
   const result: Category[] = [];
@@ -18,6 +20,7 @@ function flattenCategories(categories: Category[]): Category[] {
 }
 
 export const JobsListPage: React.FC = () => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [q, setQ] = useState(searchParams.get('q') || '');
@@ -115,8 +118,11 @@ export const JobsListPage: React.FC = () => {
         <span className="section-eyebrow">Verified Vacancies</span>
         <h1 className="board-title">Explore Career Opportunities</h1>
         <p className="board-subtitle">
-          Handpicked roles across Adama, Bishoftu, and leading Ethiopian enterprises. Direct employer applications.
+          {user
+            ? 'Handpicked roles across Adama, Bishoftu, and leading Ethiopian enterprises. Direct employer applications.'
+            : 'Browse open roles. Sign in to view full job details and how to apply.'}
         </p>
+        {!user && <GuestJobAccessNote />}
       </div>
 
       {/* Filter Capsule Card */}
@@ -255,7 +261,7 @@ export const JobsListPage: React.FC = () => {
                   {job.company ? job.company.name : 'Progress Partner Employer'}
                 </span>
                 <h2 className="job-card-title">
-                  <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
+                  <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
                 </h2>
               </div>
             </div>
@@ -300,12 +306,12 @@ export const JobsListPage: React.FC = () => {
               <span className="job-deadline">
                 Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
               </span>
-              <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
-                <span>View Position</span>
+              <JobDetailLink slug={job.slug} className="btn-card-apply">
+                <span>{user ? 'View Position' : 'Sign in to view'}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-              </Link>
+              </JobDetailLink>
             </div>
           </div>
         ))}

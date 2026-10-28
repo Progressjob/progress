@@ -16,6 +16,7 @@ import { FilesModule } from './modules/files/files.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SavedJobsModule } from './modules/saved-jobs/saved-jobs.module';
+import { TalentModule } from './modules/talent/talent.module';
 import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -34,6 +35,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ApplicationsModule,
     NotificationsModule,
     SavedJobsModule,
+    TalentModule,
     AdminModule,
   ],
   controllers: [AppController],

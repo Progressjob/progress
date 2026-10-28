@@ -4704,5 +4704,211 @@ hr {
   }
 }
 
+.guest-job-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.guest-job-note a {
+  font-weight: 700;
+}
+
+.guest-job-gate {
+  max-width: 520px;
+  margin: 3rem auto;
+  text-align: center;
+}
+
+.guest-job-gate h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.guest-job-gate-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cv-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.cv-search-form .btn {
+  height: 42px;
+}
+
+.cv-popular {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.cv-popular button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.cv-popular button.is-active,
+.cv-popular button:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.cv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+.cv-card .btn {
+  margin-top: auto;
+}
+
+.cv-card-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.cv-card-photo,
+.cv-detail-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--primary-light);
+}
+
+.cv-card-photo-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.cv-card-identity h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.cv-card-meta,
+.cv-card-summary {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.cv-card-years {
+  text-align: right;
+  font-weight: 800;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.cv-card-years span {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.cv-card-role {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cv-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cv-back {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.cv-detail-identity {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.cv-detail-photo {
+  width: 72px;
+  height: 72px;
+}
+
+.cv-detail-page h1 {
+  margin: 0 0 0.25rem;
+}
+
+.cv-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin: 1.1rem 0 0;
+}
+
+.cv-detail-facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.cv-detail-facts dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+.cv-resume-row,
+.cv-resume-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.cv-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cv-timeline li p {
+  margin: 0.15rem 0 0;
+}
+
+.cv-detail-page h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
 
 

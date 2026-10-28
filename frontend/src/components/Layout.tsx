@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
-import { isExactPath, isSectionPath, navActive } from '../auth/nav';
+import { isExactPath, isPublicCvSearch, isSectionPath, navActive } from '../auth/nav';
 import { hiringDestination } from '../auth/workspace';
 import { candidateApi } from '../api/candidate';
 import { ProgressLogo } from './ProgressLogo';
@@ -121,6 +121,12 @@ export const Layout: React.FC = () => {
               className={() => navActive(isSectionPath(location.pathname, '/jobs'))}
             >
               Find Jobs
+            </NavLink>
+            <NavLink
+              to="/cv-search"
+              className={() => navActive(isPublicCvSearch(location.pathname))}
+            >
+              CV search
             </NavLink>
             <NavLink
               to="/contact"

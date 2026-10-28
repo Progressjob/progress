@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isExactPath, navActive } from '../auth/nav';
+import { isAdminCvSearch, isExactPath, navActive } from '../auth/nav';
 import { ProgressLogo } from './ProgressLogo';
 
 export const AdminPortalLayout: React.FC = () => {
@@ -69,6 +69,12 @@ export const AdminPortalLayout: React.FC = () => {
               className={() => navActive(isExactPath(location.pathname, '/admin/candidates'))}
             >
               Candidates
+            </NavLink>
+            <NavLink
+              to="/admin/cv-search"
+              className={() => navActive(isAdminCvSearch(location.pathname))}
+            >
+              CV search
             </NavLink>
           </nav>
 

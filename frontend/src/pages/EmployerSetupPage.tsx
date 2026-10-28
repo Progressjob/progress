@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { hiringDestination } from '../auth/workspace';
+import { destinationAfterHire } from '../auth/workspace';
 import { ApiError } from '../api/client';
 import { ProgressLogo } from '../components/ProgressLogo';
 
 export const EmployerSetupPage: React.FC = () => {
   const { user, enableEmployer, setWorkspace } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = searchParams.get('next');
   const existingCompanyId = user?.companyMemberships[0]?.companyId;
 
   const [name, setName] = useState('');
@@ -24,9 +26,9 @@ export const EmployerSetupPage: React.FC = () => {
   useEffect(() => {
     if (existingCompanyId) {
       setWorkspace('employer');
-      navigate(hiringDestination(existingCompanyId), { replace: true });
+      navigate(destinationAfterHire(existingCompanyId, next), { replace: true });
     }
-  }, [existingCompanyId, navigate, setWorkspace]);
+  }, [existingCompanyId, navigate, next, setWorkspace]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +43,7 @@ export const EmployerSetupPage: React.FC = () => {
         ...(contactPerson.trim() ? { contactPerson: contactPerson.trim() } : {}),
         ...(description.trim() ? { description: description.trim() } : {}),
       });
-      navigate(hiringDestination(result.company.id), { replace: true });
+      navigate(destinationAfterHire(result.company.id, next), { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -70,8 +72,9 @@ export const EmployerSetupPage: React.FC = () => {
 
         <h1 className="auth-title">Switch this account to hiring</h1>
         <p className="auth-subtitle">
-          You keep the same login. After this, use <strong>Switch to hiring</strong> in the nav to
-          post jobs, and <strong>Switch to finding work</strong> to go back to searching.
+          {next?.startsWith('/cv-search/')
+            ? 'You keep the same login. After this short hiring setup, we’ll open the CV you selected.'
+            : 'You keep the same login. After this, use Switch to hiring in the nav to post jobs, and Switch to finding work to go back to searching.'}
         </p>
 
         {error && <div className="alert-box-error">{error}</div>}
@@ -148,7 +151,7 @@ export const EmployerSetupPage: React.FC = () => {
           </div>
 
           <button type="submit" className="btn-auth-submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Continue to job post →'}
+            {submitting ? 'Saving…' : next?.startsWith('/cv-search/') ? 'Continue to CV →' : 'Continue to job post →'}
           </button>
         </form>
       </div>

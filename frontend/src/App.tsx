@@ -21,6 +21,8 @@ import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CompanyHomePage } from './pages/CompanyHomePage';
 import { CompanyJobsPage } from './pages/CompanyJobsPage';
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
+import { CompanyCvSearchPage } from './pages/CompanyCvSearchPage';
+import { CompanyCvDetailPage } from './pages/CompanyCvDetailPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
 import { AdminCompaniesPage } from './pages/AdminCompaniesPage';
@@ -56,6 +58,14 @@ export function App(): React.ReactElement {
               <Route path="/companies" element={<Navigate to="/jobs" replace />} />
               <Route path="/companies/:slug" element={<Navigate to="/jobs" replace />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route
+                path="/cv-search"
+                element={
+                  <RequireSignedIn>
+                    <CompanyCvSearchPage />
+                  </RequireSignedIn>
+                }
+              />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route
@@ -93,6 +103,8 @@ export function App(): React.ReactElement {
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
               <Route path="/admin/jobs" element={<AdminJobsPage />} />
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
+              <Route path="/admin/cv-search" element={<CompanyCvSearchPage />} />
+              <Route path="/admin/cv-search/:candidateId" element={<CompanyCvDetailPage />} />
             </Route>
 
             {/* Employer (hiring) portal */}
@@ -107,6 +119,11 @@ export function App(): React.ReactElement {
               <Route path="/company/:companyId/jobs" element={<CompanyJobsPage />} />
               <Route path="/company/:companyId/jobs/new" element={<CompanyPostJobPage />} />
               <Route path="/company/:companyId/jobs/:jobId/edit" element={<CompanyPostJobPage />} />
+              <Route path="/company/:companyId/cv-search" element={<CompanyCvSearchPage />} />
+              <Route
+                path="/company/:companyId/cv-search/:candidateId"
+                element={<CompanyCvDetailPage />}
+              />
             </Route>
 
             <Route path="/employer/*" element={<EmployerLegacyRedirect />} />

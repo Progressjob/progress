@@ -8,6 +8,9 @@ import type {
   EmploymentType,
   Job,
   QuestionType,
+  TalentDetail,
+  TalentSearchResponse,
+  TalentSpotlightResponse,
   WorkplaceType,
 } from '../types/api';
 
@@ -156,4 +159,14 @@ export const adminApi = {
       method: 'PUT',
       body: { questions },
     }),
+  talentSpotlight: () => apiFetch<TalentSpotlightResponse>('/admin/talent/spotlight'),
+  searchTalent: (params: { q: string; page?: number; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.q.trim()) qs.set('q', params.q.trim());
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const query = qs.toString();
+    return apiFetch<TalentSearchResponse>(`/admin/talent${query ? `?${query}` : ''}`);
+  },
+  getTalent: (candidateId: string) => apiFetch<TalentDetail>(`/admin/talent/${candidateId}`),
 };

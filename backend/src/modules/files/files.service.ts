@@ -67,16 +67,34 @@ export class FilesService {
       return true;
     }
     if (!user.roles.includes('employer')) return false;
-    return Boolean(
-      await this.prisma.application.findFirst({
-        where: {
-          resume: { fileId },
-          job: {
-            company: {
-              members: { some: { userId: user.id, status: 'active' } },
-            },
+    const applied = await this.prisma.application.findFirst({
+      where: {
+        resume: { fileId },
+        job: {
+          company: {
+            members: { some: { userId: user.id, status: 'active' } },
           },
         },
+      },
+      select: { id: true },
+    });
+    if (applied) return true;
+
+    const visibleResume = await this.prisma.candidateResume.findFirst({
+      where: {
+        fileId,
+        candidate: {
+          profileVisibility: { in: ['public', 'employers'] },
+          user: { accountStatus: 'active' },
+        },
+      },
+      select: { id: true },
+    });
+    if (!visibleResume) return false;
+
+    return Boolean(
+      await this.prisma.companyMember.findFirst({
+        where: { userId: user.id, status: 'active' },
         select: { id: true },
       }),
     );

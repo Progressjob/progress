@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'reac
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import {
+  isCompanyCvSearch,
   isCompanyEditJob,
   isCompanyJobsList,
   isCompanyPostJob,
@@ -125,6 +126,18 @@ export const CompanyPortalLayout: React.FC = () => {
                 Hiring home
               </NavLink>
             )}
+            <NavLink
+              to={
+                companyId
+                  ? `/company/${companyId}/cv-search`
+                  : companies[0]
+                    ? `/company/${companies[0].id}/cv-search`
+                    : '/company'
+              }
+              className={() => navActive(isCompanyCvSearch(location.pathname, companyId))}
+            >
+              CV search
+            </NavLink>
           </nav>
 
           <div className="nav-auth">

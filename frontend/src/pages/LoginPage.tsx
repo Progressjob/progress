@@ -10,6 +10,8 @@ export function getValidRedirect(from: string | null | undefined, roles: string[
     const isPublic =
       from === '/' ||
       from === '/jobs' ||
+      from === '/cv-search' ||
+      from.startsWith('/cv-search/') ||
       (from.startsWith('/jobs/') && !from.endsWith('/apply')) ||
       from === '/contact';
 

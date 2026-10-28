@@ -9,9 +9,12 @@ import { BlurText } from '../components/reactbits/BlurText';
 import { ShinyText } from '../components/reactbits/ShinyText';
 import { SpotlightCard } from '../components/reactbits/SpotlightCard';
 import { CountUp } from '../components/reactbits/CountUp';
+import { useAuth } from '../auth/AuthContext';
+import { GuestJobAccessNote, JobDetailLink } from '../components/JobDetailLink';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -343,7 +346,12 @@ export const LandingPage: React.FC = () => {
           <div>
             <span className="section-eyebrow">Verified Vacancies</span>
             <h2 className="section-title">Featured Opportunities</h2>
-            <p className="section-subtitle">Handpicked roles open for direct candidate application</p>
+            <p className="section-subtitle">
+              {user
+                ? 'Handpicked roles open for direct candidate application'
+                : 'Handpicked roles — sign in to open a vacancy and see how to apply'}
+            </p>
+            {!user && <GuestJobAccessNote />}
           </div>
           <Link to="/jobs" className="btn-view-all-jobs">
             <span>Explore All Vacancies</span>
@@ -370,7 +378,7 @@ export const LandingPage: React.FC = () => {
                   <div className="job-card-meta">
                     <span className="job-company-name">{job.company?.name ?? 'Progress Partner'}</span>
                     <h3 className="job-card-title">
-                      <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
+                      <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
                     </h3>
                   </div>
                 </div>
@@ -408,12 +416,12 @@ export const LandingPage: React.FC = () => {
                   <span className="job-deadline">
                     Closing: {new Date(job.applicationDeadline).toLocaleDateString()}
                   </span>
-                  <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
-                    <span>View Role</span>
+                  <JobDetailLink slug={job.slug} className="btn-card-apply">
+                    <span>{user ? 'View Role' : 'Sign in to view'}</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </Link>
+                  </JobDetailLink>
                 </div>
               </SpotlightCard>
             ))}

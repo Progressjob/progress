@@ -68,9 +68,14 @@ export const CompanyHomePage: React.FC = () => {
                 {c.industry?.name ?? 'Industry'} • Verification: {c.verificationStatus}
                 {c.canSelfPublishJobs ? ' • Direct posting enabled' : ' • Jobs reviewed by admin'}
               </p>
-              <Link to={`/company/${c.id}/jobs`} className="btn btn-sm">
-                Job postings →
-              </Link>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <Link to={`/company/${c.id}/jobs`} className="btn btn-sm">
+                  Job postings →
+                </Link>
+                <Link to={`/company/${c.id}/cv-search`} className="btn btn-sm btn-secondary">
+                  CV search →
+                </Link>
+              </div>
             </div>
           ))}
         </div>

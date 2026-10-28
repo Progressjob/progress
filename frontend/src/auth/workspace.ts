@@ -37,6 +37,17 @@ export function hiringDestination(companyId?: string | null): string {
   return companyId ? postJobPath(companyId) : '/employer/setup';
 }
 
+export function employerCvPath(companyId: string, candidateId: string): string {
+  return `/company/${companyId}/cv-search/${candidateId}`;
+}
+
+/** After switching a candidate into hiring, open the CV they selected when possible. */
+export function destinationAfterHire(companyId: string, next?: string | null): string {
+  const match = next?.match(/^\/cv-search\/([0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12})$/i);
+  if (match) return employerCvPath(companyId, match[1]);
+  return hiringDestination(companyId);
+}
+
 export function employerHomeDestination(companyId?: string | null): string {
   return companyId ? employerJobsPath(companyId) : '/employer/setup';
 }

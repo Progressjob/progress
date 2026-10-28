@@ -363,3 +363,54 @@ export interface AdminCandidateUser {
   } | null;
   applications: AdminCandidateApplication[];
 }
+
+export interface TalentCard {
+  id: string;
+  firstName: string;
+  lastName: string;
+  photoFileId?: string | null;
+  headline?: string | null;
+  currentTitle?: string | null;
+  city?: string | null;
+  region?: string | null;
+  country?: string | null;
+  gender?: string | null;
+  yearsExperience?: number | string | null;
+  summary?: string | null;
+  availabilityStatus?: string | null;
+}
+
+export interface TalentResume {
+  id: string;
+  title: string;
+  fileId: string;
+  originalFilename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+}
+
+export interface TalentDetail extends TalentCard {
+  email?: string | null;
+  phone?: string | null;
+  websiteUrl?: string | null;
+  careerLevel?: string | null;
+  managerialExperience?: string | null;
+  educations: CandidateEducation[];
+  experiences: Array<Omit<CandidateExperience, 'salary'>>;
+  skills: CandidateSkillLink[];
+  certifications: CandidateCertification[];
+  languages: CandidateLanguage[];
+  resume?: TalentResume | null;
+}
+
+export interface TalentSearchResponse {
+  items: TalentCard[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface TalentSpotlightResponse {
+  searchableCount: number;
+  items: TalentCard[];
+}
