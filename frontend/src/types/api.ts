@@ -392,11 +392,12 @@ export interface TalentResume {
 export interface TalentDetail extends TalentCard {
   email?: string | null;
   phone?: string | null;
+  address?: string | null;
   websiteUrl?: string | null;
   careerLevel?: string | null;
   managerialExperience?: string | null;
   educations: CandidateEducation[];
-  experiences: Array<Omit<CandidateExperience, 'salary'>>;
+  experiences: CandidateExperience[];
   skills: CandidateSkillLink[];
   certifications: CandidateCertification[];
   languages: CandidateLanguage[];

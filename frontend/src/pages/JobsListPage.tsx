@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { taxonomyApi } from '../api/taxonomy';
+import { publicFileUrl } from '../api/files';
 import type { Category, EmploymentType, WorkplaceType } from '../types/api';
 import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
 import { useAuth } from '../auth/AuthContext';
@@ -17,6 +18,32 @@ function flattenCategories(categories: Category[]): Category[] {
     }
   }
   return result;
+}
+
+function timeAgo(iso?: string | null): string {
+  if (!iso) return 'Recently';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return 'Recently';
+  const days = Math.max(0, Math.floor((Date.now() - then) / 86_400_000));
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 14) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 8) return `${weeks}w ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+function deadlineInfo(iso: string): { text: string; urgent: boolean } {
+  const end = new Date(iso);
+  if (Number.isNaN(end.getTime())) return { text: iso, urgent: false };
+  const diffDays = Math.ceil((end.getTime() - Date.now()) / 86_400_000);
+  const formatted = end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (diffDays < 0) return { text: `Closed on ${formatted}`, urgent: true };
+  if (diffDays === 0) return { text: 'Closing today', urgent: true };
+  if (diffDays === 1) return { text: '1 day left to apply', urgent: true };
+  if (diffDays <= 7) return { text: `${diffDays} days left (${formatted})`, urgent: true };
+  return { text: `Deadline: ${formatted}`, urgent: false };
 }
 
 export const JobsListPage: React.FC = () => {
@@ -50,6 +77,11 @@ export const JobsListPage: React.FC = () => {
     queryFn: () => taxonomyApi.categories(),
   });
 
+  const locationsQuery = useQuery({
+    queryKey: ['taxonomy', 'locations'],
+    queryFn: () => taxonomyApi.locations(),
+  });
+
   const jobsQuery = useQuery({
     queryKey: [
       'jobs',
@@ -69,6 +101,7 @@ export const JobsListPage: React.FC = () => {
   });
 
   const categories = flattenCategories(categoriesQuery.data ?? []);
+  const locations = locationsQuery.data ?? [];
   const jobsData = jobsQuery.data;
   const totalPages = jobsData ? Math.max(1, Math.ceil(jobsData.total / jobsData.limit)) : 1;
 
@@ -79,9 +112,17 @@ export const JobsListPage: React.FC = () => {
   ];
 
   const regionOptions: DropdownOption[] = [
-    { value: '', label: 'All Regions' },
-    { value: 'adama-oromia', label: 'Adama' },
-    { value: 'bishoftu-oromia', label: 'Bishoftu' },
+    { value: '', label: 'All Locations / Cities' },
+    ...locations.map((loc) => ({ value: loc.slug, label: loc.name })),
+    ...(locations.length === 0
+      ? [
+        { value: 'addis-ababa', label: 'Addis Ababa' },
+        { value: 'adama-oromia', label: 'Adama' },
+        { value: 'bishoftu-oromia', label: 'Bishoftu' },
+        { value: 'dukem-oromia', label: 'Dukem' },
+        { value: 'hawassa', label: 'Hawassa' },
+      ]
+      : []),
   ];
 
   const employmentTypeOptions: DropdownOption[] = [
@@ -94,7 +135,7 @@ export const JobsListPage: React.FC = () => {
   ];
 
   const workplaceTypeOptions: DropdownOption[] = [
-    { value: '', label: 'All Workplaces' },
+    { value: '', label: 'All Workplace Types' },
     { value: 'on_site', label: 'On-Site' },
     { value: 'hybrid', label: 'Hybrid' },
     { value: 'remote', label: 'Remote' },
@@ -111,22 +152,30 @@ export const JobsListPage: React.FC = () => {
     setSearchParams({});
   };
 
+  const hasActiveFilters = Boolean(q || category || location || employmentType || workplaceType || careerLevel);
+
   return (
     <div className="jobs-list-container">
-      {/* Page Header */}
+      {/* Ethiojobs/Geezjobs style Hero Header */}
       <div className="board-header">
-        <span className="section-eyebrow">Verified Vacancies</span>
+        <span className="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Progress Verified Vacancies
+        </span>
         <h1 className="board-title">Explore Career Opportunities</h1>
         <p className="board-subtitle">
           {user
-            ? 'Handpicked roles across Adama, Bishoftu, and leading Ethiopian enterprises. Direct employer applications.'
-            : 'Browse open roles. Sign in to view full job details and how to apply.'}
+          ? 'Handpicked vacancies across Adama, Bishoftu, Dukem, Addis Ababa, and leading industrial & corporate employers in Ethiopia.'
+            : 'Browse open roles from verified employers. Sign in to access full direct application details.'}
         </p>
         {!user && <GuestJobAccessNote />}
       </div>
 
-      {/* Filter Capsule Card */}
+      {/* Modern Filter Capsule Card */}
       <div className="jobs-filter-card">
+        {/* Main Search Row */}
         <div className="filter-grid-row">
           {/* Keyword Input */}
           <div className="filter-input-wrap">
@@ -136,7 +185,7 @@ export const JobsListPage: React.FC = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search by job title or keyword..."
+              placeholder="Job title, keywords, or skills..."
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
@@ -144,6 +193,19 @@ export const JobsListPage: React.FC = () => {
               }}
               aria-label="Search jobs"
             />
+            {q && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => {
+                  setQ('');
+                  setPage(1);
+                }}
+                aria-label="Clear keyword"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           {/* Category Dropdown */}
@@ -174,7 +236,7 @@ export const JobsListPage: React.FC = () => {
                 setPage(1);
               }}
               options={regionOptions}
-              placeholder="All Regions"
+              placeholder="All Locations"
               icon={
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
@@ -185,6 +247,7 @@ export const JobsListPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Secondary Filter Row */}
         <div className="filter-secondary-row">
           <div className="filter-dropdown-wrap-sm">
             <CustomDropdown
@@ -206,13 +269,18 @@ export const JobsListPage: React.FC = () => {
                 setPage(1);
               }}
               options={workplaceTypeOptions}
-              placeholder="Workplace Model"
+              placeholder="Workplace Type"
             />
           </div>
 
-          <button type="button" className="btn-clear-filters" onClick={handleReset}>
-            Reset Filters
-          </button>
+          {hasActiveFilters && (
+            <button type="button" className="btn-clear-filters" onClick={handleReset}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Reset Filters
+            </button>
+          )}
 
           {jobsData && (
             <span className="results-count-text">
@@ -220,6 +288,43 @@ export const JobsListPage: React.FC = () => {
             </span>
           )}
         </div>
+
+        {/* Active Filter Badges */}
+        {hasActiveFilters && (
+          <div className="active-filters-bar">
+            <span className="active-filters-label">Active Filters:</span>
+            {q && (
+              <span className="active-filter-chip">
+                Keyword: "{q}"
+                <button type="button" onClick={() => setQ('')}>✕</button>
+              </span>
+            )}
+            {category && (
+              <span className="active-filter-chip">
+                {categoryOptions.find((c) => c.value === category)?.label || category}
+                <button type="button" onClick={() => setCategory('')}>✕</button>
+              </span>
+            )}
+            {location && (
+              <span className="active-filter-chip">
+                {regionOptions.find((r) => r.value === location)?.label || location}
+                <button type="button" onClick={() => setLocation('')}>✕</button>
+              </span>
+            )}
+            {employmentType && (
+              <span className="active-filter-chip">
+                {employmentTypeOptions.find((e) => e.value === employmentType)?.label || employmentType}
+                <button type="button" onClick={() => setEmploymentType('')}>✕</button>
+              </span>
+            )}
+            {workplaceType && (
+              <span className="active-filter-chip">
+                {workplaceTypeOptions.find((w) => w.value === workplaceType)?.label || workplaceType}
+                <button type="button" onClick={() => setWorkplaceType('')}>✕</button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Loading & Error States */}
@@ -241,80 +346,131 @@ export const JobsListPage: React.FC = () => {
         <div className="empty-results-box">
           <div className="empty-icon-circle">💼</div>
           <h3>No matching vacancies found</h3>
-          <p>Try adjusting your search keywords or resetting filters to explore all open opportunities.</p>
+          <p>Try adjusting your search keywords, location, or resetting filters to explore all opportunities.</p>
           <button type="button" className="btn-nav-register" onClick={handleReset}>
             Reset All Filters
           </button>
         </div>
       )}
 
-      {/* Jobs Feed Grid */}
+      {/* Jobs Feed Grid (Geezjobs & Ethiojobs Style) */}
       <div className="jobs-board-grid">
-        {jobsData?.data.map((job) => (
-          <div key={job.id} className="premium-job-card">
-            <div className="job-card-header">
-              <div className="company-badge">
-                {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
-              </div>
-              <div className="job-card-meta">
-                <span className="job-company-name">
-                  {job.company ? job.company.name : 'Progress Partner Employer'}
-                </span>
-                <h2 className="job-card-title">
-                  <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
-                </h2>
-              </div>
-            </div>
+                {jobsData?.data.map((job) => {
+                  const deadline = deadlineInfo(job.applicationDeadline);
+                  const posted = timeAgo(job.postedAt || job.createdAt);
+                  const logoUrl = job.company?.logo?.id ? publicFileUrl(job.company.logo.id) : null;
+                  const companyInitial = job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P';
 
-            <div className="job-card-tags">
-              {job.location && (
-                <span className="tag-pill tag-location">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
+                  return (
+            <div key={job.id} className="premium-job-card">
+              <div className="job-card-main-content">
+                {/* Company Logo / Monogram */}
+                <div className="company-badge-wrap">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt={job.company?.name || ''} className="company-logo-img" />
+                  ) : (
+                    <div className="company-badge">{companyInitial}</div>
+                  )}
+                </div>
+
+                {/* Job Info */}
+                <div className="job-card-meta">
+                  <div className="job-card-top-row">
+                    <span className="job-company-name">
+                      {job.company ? job.company.name : 'Progress Partner Employer'}
+                    </span>
+                    {job.company?.verificationStatus === 'verified' && (
+                      <span className="verified-badge-pill" title="Verified Employer">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        </svg>
+                        Verified
+                      </span>
+                    )}
+                    <span className="job-posted-time">• {posted}</span>
+                  </div>
+
+                  <h2 className="job-card-title">
+                    <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
+                  </h2>
+
+                  {/* Badges / Meta Pills */}
+                  <div className="job-card-tags">
+                    {job.location && (
+                      <span className="tag-pill tag-location">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
+                          <circle cx="12" cy="10" r="3" strokeWidth="2" />
+                        </svg>
+                        {job.location.name}
+                      </span>
+                    )}
+                    <span className="tag-pill tag-type">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
+                      </svg>
+                      {job.employmentType.replace('_', ' ').toUpperCase()}
+                    </span>
+                    {job.workplaceType && (
+                      <span className="tag-pill tag-workplace">
+                        {job.workplaceType.replace('_', ' ').toUpperCase()}
+                      </span>
+                    )}
+                    {job.category && (
+                      <span className="tag-pill tag-category">{job.category.name}</span>
+                    )}
+                    {(job.experienceMinYears != null || job.experienceMaxYears != null) && (
+                      <span className="tag-pill tag-exp">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                          <polyline points="12 6 12 12 16 14" strokeWidth="2" />
+                        </svg>
+                        {job.experienceMinYears ? `${job.experienceMinYears}+ yrs exp` : `Up to ${job.experienceMaxYears} yrs exp`}
+                      </span>
+                    )}
+                  </div>
+
+                  {job.summary && <p className="job-card-snippet">{job.summary}</p>}
+
+                  {job.salaryVisibility && (job.salaryMin || job.salaryMax) && (
+                    <div className="job-salary-pill">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <path d="M12 6v12M15 9.5a3.5 3.5 0 0 0-7 0c0 2 1.5 3 3.5 3.5s3.5 1.5 3.5 3.5a3.5 3.5 0 0 1-7 0" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      <span className="salary-amount">
+                        {job.salaryCurrency ?? 'ETB'}{' '}
+                        {job.salaryMin ? Number(job.salaryMin).toLocaleString() : ''}
+                        {job.salaryMin && job.salaryMax ? ' - ' : ''}
+                        {job.salaryMax ? Number(job.salaryMax).toLocaleString() : ''}
+                      </span>
+                      <span className="salary-period">/ month</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Footer: Deadline & Action CTA */}
+              <div className="job-card-footer">
+                <span className={`job-deadline-tag ${deadline.urgent ? 'is-urgent' : ''}`}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                    <polyline points="12 6 12 12 16 14" strokeWidth="2" />
                   </svg>
-                  {job.location.name}
+                  {deadline.text}
                 </span>
-              )}
-              <span className="tag-pill tag-type">
-                {job.employmentType.replace('_', ' ').toUpperCase()}
-              </span>
-              {job.workplaceType && (
-                <span className="tag-pill tag-workplace">
-                  {job.workplaceType.replace('_', ' ').toUpperCase()}
-                </span>
-              )}
-              {job.category && (
-                <span className="tag-pill tag-category">{job.category.name}</span>
-              )}
-            </div>
 
-            {job.summary && <p className="job-card-snippet">{job.summary}</p>}
-
-            {job.salaryVisibility && (job.salaryMin || job.salaryMax) && (
-              <div className="job-salary">
-                <span className="salary-amount">
-                  {job.salaryCurrency ?? 'ETB'}{' '}
-                  {job.salaryMin ? Number(job.salaryMin).toLocaleString() : ''}
-                  {job.salaryMin && job.salaryMax ? ' - ' : ''}
-                  {job.salaryMax ? Number(job.salaryMax).toLocaleString() : ''}
-                </span>
-                <span className="salary-period">/ month</span>
+                <JobDetailLink slug={job.slug} className="btn-card-apply">
+                  <span>{user ? 'View Position' : 'Sign in to Apply'}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </JobDetailLink>
               </div>
-            )}
-
-            <div className="job-card-footer">
-              <span className="job-deadline">
-                Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-              </span>
-              <JobDetailLink slug={job.slug} className="btn-card-apply">
-                <span>{user ? 'View Position' : 'Sign in to view'}</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </JobDetailLink>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination */}
@@ -324,7 +480,10 @@ export const JobsListPage: React.FC = () => {
             type="button"
             className="pagination-btn"
             disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => {
+              setPage((p) => Math.max(1, p - 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             ← Previous
           </button>
@@ -335,12 +494,15 @@ export const JobsListPage: React.FC = () => {
             type="button"
             className="pagination-btn"
             disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => {
+              setPage((p) => p + 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             Next →
           </button>
         </div>
       )}
     </div>
-  );
-};
+                  );
+                };

@@ -9,6 +9,8 @@ import { RequireRole, RequireSignedIn } from './components/RequireRole';
 import { LandingPage } from './pages/LandingPage';
 import { JobsListPage } from './pages/JobsListPage';
 import { JobDetailPage } from './pages/JobDetailPage';
+import { CompaniesListPage } from './pages/CompaniesListPage';
+import { CompanyDetailPage } from './pages/CompanyDetailPage';
 import { ContactPage } from './pages/ContactPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -55,8 +57,8 @@ export function App(): React.ReactElement {
               <Route path="/jobs" element={<JobsListPage />} />
               <Route path="/jobs/:slug" element={<JobDetailPage />} />
               <Route path="/jobs/:slug/apply" element={<ApplyJobPage />} />
-              <Route path="/companies" element={<Navigate to="/jobs" replace />} />
-              <Route path="/companies/:slug" element={<Navigate to="/jobs" replace />} />
+              <Route path="/companies" element={<CompaniesListPage />} />
+              <Route path="/companies/:slug" element={<CompanyDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route
                 path="/cv-search"

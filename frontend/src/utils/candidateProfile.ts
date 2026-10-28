@@ -5,7 +5,9 @@ export function locationLine(profile: CandidateProfile): string {
   return [profile.city, profile.region, profile.country].filter(Boolean).join(', ');
 }
 
-export function hasNoExperienceFlag(profile: CandidateProfile): boolean {
+export function hasNoExperienceFlag(
+  profile: Pick<CandidateProfile, 'yearsExperience'> & { experiences?: unknown[] | null },
+): boolean {
   if ((profile.experiences ?? []).length > 0) return false;
   return profile.yearsExperience != null && Number(profile.yearsExperience) === 0;
 }

@@ -24,15 +24,15 @@ export const Layout: React.FC = () => {
   const profile = profileQuery.data;
   const profileStarted = Boolean(
     profile?.photoFileId ||
-      profile?.summary?.trim() ||
-      profile?.city ||
-      profile?.region ||
-      profile?.educations?.length ||
-      profile?.experiences?.length ||
-      profile?.skills?.length ||
-      profile?.certifications?.length ||
-      profile?.languages?.length ||
-      profile?.resumes?.length,
+    profile?.summary?.trim() ||
+    profile?.city ||
+    profile?.region ||
+    profile?.educations?.length ||
+    profile?.experiences?.length ||
+    profile?.skills?.length ||
+    profile?.certifications?.length ||
+    profile?.languages?.length ||
+    profile?.resumes?.length,
   );
 
   useEffect(() => {
@@ -121,6 +121,12 @@ export const Layout: React.FC = () => {
               className={() => navActive(isSectionPath(location.pathname, '/jobs'))}
             >
               Find Jobs
+            </NavLink>
+            <NavLink
+              to="/companies"
+              className={() => navActive(isSectionPath(location.pathname, '/companies'))}
+            >
+              Employers
             </NavLink>
             <NavLink
               to="/cv-search"
@@ -249,6 +255,9 @@ export const Layout: React.FC = () => {
               </li>
               <li>
                 <Link to="/jobs">Browse Jobs</Link>
+              </li>
+              <li>
+                <Link to="/companies">Partner Employers</Link>
               </li>
               <li>
                 <Link to="/contact">Contact Dukem HQ</Link>
