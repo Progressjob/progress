@@ -48,8 +48,8 @@ export class PublicJobsController {
     @Query('career_level') careerLevel?: string,
     @Query('workplace_type', new ParseEnumPipe(WorkplaceType, { optional: true }))
     workplaceType?: WorkplaceType,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ) {
     return this.jobs.listPublic({
       q,

@@ -1,11 +1,54 @@
-import { writeFileSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { existsSync, unlinkSync, watch, writeFileSync } from 'fs';
+import { createRequire } from 'module';
+import { dirname, join } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
+
+const load = createRequire(__filename);
+
+type ModuleNotFound = NodeJS.ErrnoException & { requireStack?: string[] };
+
+function loadAppModule(): typeof import('./app.module').AppModule {
+  return (load('./app.module') as typeof import('./app.module')).AppModule;
+}
+
+function missingOutputFile(err: ModuleNotFound): string | null {
+  const spec = /Cannot find module '([^']+)'/.exec(err.message)?.[1];
+  const from = err.requireStack?.[0];
+  if (!spec || !from || !spec.startsWith('.')) return null;
+  const base = join(dirname(from), spec);
+  return base.endsWith('.js') ? base : `${base}.js`;
+}
+
+function launch(attempt = 0): void {
+  let AppModule: ReturnType<typeof loadAppModule>;
+  try {
+    AppModule = loadAppModule();
+  } catch (err) {
+    const moduleErr = err as ModuleNotFound;
+    const isDev = (process.env.NODE_ENV ?? 'development') === 'development';
+    if (!isDev || moduleErr?.code !== 'MODULE_NOT_FOUND' || attempt >= 8) throw err;
+    const missingJs = missingOutputFile(moduleErr);
+    if (missingJs && existsSync(missingJs)) {
+      launch(attempt + 1);
+      return;
+    }
+    const watchDir = missingJs ? dirname(missingJs) : __dirname;
+    try {
+      const watcher = watch(watchDir, () => {
+        watcher.close();
+        launch(attempt + 1);
+      });
+    } catch {
+      throw err;
+    }
+    return;
+  }
+  void bootstrap(AppModule);
+}
 
 const devPortFile = join(__dirname, '..', '.dev-server-port');
 
@@ -66,7 +109,7 @@ async function listenWithPortFallback(app: INestApplication, preferredPort: numb
   throw new Error(`Failed to bind a port starting at ${preferredPort}`);
 }
 
-async function bootstrap(): Promise<void> {
+async function bootstrap(AppModule: ReturnType<typeof loadAppModule>): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
   app.use(helmet());
@@ -99,4 +142,4 @@ async function bootstrap(): Promise<void> {
   }
   await listenWithPortFallback(app, preferredPort);
 }
-void bootstrap();
+launch();

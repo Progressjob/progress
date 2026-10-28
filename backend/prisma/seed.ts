@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PROGRESS_HIRE_EMAIL } from '../src/common/progress-contact';
+import { seedDemoData } from './seed-demo-data';
 
 const prisma = new PrismaClient();
 
@@ -127,6 +128,7 @@ async function main(): Promise<void> {
 
   if ((process.env.NODE_ENV ?? 'development') !== 'production') {
     await seedDevelopmentData(roles, admin.id);
+    await seedDemoData(prisma);
   }
 }
 

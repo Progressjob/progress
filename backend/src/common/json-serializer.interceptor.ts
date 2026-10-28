@@ -2,13 +2,12 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-function isDecimal(value: unknown): value is { toNumber: () => number; toString: () => string } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    value.constructor?.name === 'Decimal' &&
-    typeof (value as { toNumber?: unknown }).toNumber === 'function'
-  );
+function isDecimal(value: object): value is { toNumber: () => number; toString: () => string } {
+  const toNumber = (value as { toNumber?: unknown }).toNumber;
+  if (typeof toNumber !== 'function') return false;
+  // Prisma ships a minified Decimal class (constructor name "i"); the public tag is still Decimal.
+  const tag = Object.prototype.toString.call(value);
+  return tag === '[object Decimal]' || value.constructor?.name === 'Decimal';
 }
 
 function sanitize(value: unknown, seen = new WeakSet<object>()): unknown {
@@ -17,14 +16,14 @@ function sanitize(value: unknown, seen = new WeakSet<object>()): unknown {
     return Number.isSafeInteger(asNumber) ? asNumber : value.toString();
   }
   if (value instanceof Date || Buffer.isBuffer(value)) return value;
-  if (isDecimal(value)) {
-    const asNumber = value.toNumber();
-    return Number.isFinite(asNumber) ? asNumber : value.toString();
-  }
-  if (Array.isArray(value)) return value.map((item) => sanitize(item, seen));
   if (value && typeof value === 'object') {
+    if (isDecimal(value)) {
+      const asNumber = value.toNumber();
+      return Number.isFinite(asNumber) ? asNumber : value.toString();
+    }
     if (seen.has(value)) return undefined;
     seen.add(value);
+    if (Array.isArray(value)) return value.map((item) => sanitize(item, seen));
     return Object.fromEntries(
       Object.entries(value).map(([key, nested]) => [key, sanitize(nested, seen)]),
     );
