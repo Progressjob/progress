@@ -5,13 +5,12 @@ import { candidateApi } from '../api/candidate';
 import { apiDownloadFile, apiOpenFile } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import {
-  CAREER_LEVELS,
+  EXPERIENCE_STAGES,
   GENDER_OPTIONS,
   MANAGERIAL_EXPERIENCE_OPTIONS,
-  YEARS_EXPERIENCE_OPTIONS,
 } from '../constants/candidateProfile';
 import { EDUCATION_LEVELS } from '../constants/educationLevels';
-import { hasNoExperienceFlag, yearsSelectValue } from '../utils/candidateProfile';
+import { experienceStageSelectValue, hasNoExperienceFlag } from '../utils/candidateProfile';
 import type {
   CandidateCertification,
   CandidateEducation,
@@ -162,7 +161,6 @@ export const CandidateProfilePage: React.FC = () => {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [careerLevel, setCareerLevel] = useState('');
   const [managerialExperience, setManagerialExperience] = useState('');
-  const [yearsSelect, setYearsSelect] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
   const [country, setCountry] = useState('');
@@ -230,7 +228,7 @@ export const CandidateProfilePage: React.FC = () => {
         websiteUrl: websiteUrl.trim() || null,
         careerLevel: careerLevel.trim() || null,
         managerialExperience: managerialExperience.trim() || null,
-        yearsExperience: yearsSelect === '' ? null : Number(yearsSelect),
+        yearsExperience: EXPERIENCE_STAGES.find((stage) => stage.label === careerLevel)?.years ?? null,
         city: city.trim() || null,
         region: region.trim() || null,
         country: country.trim() || null,
@@ -443,9 +441,8 @@ export const CandidateProfilePage: React.FC = () => {
     setGender(profile.gender ?? '');
     setHeadline(profile.headline ?? '');
     setWebsiteUrl(profile.websiteUrl ?? '');
-    setCareerLevel(profile.careerLevel ?? '');
+    setCareerLevel(experienceStageSelectValue(profile));
     setManagerialExperience(profile.managerialExperience ?? '');
-    setYearsSelect(yearsSelectValue(profile.yearsExperience));
     setCity(profile.city ?? '');
     setRegion(profile.region ?? '');
     setCountry(profile.country ?? '');
@@ -547,9 +544,8 @@ export const CandidateProfilePage: React.FC = () => {
     gender !== (profile.gender ?? '') ||
     headline !== (profile.headline ?? '') ||
     websiteUrl !== (profile.websiteUrl ?? '') ||
-    careerLevel !== (profile.careerLevel ?? '') ||
+    careerLevel !== experienceStageSelectValue(profile) ||
     managerialExperience !== (profile.managerialExperience ?? '') ||
-    yearsSelect !== yearsSelectValue(profile.yearsExperience) ||
     city !== (profile.city ?? '') ||
     region !== (profile.region ?? '') ||
     country !== (profile.country ?? '') ||
@@ -909,9 +905,9 @@ export const CandidateProfilePage: React.FC = () => {
                 <label htmlFor="pb-career">Career level</label>
                 <select id="pb-career" value={careerLevel} onChange={(e) => setCareerLevel(e.target.value)}>
                   <option value="">Not specified</option>
-                  {CAREER_LEVELS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {EXPERIENCE_STAGES.map((stage) => (
+                    <option key={stage.label} value={stage.label}>
+                      {stage.label}
                     </option>
                   ))}
                 </select>
@@ -927,16 +923,6 @@ export const CandidateProfilePage: React.FC = () => {
                   {MANAGERIAL_EXPERIENCE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="pb-years">Years of experience</label>
-                <select id="pb-years" value={yearsSelect} onChange={(e) => setYearsSelect(e.target.value)}>
-                  {YEARS_EXPERIENCE_OPTIONS.map((option) => (
-                    <option key={option.value || 'none'} value={option.value}>
-                      {option.label}
                     </option>
                   ))}
                 </select>

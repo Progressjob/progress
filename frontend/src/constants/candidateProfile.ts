@@ -1,14 +1,14 @@
 export const GENDER_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
 
-export const CAREER_LEVELS = [
-  'Student / Intern',
-  'Entry Level (Fresh Graduate)',
-  'Junior',
-  'Mid-Level',
-  'Senior',
-  'Manager',
-  'Director / Executive',
-];
+export const EXPERIENCE_STAGES = [
+  { label: 'Intern / Fresh Graduate (0)', years: 0 },
+  { label: 'Junior (0-2)', years: 1 },
+  { label: 'Mid-Level (3-5)', years: 4 },
+  { label: 'Senior (6-10)', years: 8 },
+  { label: 'Lead / Manager (10+)', years: 12 },
+] as const;
+
+export type ExperienceStage = (typeof EXPERIENCE_STAGES)[number];
 
 export const MANAGERIAL_EXPERIENCE_OPTIONS = [
   'None',
@@ -16,16 +16,4 @@ export const MANAGERIAL_EXPERIENCE_OPTIONS = [
   '1-2 years',
   '3-5 years',
   '5+ years',
-];
-
-export const YEARS_EXPERIENCE_OPTIONS = [
-  { value: '', label: 'Not specified' },
-  { value: '0', label: '0 years' },
-  { value: '0.5', label: '0-1 years' },
-  { value: '1', label: '1 year' },
-  { value: '2', label: '2 years' },
-  { value: '3', label: '3 years' },
-  { value: '5', label: '5 years' },
-  { value: '7', label: '5-7 years' },
-  { value: '10', label: '10+ years' },
 ];

@@ -1,4 +1,4 @@
-import { YEARS_EXPERIENCE_OPTIONS } from '../constants/candidateProfile';
+import { EXPERIENCE_STAGES, type ExperienceStage } from '../constants/candidateProfile';
 import type { CandidateProfile } from '../types/api';
 
 export function locationLine(profile: CandidateProfile): string {
@@ -26,22 +26,50 @@ export function profileStrength(profile: CandidateProfile): number {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
-export function yearsExperienceLabel(value?: number | string | null): string {
-  if (value == null || value === '') return 'Not specified';
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return 'Not specified';
-  const match = YEARS_EXPERIENCE_OPTIONS.find((option) => option.value !== '' && Number(option.value) === numeric);
-  if (match) return match.label;
-  if (numeric === 1) return '1 year';
-  return `${numeric} years`;
+function stageFromYears(value?: number | string | null): ExperienceStage | undefined {
+  if (value == null || value === '') return undefined;
+  const years = Number(value);
+  if (!Number.isFinite(years)) return undefined;
+  if (years <= 0) return EXPERIENCE_STAGES[0];
+  if (years <= 2) return EXPERIENCE_STAGES[1];
+  if (years <= 5) return EXPERIENCE_STAGES[2];
+  if (years <= 10) return EXPERIENCE_STAGES[3];
+  return EXPERIENCE_STAGES[4];
 }
 
-export function yearsSelectValue(value?: number | string | null): string {
-  if (value == null || value === '') return '';
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return '';
-  const match = YEARS_EXPERIENCE_OPTIONS.find((option) => option.value !== '' && Number(option.value) === numeric);
-  return match?.value ?? String(numeric);
+export function matchExperienceStage(careerLevel?: string | null): ExperienceStage | undefined {
+  const value = careerLevel?.trim();
+  if (!value) return undefined;
+  const exact = EXPERIENCE_STAGES.find((stage) => stage.label === value);
+  if (exact) return exact;
+  const lower = value.toLowerCase();
+  if (lower.includes('intern') || lower.includes('student') || lower.includes('fresh') || lower.includes('entry')) {
+    return EXPERIENCE_STAGES[0];
+  }
+  if (lower.includes('junior')) return EXPERIENCE_STAGES[1];
+  if (lower.includes('mid')) return EXPERIENCE_STAGES[2];
+  if (lower.includes('senior')) return EXPERIENCE_STAGES[3];
+  if (
+    lower.includes('lead') ||
+    lower.includes('manager') ||
+    lower.includes('director') ||
+    lower.includes('executive')
+  ) {
+    return EXPERIENCE_STAGES[4];
+  }
+  return undefined;
+}
+
+export function experienceStageFromProfile(profile: Pick<CandidateProfile, 'careerLevel' | 'yearsExperience'>): ExperienceStage | undefined {
+  return matchExperienceStage(profile.careerLevel) ?? stageFromYears(profile.yearsExperience);
+}
+
+export function experienceStageLabel(profile: Pick<CandidateProfile, 'careerLevel' | 'yearsExperience'>): string {
+  return experienceStageFromProfile(profile)?.label ?? 'Not specified';
+}
+
+export function experienceStageSelectValue(profile: Pick<CandidateProfile, 'careerLevel' | 'yearsExperience'>): string {
+  return experienceStageFromProfile(profile)?.label ?? '';
 }
 
 export function isOpenToOpportunities(profile: CandidateProfile): boolean {

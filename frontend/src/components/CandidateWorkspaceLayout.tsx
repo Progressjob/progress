@@ -5,13 +5,13 @@ import { candidateApi } from '../api/candidate';
 import { filesApi, publicFileUrl } from '../api/files';
 import {
   displayOrFallback,
+  experienceStageLabel,
   isOpenToOpportunities,
   locationLine,
   nextVisibility,
   profileStrength,
   visibilityLabel,
   websiteHref,
-  yearsExperienceLabel,
 } from '../utils/candidateProfile';
 
 const TABS = [
@@ -214,15 +214,11 @@ export const CandidateWorkspaceLayout: React.FC = () => {
                 </li>
                 <li>
                   <span className="cw-fact-label">Career Level:</span>
-                  <span>{displayOrFallback(profile?.careerLevel)}</span>
+                  <span>{profile ? experienceStageLabel(profile) : 'Not specified'}</span>
                 </li>
                 <li>
                   <span className="cw-fact-label">Managerial Experience:</span>
                   <span>{displayOrFallback(profile?.managerialExperience)}</span>
-                </li>
-                <li>
-                  <span className="cw-fact-label">Years of experience:</span>
-                  <span>{yearsExperienceLabel(profile?.yearsExperience)}</span>
                 </li>
               </ul>
             </div>
