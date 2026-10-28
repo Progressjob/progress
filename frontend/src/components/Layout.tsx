@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { isExactPath, isSectionPath, navActive } from '../auth/nav';
 import { hiringDestination } from '../auth/workspace';
+import { candidateApi } from '../api/candidate';
 import { ProgressLogo } from './ProgressLogo';
 
 export const Layout: React.FC = () => {
@@ -13,6 +15,25 @@ export const Layout: React.FC = () => {
   const [switching, setSwitching] = useState(false);
   const firstCompanyId = user?.companyMemberships[0]?.companyId;
   const inCandidateWorkspace = !user || workspace === 'candidate';
+  const showProfileEntry = Boolean(user && inCandidateWorkspace && hasRole('candidate'));
+  const profileQuery = useQuery({
+    queryKey: ['candidate', 'profile'],
+    queryFn: () => candidateApi.getProfile(),
+    enabled: showProfileEntry,
+  });
+  const profile = profileQuery.data;
+  const profileStarted = Boolean(
+    profile?.photoFileId ||
+      profile?.summary?.trim() ||
+      profile?.city ||
+      profile?.region ||
+      profile?.educations?.length ||
+      profile?.experiences?.length ||
+      profile?.skills?.length ||
+      profile?.certifications?.length ||
+      profile?.languages?.length ||
+      profile?.resumes?.length,
+  );
 
   useEffect(() => {
     setMenuOpen(false);
@@ -102,46 +123,12 @@ export const Layout: React.FC = () => {
               Find Jobs
             </NavLink>
             <NavLink
-              to="/companies"
-              end
-              className={() => navActive(isSectionPath(location.pathname, '/companies'))}
-            >
-              Companies
-            </NavLink>
-            <NavLink
               to="/contact"
               end
               className={() => navActive(isExactPath(location.pathname, '/contact'))}
             >
               Contact
             </NavLink>
-
-            {user && inCandidateWorkspace && hasRole('candidate') && (
-              <>
-                <span className="nav-divider">|</span>
-                <NavLink
-                  to="/candidate/profile"
-                  end
-                  className={() => navActive(isExactPath(location.pathname, '/candidate/profile'))}
-                >
-                  My Profile
-                </NavLink>
-                <NavLink
-                  to="/candidate/resumes"
-                  end
-                  className={() => navActive(isExactPath(location.pathname, '/candidate/resumes'))}
-                >
-                  My CVs
-                </NavLink>
-                <NavLink
-                  to="/candidate/applications"
-                  end
-                  className={() => navActive(isExactPath(location.pathname, '/candidate/applications'))}
-                >
-                  My Applications
-                </NavLink>
-              </>
-            )}
 
             {hasRole('admin', 'moderator') && (
               <>
@@ -174,6 +161,27 @@ export const Layout: React.FC = () => {
                         ? 'Switch to hiring'
                         : 'Post a job'}
                 </button>
+                {showProfileEntry && (
+                  <NavLink
+                    to="/candidate/profile"
+                    className={() =>
+                      `btn-nav-profile${isSectionPath(location.pathname, '/candidate') ? ' is-active' : ''}`
+                    }
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path
+                        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <circle cx="9" cy="7" r="4" strokeWidth="2" />
+                      {profileStarted ? null : (
+                        <path d="M19 8v6M22 11h-6" strokeWidth="2" strokeLinecap="round" />
+                      )}
+                    </svg>
+                    <span>{profileStarted ? 'Profile' : 'Create profile'}</span>
+                  </NavLink>
+                )}
                 <div className="user-pill">
                   <div className="user-avatar-initial">
                     {user.firstName?.charAt(0) || 'U'}
@@ -235,9 +243,6 @@ export const Layout: React.FC = () => {
               </li>
               <li>
                 <Link to="/jobs">Browse Jobs</Link>
-              </li>
-              <li>
-                <Link to="/companies">Partner Companies</Link>
               </li>
               <li>
                 <Link to="/contact">Contact Dukem HQ</Link>

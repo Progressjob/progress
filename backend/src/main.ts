@@ -9,6 +9,16 @@ import { PrismaService } from './prisma/prisma.service';
 
 const devPortFile = join(__dirname, '..', '.dev-server-port');
 
+if (!(BigInt.prototype as { toJSON?: () => number | string }).toJSON) {
+  Object.defineProperty(BigInt.prototype, 'toJSON', {
+    configurable: true,
+    value() {
+      const asNumber = Number(this);
+      return Number.isSafeInteger(asNumber) ? asNumber : this.toString();
+    },
+  });
+}
+
 async function listenOnPort(app: INestApplication, port: number): Promise<void> {
   await app.listen(port);
 }

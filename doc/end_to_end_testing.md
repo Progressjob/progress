@@ -106,14 +106,15 @@ Run these in this order so later steps have data (a new job and a hiring profile
 
 **Pass:** Job detail shows title, company, deadline, and **Sign In to Apply** / **Create account** for guests.
 
-### 4.3 Company directory
+### 4.3 Public company directory
 
-1. Go to `/companies`.
-2. Confirm **Demo Technology PLC** is listed (verified companies only).
-3. Open `/companies/demo-technology-plc`.
-4. Confirm the sample job appears under open positions.
+The public company directory is retired so job-seekers follow jobs, not companies.
 
-**Pass:** Unverified companies never appear in the public directory.
+1. Go to `/companies` or `/companies/demo-technology-plc`.
+2. Confirm both URLs redirect to `/jobs`.
+3. On a job card, confirm the employer name is plain text (not a link).
+
+**Pass:** Header/footer have no Companies link. Admin still manages companies at `/admin/companies`.
 
 ### 4.4 Contact form
 
@@ -142,7 +143,7 @@ Suggested test user:
 | Phone | `+251911000000` |
 | Password | `Tester123!` |
 
-**Pass:** Redirect to `/jobs`. Nav shows Find Jobs, **Post a job**, My Profile, My CVs, and My Applications.
+**Pass:** Redirect to `/jobs`. Nav shows Find Jobs, Contact, **Post a job**, and **Create profile** next to the account pill.
 
 **Fail checks:**
 
@@ -155,7 +156,7 @@ Suggested test user:
 2. On `/employer/setup`, enter a hiring name (person or business), optional city/contact, and continue.
 3. Confirm `POST /auth/enable-employer` is idempotent: visiting setup again skips a second org and opens the job form.
 4. Submit a job. Default status is **pending_review** (not on `/jobs` until admin publishes).
-5. Click **Switch to finding work** next to the profile. Confirm candidate profile, CVs, and applications are still there.
+5. Click **Switch to finding work** next to the profile. Confirm **Create profile** is next to the account pill and `/candidate/profile` still loads.
 6. Open the public page for a job Tesfa posted (after admin publishes) and confirm it shows “You posted this job” with **Switch to hiring and edit**.
 7. Open **Junior Backend Developer** (or another job Tesfa did not post) and confirm **How to apply** shows Progress contact (`progressjobs8@gmail.com`).
 
@@ -169,23 +170,21 @@ Seed `employer@example.com` starts employer-only. **Switch to finding work** cal
 
 Login: `candidate@example.com` / `Candidate123!`
 
-### 6.1 Profile
+### 6.1 Profile builder
 
-1. Open `/candidate/profile`.
-2. Update headline, summary, city, region, years of experience, visibility.
-3. Save.
+1. Click **Create profile** next to the account pill (or open `/candidate/profile`).
+2. Confirm the page has identity, summary, experience, education, certifications, skills, languages, profile strength, and CV.
+3. Use **Edit profile** to change name/location, then add a summary, a skill, and a language.
+4. `/candidate/resumes` and `/candidate/applications` redirect here.
 
-**Pass:** “Profile saved.” Reload keeps the values.
+**Pass:** Reload keeps the values. Header does not show My Profile, My CVs, or My Applications.
 
-### 6.2 CVs / resumes
+### 6.2 CV upload
 
-1. Open `/candidate/resumes`.
-2. Upload a PDF, DOC, or DOCX (max 5 MB). Field name is `file`.
-3. Set a default CV.
-4. Download it.
-5. Optionally upload a second file and delete one.
+1. On `/candidate/profile`, upload a PDF, DOC, or DOCX (max 5 MB) in **Your curriculum vitae**.
+2. Confirm View / Change / Download work for the active file.
 
-**Pass:** Upload succeeds and a default CV can be selected.
+**Pass:** Upload succeeds and the file name appears on the CV card.
 
 **Fail checks:** Non-document files and files over 5 MB are rejected.
 
@@ -230,7 +229,7 @@ Nav shows **Dashboard**, **Companies**, **Jobs**, and **Candidates** only (no pu
 
 1. On `/admin/companies`, click **🚫 Terminate** on a non-production test company (not Demo Technology PLC unless you re-seed).
 2. Confirm optional reason. Company login for that company should fail with a suspension message.
-3. Confirm the company no longer appears on `/companies` (public directory).
+3. Confirm the company is hidden from the public job board while suspended.
 4. Click **♻️ Reactivate** on the same row. Employer can log in again; company reappears when verified.
 
 **Pass:** `PATCH /admin/companies/:id/portal-status` suspends member logins and hides the company from the public list until reactivated.
@@ -323,10 +322,10 @@ For API-only setup (Swagger or curl), use the admin JWT from `POST /api/v1/auth/
    }
    ```
 
-4. If not using provision, `PATCH /api/v1/admin/companies/:id/verification` with `{ "status": "verified" }` so the company appears in `/companies`.
+4. If not using provision, `PATCH /api/v1/admin/companies/:id/verification` with `{ "status": "verified" }` so the company’s jobs can appear on `/jobs`.
 5. Log in as the new company user and confirm `/company` lists the company.
 
-Until verification, the public directory hides the company. Suspended companies are hidden even when verified. `GET /admin/companies` returns all companies for admin search and job posting.
+Until verification, the company’s jobs stay off the public job board. Suspended companies are hidden even when verified. `GET /admin/companies` returns all companies for admin search and job posting. The public `/companies` directory redirects to `/jobs`.
 
 ---
 

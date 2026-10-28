@@ -9,16 +9,15 @@ import { RequireRole, RequireSignedIn } from './components/RequireRole';
 import { LandingPage } from './pages/LandingPage';
 import { JobsListPage } from './pages/JobsListPage';
 import { JobDetailPage } from './pages/JobDetailPage';
-import { CompaniesListPage } from './pages/CompaniesListPage';
-import { CompanyDetailPage } from './pages/CompanyDetailPage';
 import { ContactPage } from './pages/ContactPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { EmployerSetupPage } from './pages/EmployerSetupPage';
+import { CandidateWorkspaceLayout } from './components/CandidateWorkspaceLayout';
 import { CandidateProfilePage } from './pages/CandidateProfilePage';
-import { CandidateResumesPage } from './pages/CandidateResumesPage';
-import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CandidateApplicationsPage } from './pages/CandidateApplicationsPage';
+import { CandidateSavedJobsPage } from './pages/CandidateSavedJobsPage';
+import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CompanyHomePage } from './pages/CompanyHomePage';
 import { CompanyJobsPage } from './pages/CompanyJobsPage';
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
@@ -54,8 +53,8 @@ export function App(): React.ReactElement {
               <Route path="/jobs" element={<JobsListPage />} />
               <Route path="/jobs/:slug" element={<JobDetailPage />} />
               <Route path="/jobs/:slug/apply" element={<ApplyJobPage />} />
-              <Route path="/companies" element={<CompaniesListPage />} />
-              <Route path="/companies/:slug" element={<CompanyDetailPage />} />
+              <Route path="/companies" element={<Navigate to="/jobs" replace />} />
+              <Route path="/companies/:slug" element={<Navigate to="/jobs" replace />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -69,29 +68,17 @@ export function App(): React.ReactElement {
               />
 
               <Route
-                path="/candidate/profile"
                 element={
                   <RequireRole roles={['candidate']}>
-                    <CandidateProfilePage />
+                    <CandidateWorkspaceLayout />
                   </RequireRole>
                 }
-              />
-              <Route
-                path="/candidate/resumes"
-                element={
-                  <RequireRole roles={['candidate']}>
-                    <CandidateResumesPage />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/candidate/applications"
-                element={
-                  <RequireRole roles={['candidate']}>
-                    <CandidateApplicationsPage />
-                  </RequireRole>
-                }
-              />
+              >
+                <Route path="/candidate/profile" element={<CandidateProfilePage />} />
+                <Route path="/candidate/applications" element={<CandidateApplicationsPage />} />
+                <Route path="/candidate/saved-jobs" element={<CandidateSavedJobsPage />} />
+              </Route>
+              <Route path="/candidate/resumes" element={<Navigate to="/candidate/profile" replace />} />
             </Route>
 
             {/* Admin portal */}

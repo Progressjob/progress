@@ -203,3 +203,28 @@ export async function apiDownloadFile(fileId: string, filename = 'download'): Pr
   a.remove();
   URL.revokeObjectURL(objectUrl);
 }
+
+export async function apiOpenFile(fileId: string): Promise<void> {
+  const { accessToken } = getStoredTokens();
+  const url = `${BASE_URL}/files/${fileId}/download`;
+  let res = await fetch(url, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+
+  if (res.status === 401) {
+    const newAccess = await refreshAccessTokenSingleFlight();
+    if (newAccess) {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${newAccess}` },
+      });
+    }
+  }
+
+  if (!res.ok) {
+    throw await parseErrorResponse(res);
+  }
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+}

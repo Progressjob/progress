@@ -11,8 +11,6 @@ export function getValidRedirect(from: string | null | undefined, roles: string[
       from === '/' ||
       from === '/jobs' ||
       (from.startsWith('/jobs/') && !from.endsWith('/apply')) ||
-      from === '/companies' ||
-      from.startsWith('/companies/') ||
       from === '/contact';
 
     if (isPublic) {

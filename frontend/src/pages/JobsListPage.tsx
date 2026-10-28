@@ -252,11 +252,7 @@ export const JobsListPage: React.FC = () => {
               </div>
               <div className="job-card-meta">
                 <span className="job-company-name">
-                  {job.company ? (
-                    <Link to={`/companies/${job.company.slug}`}>{job.company.name}</Link>
-                  ) : (
-                    'Progress Partner Employer'
-                  )}
+                  {job.company ? job.company.name : 'Progress Partner Employer'}
                 </span>
                 <h2 className="job-card-title">
                   <Link to={`/jobs/${job.slug}`}>{job.title}</Link>

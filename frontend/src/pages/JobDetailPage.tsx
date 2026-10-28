@@ -269,11 +269,7 @@ export const JobDetailPage: React.FC = () => {
         <header className="jd-header">
           <div>
             <p className="jd-kicker">
-              {job.company ? (
-                <Link to={`/companies/${job.company.slug}`}>{job.company.name}</Link>
-              ) : (
-                'Progress Verified Employer'
-              )}
+              {job.company ? job.company.name : 'Progress Verified Employer'}
               {job.company?.verificationStatus === 'verified' && <span className="jd-kicker-tag">Verified</span>}
             </p>
             <h1 className="jd-title">{title}</h1>

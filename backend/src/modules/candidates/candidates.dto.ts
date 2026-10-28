@@ -11,6 +11,7 @@ import {
   IsString,
   IsUUID,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -23,12 +24,26 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() region?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() address?: string;
-  @IsOptional() @IsNumber() @Min(0) yearsExperience?: number;
+  @IsOptional() @IsString() websiteUrl?: string;
+  @IsOptional() @IsString() careerLevel?: string;
+  @IsOptional() @IsString() managerialExperience?: string;
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsNumber()
+  @Min(0)
+  yearsExperience?: number | null;
   @IsOptional() @IsNumber() @Min(0) currentSalary?: number;
   @IsOptional() @IsString() salaryCurrency?: string;
   @IsOptional() @IsNumber() @Min(0) expectedSalary?: number;
   @IsOptional() @IsString() availabilityStatus?: string;
   @IsOptional() @IsEnum(ProfileVisibility) profileVisibility?: ProfileVisibility;
+  @IsOptional() @IsString() firstName?: string;
+  @IsOptional() @IsString() lastName?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional()
+  @ValidateIf((_, value) => Boolean(value))
+  @IsUUID()
+  photoFileId?: string | null;
 }
 
 export class EducationDto {
@@ -46,8 +61,10 @@ export class UpdateEducationDto extends PartialType(EducationDto) {}
 export class ExperienceDto {
   @IsString() companyName!: string;
   @IsString() jobTitle!: string;
+  @IsOptional() @IsString() workingCity?: string;
+  @IsOptional() @IsString() salary?: string;
   @IsOptional() @IsString() employmentType?: string;
-  @IsDateString() startDate!: string;
+  @IsOptional() @IsDateString() startDate?: string;
   @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @IsBoolean() isCurrent?: boolean;
   @IsOptional() @IsString() description?: string;
@@ -55,10 +72,31 @@ export class ExperienceDto {
 export class UpdateExperienceDto extends PartialType(ExperienceDto) {}
 
 export class CandidateSkillDto {
-  @IsUUID() skillId!: string;
+  @IsOptional()
+  @ValidateIf((_, value) => Boolean(value))
+  @IsUUID()
+  skillId?: string;
+  @IsOptional() @IsString() name?: string;
   @IsOptional() @IsString() proficiencyLevel?: string;
   @IsOptional() @IsNumber() @Min(0) yearsExperience?: number;
 }
+
+export class CertificationDto {
+  @IsString() name!: string;
+  @IsOptional() @IsString() issuer?: string;
+  @IsOptional() @IsDateString() issuedDate?: string;
+  @IsOptional() @IsString() credentialId?: string;
+}
+export class UpdateCertificationDto extends PartialType(CertificationDto) {}
+
+export class LanguageDto {
+  @IsString() name!: string;
+  @IsOptional() @IsString() proficiency?: string;
+  @IsOptional() @IsString() reading?: string;
+  @IsOptional() @IsString() writing?: string;
+  @IsOptional() @IsString() listening?: string;
+}
+export class UpdateLanguageDto extends PartialType(LanguageDto) {}
 
 export class ReplaceCandidateSkillsDto {
   @IsArray()
@@ -68,6 +106,7 @@ export class ReplaceCandidateSkillsDto {
 }
 
 export class ResumeMetaDto {
+  @IsOptional()
   @IsString()
-  title!: string;
+  title?: string;
 }

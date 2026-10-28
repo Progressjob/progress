@@ -297,7 +297,7 @@ Detail includes `screeningQuestions` (for apply form), `skills`, company, etc.
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/companies` | Verified companies; `page`, `limit` |
+| GET | `/companies` | Verified companies; `page`, `limit`. Public UI redirects to `/jobs`. |
 | GET | `/companies/:slug` | Profile + open published jobs |
 
 ### Support
@@ -320,9 +320,11 @@ Detail includes `screeningQuestions` (for apply form), `skills`, company, etc.
 | GET | `/candidate/profile` |
 | PATCH | `/candidate/profile` |
 
-PATCH body (all optional): `headline`, `summary`, `dateOfBirth`, `gender`, `country`, `region`, `city`, `address`, `yearsExperience`, `currentSalary`, `salaryCurrency`, `expectedSalary`, `availabilityStatus`, `profileVisibility`.
+PATCH body (all optional): `headline`, `summary`, `dateOfBirth`, `gender`, `country`, `region`, `city`, `address`, `yearsExperience`, `currentSalary`, `salaryCurrency`, `expectedSalary`, `availabilityStatus`, `profileVisibility`, `firstName`, `lastName`, `phone`, `photoFileId`.
 
-### Education & experience
+`GET /candidate/profile` includes `user`, `photo`, `educations`, `experiences`, `skills`, `certifications`, `languages`, and `resumes`.
+
+### Education, experience, certifications, languages
 
 | Method | Path |
 |--------|------|
@@ -332,14 +334,20 @@ PATCH body (all optional): `headline`, `summary`, `dateOfBirth`, `gender`, `coun
 | POST | `/candidate/experiences` |
 | PATCH | `/candidate/experiences/:id` |
 | DELETE | `/candidate/experiences/:id` |
+| POST | `/candidate/certifications` |
+| PATCH | `/candidate/certifications/:id` |
+| DELETE | `/candidate/certifications/:id` |
+| POST | `/candidate/languages` |
+| PATCH | `/candidate/languages/:id` |
+| DELETE | `/candidate/languages/:id` |
 
 ### Skills
 
 | Method | Path | Body |
 |--------|------|------|
-| PUT | `/candidate/skills` | `{ "skills": [{ "skillId", "proficiencyLevel?", "yearsExperience?" }] }` |
+| PUT | `/candidate/skills` | `{ "skills": [{ "name" \| "skillId", "proficiencyLevel?", "yearsExperience?" }] }` |
 
-Replaces the full skill set.
+Replaces the full skill set. `name` find-or-creates a taxonomy skill so the profile builder can add chips without an admin skill id.
 
 ### CVs / resumes
 

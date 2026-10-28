@@ -1,13 +1,33 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  CertificationDto,
   EducationDto,
   ExperienceDto,
+  LanguageDto,
   ReplaceCandidateSkillsDto,
+  UpdateCertificationDto,
   UpdateEducationDto,
   UpdateExperienceDto,
+  UpdateLanguageDto,
   UpdateProfileDto,
 } from './candidates.dto';
+
+const profileInclude = {
+  user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+  photo: { select: { id: true, originalFilename: true, mimeType: true } },
+  educations: { orderBy: { startDate: 'desc' as const } },
+  experiences: { orderBy: { startDate: 'desc' as const } },
+  skills: { include: { skill: true } },
+  certifications: { orderBy: { issuedDate: 'desc' as const } },
+  languages: { orderBy: { name: 'asc' as const } },
+  resumes: {
+    include: {
+      file: { select: { id: true, originalFilename: true, mimeType: true, sizeBytes: true } },
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+};
 
 @Injectable()
 export class CandidatesService {
@@ -16,23 +36,32 @@ export class CandidatesService {
   profile(userId: string) {
     return this.prisma.candidateProfile.findUniqueOrThrow({
       where: { userId },
-      include: {
-        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
-        educations: { orderBy: { startDate: 'desc' } },
-        experiences: { orderBy: { startDate: 'desc' } },
-        skills: { include: { skill: true } },
-        resumes: { include: { file: true }, orderBy: { createdAt: 'desc' } },
-      },
+      include: profileInclude,
     });
   }
 
-  updateProfile(userId: string, dto: UpdateProfileDto) {
-    return this.prisma.candidateProfile.update({
-      where: { userId },
-      data: {
-        ...dto,
-        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-      },
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const { firstName, lastName, phone, photoFileId, ...profileDto } = dto;
+    return this.prisma.$transaction(async (tx) => {
+      if (firstName !== undefined || lastName !== undefined || phone !== undefined) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            ...(firstName !== undefined ? { firstName: firstName.trim() } : {}),
+            ...(lastName !== undefined ? { lastName: lastName.trim() } : {}),
+            ...(phone !== undefined ? { phone: phone.trim() || null } : {}),
+          },
+        });
+      }
+      return tx.candidateProfile.update({
+        where: { userId },
+        data: {
+          ...profileDto,
+          dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+          ...(photoFileId !== undefined ? { photoFileId: photoFileId || null } : {}),
+        },
+        include: profileInclude,
+      });
     });
   }
 
@@ -73,7 +102,9 @@ export class CandidatesService {
       data: {
         ...dto,
         candidateId,
-        startDate: new Date(dto.startDate),
+        startDate: dto.startDate
+          ? new Date(dto.startDate)
+          : new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)),
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
       },
     });
@@ -101,14 +132,103 @@ export class CandidatesService {
   async replaceSkills(userId: string, dto: ReplaceCandidateSkillsDto) {
     const candidateId = await this.candidateId(userId);
     return this.prisma.$transaction(async (tx) => {
-      await tx.candidateSkill.deleteMany({ where: { candidateId } });
-      if (dto.skills.length) {
-        await tx.candidateSkill.createMany({
-          data: dto.skills.map((skill) => ({ candidateId, ...skill })),
+      const resolved: Array<{
+        candidateId: string;
+        skillId: string;
+        proficiencyLevel?: string;
+        yearsExperience?: number;
+      }> = [];
+      for (const item of dto.skills) {
+        const name = item.name?.trim();
+        let skillId = item.skillId;
+        if (!skillId && name) {
+          const existing = await tx.skill.findFirst({
+            where: { name: { equals: name, mode: 'insensitive' } },
+          });
+          skillId = existing?.id ?? (await tx.skill.create({ data: { name } })).id;
+        }
+        if (!skillId) {
+          throw new BadRequestException('Each skill needs a name or skillId');
+        }
+        resolved.push({
+          candidateId,
+          skillId,
+          proficiencyLevel: item.proficiencyLevel,
+          yearsExperience: item.yearsExperience,
         });
+      }
+      await tx.candidateSkill.deleteMany({ where: { candidateId } });
+      if (resolved.length) {
+        await tx.candidateSkill.createMany({ data: resolved });
       }
       return tx.candidateSkill.findMany({ where: { candidateId }, include: { skill: true } });
     });
+  }
+
+  async addCertification(userId: string, dto: CertificationDto) {
+    const candidateId = await this.candidateId(userId);
+    return this.prisma.candidateCertification.create({
+      data: {
+        candidateId,
+        name: dto.name,
+        issuer: dto.issuer,
+        credentialId: dto.credentialId,
+        issuedDate: dto.issuedDate ? new Date(dto.issuedDate) : undefined,
+      },
+    });
+  }
+
+  async updateCertification(userId: string, id: string, dto: UpdateCertificationDto) {
+    const candidateId = await this.candidateId(userId);
+    const found = await this.prisma.candidateCertification.findFirst({ where: { id, candidateId } });
+    if (!found) throw new NotFoundException();
+    return this.prisma.candidateCertification.update({
+      where: { id },
+      data: {
+        ...dto,
+        issuedDate: dto.issuedDate ? new Date(dto.issuedDate) : undefined,
+      },
+    });
+  }
+
+  async deleteCertification(userId: string, id: string) {
+    const candidateId = await this.candidateId(userId);
+    return this.prisma.candidateCertification.delete({ where: { id, candidateId } });
+  }
+
+  async addLanguage(userId: string, dto: LanguageDto) {
+    const candidateId = await this.candidateId(userId);
+    return this.prisma.candidateLanguage.create({
+      data: {
+        candidateId,
+        name: dto.name.trim(),
+        proficiency: dto.proficiency,
+        reading: dto.reading,
+        writing: dto.writing,
+        listening: dto.listening,
+      },
+    });
+  }
+
+  async updateLanguage(userId: string, id: string, dto: UpdateLanguageDto) {
+    const candidateId = await this.candidateId(userId);
+    const found = await this.prisma.candidateLanguage.findFirst({ where: { id, candidateId } });
+    if (!found) throw new NotFoundException();
+    return this.prisma.candidateLanguage.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.proficiency !== undefined ? { proficiency: dto.proficiency } : {}),
+        ...(dto.reading !== undefined ? { reading: dto.reading } : {}),
+        ...(dto.writing !== undefined ? { writing: dto.writing } : {}),
+        ...(dto.listening !== undefined ? { listening: dto.listening } : {}),
+      },
+    });
+  }
+
+  async deleteLanguage(userId: string, id: string) {
+    const candidateId = await this.candidateId(userId);
+    return this.prisma.candidateLanguage.delete({ where: { id, candidateId } });
   }
 
   async addResume(userId: string, fileId: string, title: string) {
@@ -116,7 +236,9 @@ export class CandidatesService {
     const count = await this.prisma.candidateResume.count({ where: { candidateId } });
     return this.prisma.candidateResume.create({
       data: { candidateId, fileId, title, isDefault: count === 0 },
-      include: { file: true },
+      include: {
+        file: { select: { id: true, originalFilename: true, mimeType: true, sizeBytes: true } },
+      },
     });
   }
 
@@ -124,7 +246,9 @@ export class CandidatesService {
     const candidateId = await this.candidateId(userId);
     return this.prisma.candidateResume.findMany({
       where: { candidateId },
-      include: { file: true },
+      include: {
+        file: { select: { id: true, originalFilename: true, mimeType: true, sizeBytes: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

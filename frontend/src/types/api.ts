@@ -168,10 +168,65 @@ export interface CandidateResume {
   createdAt: string;
   file?: {
     id: string;
-    originalName: string;
+    originalFilename?: string;
+    originalName?: string;
     mimeType: string;
     sizeBytes: number;
   };
+}
+
+export interface CandidateEducation {
+  id: string;
+  candidateId: string;
+  institution: string;
+  qualification?: string | null;
+  fieldOfStudy?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  isCurrent: boolean;
+  grade?: string | null;
+  description?: string | null;
+}
+
+export interface CandidateExperience {
+  id: string;
+  candidateId: string;
+  companyName: string;
+  jobTitle: string;
+  workingCity?: string | null;
+  salary?: string | null;
+  employmentType?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  isCurrent: boolean;
+  description?: string | null;
+}
+
+export interface CandidateCertification {
+  id: string;
+  candidateId: string;
+  name: string;
+  issuer?: string | null;
+  issuedDate?: string | null;
+  credentialId?: string | null;
+}
+
+export interface CandidateLanguage {
+  id: string;
+  candidateId: string;
+  name: string;
+  proficiency?: string | null;
+  reading?: string | null;
+  writing?: string | null;
+  listening?: string | null;
+}
+
+export interface CandidateSkillLink {
+  candidateId: string;
+  skillId: string;
+  proficiencyLevel?: string | null;
+  yearsExperience?: number | null;
+  skill: Skill;
 }
 
 export interface CandidateProfile {
@@ -179,23 +234,41 @@ export interface CandidateProfile {
   userId: string;
   headline?: string | null;
   summary?: string | null;
+  gender?: string | null;
   country?: string | null;
   region?: string | null;
   city?: string | null;
   address?: string | null;
-  yearsExperience?: number | null;
+  websiteUrl?: string | null;
+  careerLevel?: string | null;
+  managerialExperience?: string | null;
+  yearsExperience?: number | string | null;
   currentSalary?: number | null;
   salaryCurrency?: string | null;
   expectedSalary?: number | null;
   availabilityStatus?: string | null;
   profileVisibility: 'public' | 'employers' | 'private';
+  photoFileId?: string | null;
+  photo?: { id: string; originalFilename?: string; mimeType?: string } | null;
   user?: {
     firstName: string;
     lastName: string;
     email: string;
     phone?: string | null;
   };
+  educations?: CandidateEducation[];
+  experiences?: CandidateExperience[];
+  skills?: CandidateSkillLink[];
+  certifications?: CandidateCertification[];
+  languages?: CandidateLanguage[];
   resumes?: CandidateResume[];
+}
+
+export interface SavedJob {
+  candidateId: string;
+  jobId: string;
+  createdAt: string;
+  job?: Job;
 }
 
 export interface Application {

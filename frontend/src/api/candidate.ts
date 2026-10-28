@@ -1,18 +1,80 @@
 import { apiFetch } from './client';
-import type { Application, CandidateProfile, CandidateResume } from '../types/api';
+import type {
+  Application,
+  CandidateCertification,
+  CandidateEducation,
+  CandidateExperience,
+  CandidateLanguage,
+  CandidateProfile,
+  CandidateResume,
+  CandidateSkillLink,
+  SavedJob,
+} from '../types/api';
 
 export interface UpdateProfilePayload {
-  headline?: string;
+  headline?: string | null;
   summary?: string;
-  country?: string;
-  region?: string;
-  city?: string;
-  address?: string;
-  yearsExperience?: number;
+  gender?: string | null;
+  country?: string | null;
+  region?: string | null;
+  city?: string | null;
+  address?: string | null;
+  websiteUrl?: string | null;
+  careerLevel?: string | null;
+  managerialExperience?: string | null;
+  yearsExperience?: number | null;
   expectedSalary?: number;
   salaryCurrency?: string;
-  availabilityStatus?: string;
+  availabilityStatus?: string | null;
   profileVisibility?: 'public' | 'employers' | 'private';
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  photoFileId?: string | null;
+}
+
+export interface EducationPayload {
+  institution: string;
+  qualification?: string;
+  fieldOfStudy?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  grade?: string;
+  description?: string;
+}
+
+export interface ExperiencePayload {
+  companyName: string;
+  jobTitle: string;
+  workingCity?: string;
+  salary?: string;
+  employmentType?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+}
+
+export interface CertificationPayload {
+  name: string;
+  issuer?: string;
+  issuedDate?: string;
+  credentialId?: string;
+}
+
+export interface LanguagePayload {
+  name: string;
+  proficiency?: string;
+  reading?: string;
+  writing?: string;
+  listening?: string;
+}
+
+export interface SkillNamePayload {
+  name: string;
+  proficiencyLevel?: string;
+  yearsExperience?: number;
 }
 
 export interface ApplyPayload {
@@ -28,6 +90,40 @@ export const candidateApi = {
       method: 'PATCH',
       body: payload,
     }),
+
+  addEducation: (payload: EducationPayload) =>
+    apiFetch<CandidateEducation>('/candidate/educations', { method: 'POST', body: payload }),
+  updateEducation: (id: string, payload: Partial<EducationPayload>) =>
+    apiFetch<CandidateEducation>(`/candidate/educations/${id}`, { method: 'PATCH', body: payload }),
+  deleteEducation: (id: string) => apiFetch(`/candidate/educations/${id}`, { method: 'DELETE' }),
+
+  addExperience: (payload: ExperiencePayload) =>
+    apiFetch<CandidateExperience>('/candidate/experiences', { method: 'POST', body: payload }),
+  updateExperience: (id: string, payload: Partial<ExperiencePayload>) =>
+    apiFetch<CandidateExperience>(`/candidate/experiences/${id}`, { method: 'PATCH', body: payload }),
+  deleteExperience: (id: string) => apiFetch(`/candidate/experiences/${id}`, { method: 'DELETE' }),
+
+  replaceSkills: (skills: SkillNamePayload[]) =>
+    apiFetch<CandidateSkillLink[]>('/candidate/skills', {
+      method: 'PUT',
+      body: { skills },
+    }),
+
+  addCertification: (payload: CertificationPayload) =>
+    apiFetch<CandidateCertification>('/candidate/certifications', { method: 'POST', body: payload }),
+  updateCertification: (id: string, payload: Partial<CertificationPayload>) =>
+    apiFetch<CandidateCertification>(`/candidate/certifications/${id}`, {
+      method: 'PATCH',
+      body: payload,
+    }),
+  deleteCertification: (id: string) =>
+    apiFetch(`/candidate/certifications/${id}`, { method: 'DELETE' }),
+
+  addLanguage: (payload: LanguagePayload) =>
+    apiFetch<CandidateLanguage>('/candidate/languages', { method: 'POST', body: payload }),
+  updateLanguage: (id: string, payload: Partial<LanguagePayload>) =>
+    apiFetch<CandidateLanguage>(`/candidate/languages/${id}`, { method: 'PATCH', body: payload }),
+  deleteLanguage: (id: string) => apiFetch(`/candidate/languages/${id}`, { method: 'DELETE' }),
 
   listResumes: () => apiFetch<CandidateResume[]>('/candidate/resumes'),
   uploadResume: (file: File, title: string) => {
@@ -61,7 +157,7 @@ export const candidateApi = {
       method: 'POST',
     }),
 
-  listSavedJobs: () => apiFetch<Array<{ jobId: string; job?: { id: string } }>>('/candidate/saved-jobs'),
+  listSavedJobs: () => apiFetch<SavedJob[]>('/candidate/saved-jobs'),
   saveJob: (jobId: string) => apiFetch(`/candidate/saved-jobs/${jobId}`, { method: 'POST' }),
   unsaveJob: (jobId: string) => apiFetch(`/candidate/saved-jobs/${jobId}`, { method: 'DELETE' }),
 };

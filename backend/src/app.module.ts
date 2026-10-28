@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AuditInterceptor } from './common/audit.interceptor';
+import { JsonSerializerInterceptor } from './common/json-serializer.interceptor';
 import { envValidationSchema } from './config/env.validation';
 import { AdminModule } from './modules/admin/admin.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
@@ -36,6 +37,9 @@ import { PrismaModule } from './prisma/prisma.module';
     AdminModule,
   ],
   controllers: [AppController],
-  providers: [{ provide: APP_INTERCEPTOR, useClass: AuditInterceptor }],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: JsonSerializerInterceptor },
+  ],
 })
 export class AppModule {}

@@ -211,6 +211,9 @@ model CandidateProfile {
   region             String?               @db.VarChar(100)
   city               String?               @db.VarChar(100)
   address            String?
+  websiteUrl         String?               @map("website_url") @db.VarChar(255)
+  careerLevel        String?               @map("career_level") @db.VarChar(80)
+  managerialExperience String?             @map("managerial_experience") @db.VarChar(80)
   yearsExperience    Decimal?              @map("years_experience") @db.Decimal(4, 1)
   currentSalary      Decimal?              @map("current_salary") @db.Decimal(12, 2)
   salaryCurrency     String?               @map("salary_currency") @db.Char(3)
@@ -218,12 +221,16 @@ model CandidateProfile {
   availabilityStatus String?               @map("availability_status") @db.VarChar(30)
   profileVisibility  ProfileVisibility     @default(employers) @map("profile_visibility")
   applicationsBlocked Boolean              @default(false) @map("applications_blocked")
+  photoFileId        String?               @unique @map("photo_file_id") @db.Uuid
   createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz
   user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo              File?                 @relation("CandidatePhoto", fields: [photoFileId], references: [id], onDelete: SetNull)
   educations         CandidateEducation[]
   experiences        CandidateExperience[]
   skills             CandidateSkill[]
+  certifications     CandidateCertification[]
+  languages          CandidateLanguage[]
   resumes            CandidateResume[]
   applications       Application[]
   savedJobs          SavedJob[]
@@ -253,6 +260,8 @@ model CandidateExperience {
   candidateId    String           @map("candidate_id") @db.Uuid
   companyName    String           @map("company_name") @db.VarChar(255)
   jobTitle       String           @map("job_title") @db.VarChar(200)
+  workingCity    String?          @map("working_city") @db.VarChar(100)
+  salary         String?          @db.VarChar(80)
   employmentType String?          @map("employment_type") @db.VarChar(50)
   startDate      DateTime         @map("start_date") @db.Date
   endDate        DateTime?        @map("end_date") @db.Date
@@ -285,6 +294,33 @@ model CandidateSkill {
   @@map("candidate_skills")
 }
 
+model CandidateCertification {
+  id           String           @id @default(uuid()) @db.Uuid
+  candidateId  String           @map("candidate_id") @db.Uuid
+  name         String           @db.VarChar(255)
+  issuer       String?          @db.VarChar(255)
+  issuedDate   DateTime?        @map("issued_date") @db.Date
+  credentialId String?          @map("credential_id") @db.VarChar(150)
+  candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@map("candidate_certifications")
+}
+
+model CandidateLanguage {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @map("candidate_id") @db.Uuid
+  name        String           @db.VarChar(100)
+  proficiency String?          @db.VarChar(50)
+  reading     String?          @db.VarChar(50)
+  writing     String?          @db.VarChar(50)
+  listening   String?          @db.VarChar(50)
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@map("candidate_languages")
+}
+
 model File {
   id                    String                        @id @default(uuid()) @db.Uuid
   ownerUserId           String?                       @map("owner_user_id") @db.Uuid
@@ -297,6 +333,7 @@ model File {
   createdAt             DateTime                      @default(now()) @map("created_at") @db.Timestamptz
   owner                 User?                         @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
   companyLogos          Company[]                     @relation("CompanyLogo")
+  candidatePhotos       CandidateProfile[]            @relation("CandidatePhoto")
   resumes               CandidateResume[]
   verificationDocuments CompanyVerificationDocument[]
 

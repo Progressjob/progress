@@ -24,7 +24,7 @@ export class FilesService {
     const key = `${category}/${new Date().getUTCFullYear()}/${randomUUID()}${extension}`;
     await this.storage.put(key, file.buffer);
     try {
-      return await this.prisma.file.create({
+      const created = await this.prisma.file.create({
         data: {
           ownerUserId,
           storageKey: key,
@@ -32,9 +32,10 @@ export class FilesService {
           mimeType: file.mimetype,
           sizeBytes: BigInt(file.size),
           fileCategory: category,
-          isPrivate: category !== 'logo',
+          isPrivate: category !== 'logo' && category !== 'profile_image',
         },
       });
+      return { ...created, sizeBytes: Number(created.sizeBytes) };
     } catch (error) {
       await this.storage.delete(key);
       throw error;

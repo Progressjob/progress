@@ -21,4 +21,12 @@ export const filesApi = {
       body: formData,
     });
   },
+  uploadProfileImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiFetch<UploadedFile>('/files/upload/profile_image', {
+      method: 'POST',
+      body: formData,
+    });
+  },
 };
