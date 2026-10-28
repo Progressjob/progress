@@ -6,6 +6,7 @@ import {
   Param,
   ParseEnumPipe,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Put,
@@ -83,13 +84,47 @@ export class AdminJobsController {
   constructor(private readonly jobs: JobsService) {}
 
   @Get()
-  list(@Query('q') q?: string) {
-    return this.jobs.adminList(undefined, q);
+  list(
+    @Query('q') q?: string,
+    @Query('status', new ParseEnumPipe(JobStatus, { optional: true })) status?: JobStatus,
+    @Query('companyId', new ParseUUIDPipe({ optional: true })) companyId?: string,
+    @Query('employmentType', new ParseEnumPipe(EmploymentType, { optional: true }))
+    employmentType?: EmploymentType,
+    @Query('workplaceType', new ParseEnumPipe(WorkplaceType, { optional: true }))
+    workplaceType?: WorkplaceType,
+    @Query('employerEdited') employerEdited?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize = 20,
+  ) {
+    return this.jobs.adminList({
+      q,
+      status,
+      companyId,
+      employmentType,
+      workplaceType,
+      employerEdited:
+        employerEdited === 'true' || employerEdited === '1'
+          ? true
+          : employerEdited === 'false' || employerEdited === '0'
+            ? false
+            : undefined,
+      page,
+      pageSize,
+    });
   }
 
   @Get('pending')
-  pending(@Query('q') q?: string) {
-    return this.jobs.adminList('pending_review', q);
+  pending(
+    @Query('q') q?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize = 20,
+  ) {
+    return this.jobs.adminList({ status: 'pending_review', q, page, pageSize });
+  }
+
+  @Get(':id')
+  get(@Param('id', ParseUUIDPipe) id: string) {
+    return this.jobs.adminGet(id);
   }
 
   @Post()
@@ -98,8 +133,12 @@ export class AdminJobsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateJobDto) {
-    return this.jobs.update(id, dto);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateJobDto,
+  ) {
+    return this.jobs.update(id, dto, { actorId: user.id, source: 'admin' });
   }
 
   @Post(':id/reject')

@@ -5,7 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { ApplicationMethod, EmploymentType, JobStatus, Prisma, WorkplaceType } from '@prisma/client';
+import {
+  ApplicationMethod,
+  EmploymentType,
+  JobRevisionSource,
+  JobStatus,
+  Prisma,
+  WorkplaceType,
+} from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { PROGRESS_HIRE_EMAIL } from '../../common/progress-contact';
 import { slugify } from '../../common/slug';
@@ -18,6 +25,11 @@ import {
   ReplaceScreeningDto,
   UpdateJobDto,
 } from './jobs.dto';
+import {
+  diffJobContent,
+  mergeJobSnapshot,
+  type JobContentSnapshot,
+} from './jobs.revisions';
 
 const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = [
   'draft',
@@ -147,10 +159,29 @@ export class JobsService {
     return job;
   }
 
-  adminList(status?: JobStatus, q?: string) {
-    const term = q?.trim();
+  async adminList(filters: {
+    q?: string;
+    status?: JobStatus;
+    companyId?: string;
+    employmentType?: EmploymentType;
+    workplaceType?: WorkplaceType;
+    employerEdited?: boolean;
+    page?: number;
+    pageSize?: number;
+  } = {}) {
+    const page = Math.max(filters.page ?? 1, 1);
+    const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
+    const term = filters.q?.trim();
     const where: Prisma.JobWhereInput = {
-      ...(status ? { status } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.companyId ? { companyId: filters.companyId } : {}),
+      ...(filters.employmentType ? { employmentType: filters.employmentType } : {}),
+      ...(filters.workplaceType ? { workplaceType: filters.workplaceType } : {}),
+      ...(filters.employerEdited === true
+        ? { revisions: { some: { source: 'employer' } } }
+        : filters.employerEdited === false
+          ? { revisions: { none: { source: 'employer' } } }
+          : {}),
       ...(term
         ? {
             OR: [
@@ -162,11 +193,54 @@ export class JobsService {
           }
         : {}),
     };
-    return this.prisma.job.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { company: true, category: true, location: true },
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.job.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          company: true,
+          category: true,
+          location: true,
+          _count: { select: { revisions: { where: { source: 'employer' } } } },
+        },
+      }),
+      this.prisma.job.count({ where }),
+    ]);
+    return {
+      items: rows.map(({ _count, ...job }) => ({
+        ...job,
+        employerEdited: _count.revisions > 0,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async adminGet(id: string) {
+    const job = await this.prisma.job.findUnique({
+      where: { id },
+      include: {
+        company: true,
+        category: true,
+        location: true,
+        skills: { include: { skill: true } },
+        screeningQuestions: { orderBy: { sortOrder: 'asc' } },
+        revisions: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            actor: { select: { id: true, firstName: true, lastName: true, email: true } },
+          },
+        },
+      },
     });
+    if (!job) throw new NotFoundException('Job not found');
+    return {
+      ...job,
+      employerEdited: job.revisions.some((revision) => revision.source === 'employer'),
+    };
   }
 
   async create(actorId: string, dto: CreateJobDto) {
@@ -185,22 +259,49 @@ export class JobsService {
     });
   }
 
-  async update(id: string, dto: UpdateJobDto) {
+  async update(
+    id: string,
+    dto: UpdateJobDto,
+    actor?: { actorId: string; source: JobRevisionSource },
+  ) {
     this.validateRanges(dto);
     const job = await this.prisma.job.findUnique({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
     if (job.status === 'archived') throw new BadRequestException('Archived jobs cannot be edited');
-    const hire = dto.applicationMethod ? this.normalizeHireContact(dto) : {};
-    return this.prisma.job.update({
-      where: { id },
-      data: {
-        ...dto,
-        ...hire,
-        applicationDeadline: dto.applicationDeadline
-          ? new Date(dto.applicationDeadline)
-          : undefined,
-      },
+    const { companyId: _companyId, ...patch } = dto;
+    const hire = patch.applicationMethod ? this.normalizeHireContact(patch) : {};
+    const deadline = patch.applicationDeadline
+      ? new Date(patch.applicationDeadline)
+      : undefined;
+    const data: Prisma.JobUncheckedUpdateInput = {
+      ...patch,
+      ...hire,
+      applicationDeadline: deadline,
+    };
+    const next = mergeJobSnapshot(job as JobContentSnapshot, {
+      ...patch,
+      ...hire,
+      applicationDeadline: deadline,
     });
+    const labels = await this.revisionLabels(job, next);
+    const changes = diffJobContent(job as JobContentSnapshot, next, labels);
+
+    if (!actor || !changes.length) {
+      return this.prisma.job.update({ where: { id }, data });
+    }
+
+    const [, updated] = await this.prisma.$transaction([
+      this.prisma.jobRevision.create({
+        data: {
+          jobId: id,
+          actorUserId: actor.actorId,
+          source: actor.source,
+          changes: changes as unknown as Prisma.InputJsonValue,
+        },
+      }),
+      this.prisma.job.update({ where: { id }, data }),
+    ]);
+    return updated;
   }
 
   async transition(id: string, next: JobStatus, actorId: string) {
@@ -283,7 +384,7 @@ export class JobsService {
     if (!EMPLOYER_EDITABLE_STATUSES.includes(job.status)) {
       throw new BadRequestException('This job cannot be edited in its current status');
     }
-    return this.update(jobId, dto);
+    return this.update(jobId, dto, { actorId: userId, source: 'employer' });
   }
 
   async employerSubmit(userId: string, companyId: string, jobId: string) {
@@ -396,5 +497,30 @@ export class JobsService {
   private today(): Date {
     const now = new Date();
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+
+  private async revisionLabels(before: { categoryId: string; locationId: string | null }, after: JobContentSnapshot) {
+    const categoryIds = [before.categoryId, after.categoryId].filter(
+      (id, index, all): id is string => Boolean(id) && all.indexOf(id) === index,
+    );
+    const locationIds = [before.locationId, after.locationId].filter(
+      (id, index, all): id is string => Boolean(id) && all.indexOf(id) === index,
+    );
+    const [categories, locations] = await Promise.all([
+      categoryIds.length
+        ? this.prisma.jobCategory.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } })
+        : Promise.resolve([]),
+      locationIds.length
+        ? this.prisma.location.findMany({ where: { id: { in: locationIds } }, select: { id: true, name: true } })
+        : Promise.resolve([]),
+    ]);
+    const categoryName = Object.fromEntries(categories.map((row) => [row.id, row.name]));
+    const locationName = Object.fromEntries(locations.map((row) => [row.id, row.name]));
+    return {
+      categoryFrom: before.categoryId ? categoryName[before.categoryId] ?? null : null,
+      categoryTo: after.categoryId ? categoryName[after.categoryId] ?? null : null,
+      locationFrom: before.locationId ? locationName[before.locationId] ?? null : null,
+      locationTo: after.locationId ? locationName[after.locationId] ?? null : null,
+    };
   }
 }

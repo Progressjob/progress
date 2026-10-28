@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api/admin';
 import type { CompanyPayload, CreateAdminJobPayload } from '../api/admin';
 import { AdminCredentialsModal } from '../components/admin/AdminCredentialsModal';
 import { AdminJobFormFields } from '../components/admin/AdminJobFormFields';
+import { AdminJobStatusActions } from '../components/admin/AdminJobStatusActions';
 import { CompanyFormFields } from '../components/admin/CompanyFormFields';
 import { EmployerCredentialsFields } from '../components/admin/EmployerCredentialsFields';
 import {
@@ -14,17 +15,55 @@ import {
   sanitizeCompanyPayload,
   sanitizeJobPayload,
 } from '../components/admin/adminFormUtils';
-import type { Company } from '../types/api';
+import { formatJobStatus, prettyJobEnum } from '../components/admin/adminJobUi';
+import { LatestVacanciesGrid } from '../components/jobs/LatestVacanciesGrid';
+import { jobDeadlineDays } from '../utils/jobListing';
+import type { EmploymentType, Job, JobStatus, WorkplaceType } from '../types/api';
+
+const PAGE_SIZE = 24;
+
+const STATUS_OPTIONS: Array<{ value: JobStatus | ''; label: string }> = [
+  { value: '', label: 'All statuses' },
+  { value: 'pending_review', label: 'Pending review' },
+  { value: 'published', label: 'Published' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'archived', label: 'Archived' },
+];
+
+const EMPLOYMENT_OPTIONS: Array<{ value: EmploymentType | ''; label: string }> = [
+  { value: '', label: 'All types' },
+  { value: 'full_time', label: 'Full time' },
+  { value: 'part_time', label: 'Part time' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'internship', label: 'Internship' },
+  { value: 'temporary', label: 'Temporary' },
+  { value: 'volunteer', label: 'Volunteer' },
+];
+
+const WORKPLACE_OPTIONS: Array<{ value: WorkplaceType | ''; label: string }> = [
+  { value: '', label: 'All workplaces' },
+  { value: 'on_site', label: 'On site' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'remote', label: 'Remote' },
+];
 
 export const AdminJobsPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<'all' | 'pending'>('pending');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const q = searchParams.get('q') ?? '';
+  const status = (searchParams.get('status') ?? '') as JobStatus | '';
+  const companyId = searchParams.get('companyId') ?? '';
+  const employmentType = (searchParams.get('employmentType') ?? '') as EmploymentType | '';
+  const workplaceType = (searchParams.get('workplaceType') ?? '') as WorkplaceType | '';
+  const employerEdited = searchParams.get('employerEdited') === 'true';
+  const page = Math.max(Number(searchParams.get('page') || 1), 1);
+
+  const [search, setSearch] = useState(q);
   const [showCreate, setShowCreate] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterCompanyId, setFilterCompanyId] = useState<string | null>(null);
 
   const [postMode, setPostMode] = useState<'existing' | 'new'>('existing');
   const [companyPickerSearch, setCompanyPickerSearch] = useState('');
@@ -32,32 +71,71 @@ export const AdminJobsPage: React.FC = () => {
   const [newEmployerForm, setNewEmployerForm] = useState(emptyEmployerForm());
   const [newCompanyCanPost, setNewCompanyCanPost] = useState(false);
   const [publishAfterCreate, setPublishAfterCreate] = useState(true);
-
   const [jobForm, setJobForm] = useState<CreateAdminJobPayload>(emptyAdminJobForm());
   const [credentials, setCredentials] = useState<{ email: string; temporaryPassword: string } | null>(
     null,
   );
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(t);
-  }, [search]);
+    setSearch(q);
+  }, [q]);
 
-  const searchQ = debouncedSearch || undefined;
+  const patchParams = (updates: Record<string, string>) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    setSearchParams(next);
+  };
 
-  const allJobsQuery = useQuery({
-    queryKey: ['admin', 'jobs', 'all', searchQ],
-    queryFn: () => adminApi.listJobs(searchQ),
-  });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchParams((prev) => {
+        const currentQ = prev.get('q') ?? '';
+        if (search === currentQ) return prev;
+        const next = new URLSearchParams(prev);
+        if (search.trim()) next.set('q', search.trim());
+        else next.delete('q');
+        next.delete('page');
+        return next;
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, setSearchParams]);
 
-  const pendingJobsQuery = useQuery({
-    queryKey: ['admin', 'jobs', 'pending', searchQ],
-    queryFn: () => adminApi.listPendingJobs(searchQ),
+  const setFilter = (key: string, value: string) => {
+    patchParams({ [key]: value, page: '' });
+  };
+
+  const jobsQuery = useQuery({
+    queryKey: [
+      'admin',
+      'jobs',
+      q,
+      status,
+      companyId,
+      employmentType,
+      workplaceType,
+      employerEdited,
+      page,
+    ],
+    queryFn: () =>
+      adminApi.listJobs({
+        q: q || undefined,
+        status: status || undefined,
+        companyId: companyId || undefined,
+        employmentType: employmentType || undefined,
+        workplaceType: workplaceType || undefined,
+        employerEdited: employerEdited || undefined,
+        page,
+        pageSize: PAGE_SIZE,
+      }),
   });
 
   const companiesQuery = useQuery({
-    queryKey: ['admin', 'companies', searchQ],
-    queryFn: () => adminApi.listCompanies(searchQ),
+    queryKey: ['admin', 'companies'],
+    queryFn: () => adminApi.listCompanies(),
   });
 
   const pickerCompaniesQuery = useQuery({
@@ -74,7 +152,7 @@ export const AdminJobsPage: React.FC = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      let companyId = jobForm.companyId;
+      let nextCompanyId = jobForm.companyId;
       if (postMode === 'new') {
         const provisioned = await adminApi.provisionCompany({
           company: sanitizeCompanyPayload(newCompanyForm),
@@ -82,11 +160,11 @@ export const AdminJobsPage: React.FC = () => {
           verify: true,
           canSelfPublishJobs: newCompanyCanPost,
         });
-        companyId = provisioned.company.id;
+        nextCompanyId = provisioned.company.id;
         setCredentials(provisioned.credentials);
       }
-      if (!companyId) throw new Error('Select a company');
-      const job = await adminApi.createJob(sanitizeJobPayload({ ...jobForm, companyId }));
+      if (!nextCompanyId) throw new Error('Select a company');
+      const job = await adminApi.createJob(sanitizeJobPayload({ ...jobForm, companyId: nextCompanyId }));
       if (publishAfterCreate) {
         await adminApi.publishJob(job.id);
       }
@@ -132,19 +210,35 @@ export const AdminJobsPage: React.FC = () => {
     onError: (err: Error) => setActionError(err.message),
   });
 
-  const rawJobs = tab === 'all' ? (allJobsQuery.data ?? []) : (pendingJobsQuery.data ?? []);
-  const jobs = filterCompanyId
-    ? rawJobs.filter((j) => j.companyId === filterCompanyId)
-    : rawJobs;
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => adminApi.archiveJob(id),
+    onSuccess: () => {
+      setActionError(null);
+      invalidateJobs();
+    },
+    onError: (err: Error) => setActionError(err.message),
+  });
 
+  const jobs = jobsQuery.data?.items ?? [];
+  const total = jobsQuery.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const companies = companiesQuery.data ?? [];
-  const companiesByJobs = useMemo(() => {
-    return [...companies].sort(
-      (a, b) => (b._count?.jobs ?? 0) - (a._count?.jobs ?? 0),
-    );
-  }, [companies]);
-
   const selectedCompany = companies.find((c) => c.id === jobForm.companyId);
+  const pickerCompanies = pickerCompaniesQuery.data ?? companies;
+  const busy =
+    publishMutation.isPending ||
+    closeMutation.isPending ||
+    rejectMutation.isPending ||
+    archiveMutation.isPending;
+
+  const hasFilters = Boolean(q || status || companyId || employmentType || workplaceType || employerEdited);
+
+  const rangeLabel = useMemo(() => {
+    if (!total) return '0 jobs';
+    const from = (page - 1) * PAGE_SIZE + 1;
+    const to = Math.min(page * PAGE_SIZE, total);
+    return `${from}–${to} of ${total}`;
+  }, [page, total]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +246,44 @@ export const AdminJobsPage: React.FC = () => {
     createMutation.mutate();
   };
 
-  const pickerCompanies = pickerCompaniesQuery.data ?? companies;
+  const renderAdminFooter = (job: Job) => {
+    const deadline = jobDeadlineDays(job.applicationDeadline);
+    return (
+      <>
+        <div className="jb-admin-meta">
+          <span className={`admin-status-pill is-${job.status}`}>{formatJobStatus(job.status)}</span>
+          <span className={`jb-admin-deadline${deadline.urgent ? ' is-urgent' : ''}`}>
+            {deadline.closed ? 'Closed' : deadline.label}
+          </span>
+          <span className="jb-admin-type">{prettyJobEnum(job.employmentType)}</span>
+          {job.employerEdited && <span className="admin-status-pill is-edited">Edited</span>}
+        </div>
+        <div className="admin-jobs-actions">
+          <Link to={`/admin/jobs/${job.id}`} className="admin-jobs-action">
+            Open
+          </Link>
+          {job.status !== 'archived' && (
+            <Link to={`/admin/jobs/${job.id}?edit=1`} className="admin-jobs-action">
+              Edit
+            </Link>
+          )}
+          <AdminJobStatusActions
+            job={job}
+            busy={busy}
+            onPublish={(id) => publishMutation.mutate(id)}
+            onReject={(id) => rejectMutation.mutate(id)}
+            onClose={(id) => closeMutation.mutate(id)}
+            onArchive={(id) => archiveMutation.mutate(id)}
+          />
+          {job.status === 'published' && (
+            <Link to={`/jobs/${job.slug}`} className="admin-jobs-action">
+              Public
+            </Link>
+          )}
+        </div>
+      </>
+    );
+  };
 
   const companySelect = (
     <div className="form-input-group">
@@ -167,12 +298,7 @@ export const AdminJobsPage: React.FC = () => {
       <div
         role="listbox"
         aria-label="Select company"
-        style={{
-          maxHeight: '200px',
-          overflowY: 'auto',
-          border: '1px solid #cbd5e1',
-          borderRadius: '12px',
-        }}
+        className="admin-company-picker"
       >
         {pickerCompanies.length === 0 ? (
           <p className="muted" style={{ padding: '0.75rem', margin: 0 }}>
@@ -187,18 +313,8 @@ export const AdminJobsPage: React.FC = () => {
                 type="button"
                 role="option"
                 aria-selected={selected}
+                className={`admin-company-option${selected ? ' is-selected' : ''}`}
                 onClick={() => setJobForm({ ...jobForm, companyId: c.id })}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '0.65rem 0.85rem',
-                  border: 'none',
-                  borderBottom: '1px solid #f1f5f9',
-                  background: selected ? 'rgba(11, 87, 208, 0.08)' : 'transparent',
-                  cursor: 'pointer',
-                  fontWeight: selected ? 700 : 400,
-                }}
               >
                 {c.name}{' '}
                 <span className="muted" style={{ fontWeight: 400 }}>
@@ -220,63 +336,45 @@ export const AdminJobsPage: React.FC = () => {
   );
 
   return (
-    <div className="jobs-list-container">
-      <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '1rem',
-          }}
-        >
-          <div>
-            <span className="section-eyebrow">Admin portal</span>
-            <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
-              Job postings
-            </h1>
-            <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
-              Search companies and jobs, post on behalf of partners, and manage the review queue.
-            </p>
+    <div className="jobs-list-container jb-page admin-jobs-page">
+      <section className="jb-hero jb-hero-admin">
+        <div className="jb-hero-inner">
+          <div className="jb-admin-hero-row">
+            <div>
+              <p className="jb-breadcrumb">
+                Admin <span>/</span> Job postings
+              </p>
+              <h1 className="jb-hero-title">
+                Job <span>postings</span>
+              </h1>
+              <p className="jb-hero-copy">
+                Review, filter, and edit vacancies posted by employers or on their behalf.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-nav-register"
+              onClick={() => {
+                setActionError(null);
+                setShowCreate((v) => !v);
+              }}
+              style={{ cursor: 'pointer', border: 'none' }}
+            >
+              {showCreate ? 'Close form' : '+ Post job'}
+            </button>
           </div>
-          <button
-            type="button"
-            className="btn-nav-register"
-            onClick={() => {
-              setActionError(null);
-              setShowCreate((v) => !v);
-            }}
-            style={{ cursor: 'pointer', border: 'none' }}
-          >
-            <span>{showCreate ? '✕ Close studio' : '+ Post new job'}</span>
-          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="form-input-group" style={{ maxWidth: '480px', marginBottom: '1.5rem' }}>
-        <label htmlFor="job-admin-search">Search jobs and companies</label>
-        <input
-          id="job-admin-search"
-          placeholder="Company name or job title…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <div className="jb-body">
 
       {actionError && <div className="alert-box-error">{actionError}</div>}
 
       {showCreate && (
-        <div
-          className="jobs-filter-card"
-          style={{ marginBottom: '2.5rem', border: '2px solid rgba(11, 87, 208, 0.3)' }}
-        >
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0a2540', margin: '0 0 1.25rem' }}>
-            Post job advertisement
-          </h2>
-
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="card">
+          <h2 className="admin-jobs-card-title">Post job</h2>
+          <div className="admin-jobs-mode">
+            <label>
               <input
                 type="radio"
                 name="postMode"
@@ -285,29 +383,29 @@ export const AdminJobsPage: React.FC = () => {
               />
               Existing company
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <label>
               <input
                 type="radio"
                 name="postMode"
                 checked={postMode === 'new'}
                 onChange={() => setPostMode('new')}
               />
-              Register new company & post
+              Register company and post
             </label>
           </div>
 
           <form onSubmit={handleCreate}>
             {postMode === 'new' && (
               <>
-                <h3 style={{ margin: '0 0 0.5rem' }}>New company</h3>
+                <h3 className="admin-jobs-subhead">New company</h3>
                 <CompanyFormFields value={newCompanyForm} onChange={setNewCompanyForm} idPrefix="new-co" />
-                <h3 style={{ margin: '1rem 0 0.5rem' }}>Company login</h3>
+                <h3 className="admin-jobs-subhead">Company login</h3>
                 <EmployerCredentialsFields
                   value={newEmployerForm}
                   onChange={setNewEmployerForm}
                   idPrefix="new-emp"
                 />
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
+                <label className="admin-jobs-check">
                   <input
                     type="checkbox"
                     checked={newCompanyCanPost}
@@ -325,7 +423,7 @@ export const AdminJobsPage: React.FC = () => {
               companySelect={postMode === 'existing' ? companySelect : undefined}
             />
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <label className="admin-jobs-check">
               <input
                 type="checkbox"
                 checked={publishAfterCreate}
@@ -334,7 +432,7 @@ export const AdminJobsPage: React.FC = () => {
               Publish live immediately after saving
             </label>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <div className="admin-jobs-form-actions">
               <button
                 type="submit"
                 className="btn-auth-submit"
@@ -351,188 +449,171 @@ export const AdminJobsPage: React.FC = () => {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(240px, 320px) 1fr',
-          gap: '1.5rem',
-          alignItems: 'start',
-        }}
-      >
-        <div className="card" style={{ overflowX: 'auto', maxHeight: '520px', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Filter job list by company</h2>
-            {filterCompanyId && (
-              <button
-                type="button"
-                className="btn-clear-filters"
-                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
-                onClick={() => setFilterCompanyId(null)}
-              >
-                Clear filter
-              </button>
-            )}
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '0.5rem' }}>Name</th>
-                <th style={{ padding: '0.5rem' }}>Jobs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companiesByJobs.map((c) => (
-                <CompanyRow
-                  key={c.id}
-                  company={c}
-                  active={filterCompanyId === c.id}
-                  onSelect={() =>
-                    setFilterCompanyId((prev) => (prev === c.id ? null : c.id))
-                  }
-                />
+      <div className="jb-admin-toolbar">
+        <form
+          className="jb-search-bar"
+          onSubmit={(e) => {
+            e.preventDefault();
+            patchParams({ q: search.trim() });
+          }}
+        >
+          <svg className="jb-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8" strokeWidth="2.2" />
+            <path d="M21 21l-4.35-4.35" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          <input
+            id="job-admin-search"
+            placeholder="Search by job title, company, or reference..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search job postings"
+          />
+          <button type="submit" className="jb-search-submit">
+            Search
+          </button>
+        </form>
+        <div className="jb-filters jb-filters-admin">
+          <span className="jb-filters-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+              <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Filter
+          </span>
+          <label className="jb-filter-select">
+            <span>Status</span>
+            <select
+              id="job-admin-status"
+              value={status}
+              onChange={(e) => setFilter('status', e.target.value)}
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
-            </tbody>
-          </table>
-          {companiesByJobs.length === 0 && (
-            <p className="muted" style={{ padding: '0.5rem 0' }}>No companies found.</p>
-          )}
-        </div>
-
-        <div>
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            </select>
+          </label>
+          <label className="jb-filter-select">
+            <span>Company</span>
+            <select
+              id="job-admin-company"
+              value={companyId}
+              onChange={(e) => setFilter('companyId', e.target.value)}
+            >
+              <option value="">All companies</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="jb-filter-select">
+            <span>Employment</span>
+            <select
+              id="job-admin-type"
+              value={employmentType}
+              onChange={(e) => setFilter('employmentType', e.target.value)}
+            >
+              {EMPLOYMENT_OPTIONS.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="jb-filter-select">
+            <span>Workplace</span>
+            <select
+              id="job-admin-place"
+              value={workplaceType}
+              onChange={(e) => setFilter('workplaceType', e.target.value)}
+            >
+              {WORKPLACE_OPTIONS.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="jb-filter-select">
+            <span>Edits</span>
+            <select
+              id="job-admin-edited"
+              value={employerEdited ? 'true' : ''}
+              onChange={(e) => setFilter('employerEdited', e.target.value)}
+            >
+              <option value="">All jobs</option>
+              <option value="true">Edited by employer</option>
+            </select>
+          </label>
+          {hasFilters && (
             <button
               type="button"
-              onClick={() => setTab('all')}
-              className={`pagination-btn ${tab === 'all' ? 'active' : ''}`}
-              style={{
-                background: tab === 'all' ? 'var(--primary)' : '#ffffff',
-                color: tab === 'all' ? '#ffffff' : '#0f172a',
-                fontWeight: 700,
-              }}
+              className="btn-clear-filters"
+              onClick={() => setSearchParams(new URLSearchParams())}
             >
-              All jobs ({allJobsQuery.data?.length ?? 0})
+              Reset
             </button>
-            <button
-              type="button"
-              onClick={() => setTab('pending')}
-              className={`pagination-btn ${tab === 'pending' ? 'active' : ''}`}
-              style={{
-                background: tab === 'pending' ? 'var(--primary)' : '#ffffff',
-                color: tab === 'pending' ? '#ffffff' : '#0f172a',
-                fontWeight: 700,
-              }}
-            >
-              Pending review ({pendingJobsQuery.data?.length ?? 0})
-            </button>
-          </div>
-
-          <div className="jobs-board-grid">
-            {jobs.map((job) => (
-              <div key={job.id} className="premium-job-card">
-                <div className="job-card-header">
-                  <div className="company-badge">
-                    {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
-                  </div>
-                  <div className="job-card-meta">
-                    <span className="job-company-name">{job.company?.name ?? 'Partner employer'}</span>
-                    <h3 className="job-card-title">
-                      <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="job-card-tags">
-                  <span
-                    className="tag-pill"
-                    style={{
-                      background:
-                        job.status === 'published'
-                          ? '#dcfce7'
-                          : job.status === 'pending_review'
-                            ? '#fef3c7'
-                            : '#f1f5f9',
-                      color:
-                        job.status === 'published'
-                          ? '#15803d'
-                          : job.status === 'pending_review'
-                            ? '#b45309'
-                            : '#475569',
-                      fontWeight: 700,
-                    }}
-                  >
-                    ● {job.status.toUpperCase()}
-                  </span>
-                  <span className="tag-pill tag-type">
-                    {job.employmentType.replace('_', ' ').toUpperCase()}
-                  </span>
-                  {job.location && <span className="tag-pill tag-location">{job.location.name}</span>}
-                </div>
-
-                <div className="job-card-footer" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
-                  <span className="job-deadline">
-                    Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-                  </span>
-
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {job.status === 'pending_review' && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn-card-apply"
-                          style={{ background: '#16a34a', color: '#ffffff', cursor: 'pointer', border: 'none' }}
-                          onClick={() => publishMutation.mutate(job.id)}
-                          disabled={publishMutation.isPending}
-                        >
-                          Publish live
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-clear-filters"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => rejectMutation.mutate(job.id)}
-                          disabled={rejectMutation.isPending}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    {job.status === 'draft' && (
-                      <button
-                        type="button"
-                        className="btn-card-apply"
-                        style={{ background: '#16a34a', color: '#ffffff', cursor: 'pointer', border: 'none' }}
-                        onClick={() => publishMutation.mutate(job.id)}
-                        disabled={publishMutation.isPending}
-                      >
-                        Publish live
-                      </button>
-                    )}
-
-                    {job.status === 'published' && (
-                      <button
-                        type="button"
-                        className="btn-clear-filters"
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => closeMutation.mutate(job.id)}
-                        disabled={closeMutation.isPending}
-                      >
-                        Close vacancy
-                      </button>
-                    )}
-
-                    <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
-                      View public ad →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {jobs.length === 0 && !allJobsQuery.isLoading && (
-            <p className="muted">No jobs match your filters.</p>
           )}
+          <span className="jb-results-count">
+            <strong>{rangeLabel}</strong>
+          </span>
         </div>
       </div>
+
+      {jobsQuery.isError && (
+        <div className="alert-box-error">{(jobsQuery.error as Error).message}</div>
+      )}
+
+      <section className="jb-latest" aria-label="Job vacancies">
+        <div className="jb-latest-head">
+          <div>
+            <p className="jb-kicker">Latest job vacancies</p>
+            <h2 className="jb-section-title">All posted opportunities</h2>
+          </div>
+        </div>
+
+        {!jobsQuery.isLoading && jobs.length === 0 && (
+          <div className="empty-results-box">
+            <div className="empty-icon-circle">💼</div>
+            <h3>No jobs match your filters</h3>
+            <p>Try another search, company, or status, or post a new vacancy.</p>
+          </div>
+        )}
+
+        <LatestVacanciesGrid
+          jobs={jobs}
+          loading={jobsQuery.isLoading}
+          publicLinks={false}
+          hrefFor={(job) => `/admin/jobs/${job.id}`}
+          footer={renderAdminFooter}
+        />
+
+        {total > 0 && pageCount > 1 && (
+          <div className="pagination-wrapper">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page <= 1}
+              onClick={() => patchParams({ page: String(page - 1) })}
+            >
+              ← Previous
+            </button>
+            <span className="pagination-info">
+              Page <strong>{page}</strong> of <strong>{pageCount}</strong>
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={page >= pageCount}
+              onClick={() => patchParams({ page: String(page + 1) })}
+            >
+              Next →
+            </button>
+          </div>
+        )}
+      </section>
 
       {credentials && (
         <AdminCredentialsModal
@@ -541,29 +622,7 @@ export const AdminJobsPage: React.FC = () => {
           onClose={() => setCredentials(null)}
         />
       )}
+      </div>
     </div>
   );
 };
-
-const CompanyRow: React.FC<{
-  company: Company;
-  active: boolean;
-  onSelect: () => void;
-}> = ({ company, active, onSelect }) => (
-  <tr
-    style={{
-      borderBottom: '1px solid #f1f5f9',
-      cursor: 'pointer',
-      background: active ? '#eff6ff' : undefined,
-    }}
-    onClick={onSelect}
-  >
-    <td style={{ padding: '0.5rem' }}>
-      {company.name}
-      {company.portalStatus === 'suspended' && (
-        <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}> · off</span>
-      )}
-    </td>
-    <td style={{ padding: '0.5rem' }}>{company._count?.jobs ?? 0}</td>
-  </tr>
-);

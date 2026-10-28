@@ -108,11 +108,9 @@ export class TalentService {
     const safePage = Math.max(page, 1);
     const safeLimit = Math.min(Math.max(limit, 1), 50);
     const term = q?.trim() ?? '';
-    if (term.length < MIN_QUERY_LENGTH) {
-      return { items: [], total: 0, page: safePage, limit: safeLimit };
-    }
-
-    const where = searchWhere(term);
+    // No keyword: paginate the full visible pool. Filter only when the query is at least 2 chars.
+    const where =
+      term.length >= MIN_QUERY_LENGTH ? searchWhere(term) : visibleWhere;
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.candidateProfile.findMany({
         where,

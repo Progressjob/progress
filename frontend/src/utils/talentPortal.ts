@@ -53,7 +53,7 @@ export function useTalentPortal() {
       if (isBrowse) return talentApi.spotlight();
       return employerApi.talentSpotlight(companyId!);
     },
-    search: (params: { q: string; page?: number; limit?: number }): Promise<TalentSearchResponse> => {
+    search: (params: { q?: string; page?: number; limit?: number }): Promise<TalentSearchResponse> => {
       if (isAdmin) return adminApi.searchTalent(params);
       if (isBrowse) return talentApi.search(params);
       return employerApi.searchTalent(companyId!, params);

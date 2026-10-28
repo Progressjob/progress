@@ -149,6 +149,7 @@ export interface Job {
   deadlineChangeNote?: string | null;
   deadlineChangeRequestedAt?: string | null;
   status: JobStatus;
+  isFeatured?: boolean;
   postedAt?: string | null;
   createdAt?: string;
   company?: Company;
@@ -157,6 +158,37 @@ export interface Job {
   skills?: Array<{ id: string; skillId: string; isRequired: boolean; skill: Skill }>;
   screeningQuestions?: ScreeningQuestion[];
   _count?: { applications: number; views: number };
+  employerEdited?: boolean;
+  revisions?: JobRevision[];
+}
+
+export interface JobRevisionChange {
+  field: string;
+  label: string;
+  from: string | null;
+  to: string | null;
+}
+
+export interface JobRevision {
+  id: string;
+  jobId: string;
+  actorUserId: string;
+  source: 'employer' | 'admin';
+  changes: JobRevisionChange[];
+  createdAt: string;
+  actor?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+  };
+}
+
+export interface AdminJobListResponse {
+  items: Job[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface CandidateResume {

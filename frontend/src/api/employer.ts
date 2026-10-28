@@ -84,9 +84,9 @@ export const employerApi = {
     ),
   talentSpotlight: (companyId: string) =>
     apiFetch<TalentSpotlightResponse>(`/employer/companies/${companyId}/talent/spotlight`),
-  searchTalent: (companyId: string, params: { q: string; page?: number; limit?: number }) => {
+  searchTalent: (companyId: string, params: { q?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
-    if (params.q.trim()) qs.set('q', params.q.trim());
+    if (params.q?.trim()) qs.set('q', params.q.trim());
     if (params.page) qs.set('page', String(params.page));
     if (params.limit) qs.set('limit', String(params.limit));
     const query = qs.toString();

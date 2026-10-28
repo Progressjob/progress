@@ -63,7 +63,7 @@ export const AdminDashboardPage: React.FC = () => {
           <Link to="/admin/companies" className="btn">
             Manage companies →
           </Link>
-          <Link to="/admin/jobs" className="btn">
+          <Link to="/admin/jobs?status=pending_review" className="btn">
             Jobs & review queue →
           </Link>
           <Link to="/admin/candidates" className="btn">

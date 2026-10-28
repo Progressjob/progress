@@ -60,6 +60,11 @@ enum WorkplaceType {
   remote
 }
 
+enum JobRevisionSource {
+  employer
+  admin
+}
+
 enum ApplicationMethod {
   internal
   external_url
@@ -148,6 +153,7 @@ model User {
   reports                 JobReport[]                   @relation("Reporter")
   reviewedReports         JobReport[]                   @relation("ReportReviewer")
   auditLogs               AdminAuditLog[]
+  jobRevisions            JobRevision[]
   contactMessages         ContactMessage[]
   reviewedDocuments       CompanyVerificationDocument[]
 
@@ -523,6 +529,7 @@ model Job {
   savedBy                 SavedJob[]
   views                   JobView[]
   reports                 JobReport[]
+  revisions               JobRevision[]
 
   @@unique([companyId, referenceCode])
   @@index([status, postedAt(sort: Desc)])
@@ -531,6 +538,21 @@ model Job {
   @@index([companyId, status])
   @@index([applicationDeadline, status])
   @@map("jobs")
+}
+
+model JobRevision {
+  id          String            @id @default(uuid()) @db.Uuid
+  jobId       String            @map("job_id") @db.Uuid
+  actorUserId String            @map("actor_user_id") @db.Uuid
+  source      JobRevisionSource
+  changes     Json
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actor       User              @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([jobId, createdAt])
+  @@index([source])
+  @@map("job_revisions")
 }
 
 model JobSkill {

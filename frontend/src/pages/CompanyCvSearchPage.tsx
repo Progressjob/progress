@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { publicFileUrl } from '../api/files';
 import type { TalentCard } from '../types/api';
 import { useTalentPortal } from '../utils/talentPortal';
@@ -141,29 +141,25 @@ export const CompanyCvSearchPage: React.FC = () => {
                 setDraft(query);
   }, [query]);
 
-              const spotlightQuery = useQuery({
-                queryKey: ['talent', 'spotlight', portal.isAdmin ? 'admin' : portal.isBrowse ? 'browse' : portal.companyId],
+  const poolKey = portal.isAdmin ? 'admin' : portal.isBrowse ? 'browse' : portal.companyId;
+  const spotlightQuery = useQuery({
+    queryKey: ['talent', 'spotlight', poolKey],
     queryFn: () => portal.spotlight(),
-              enabled: portal.canQuery,
+    enabled: portal.canQuery,
   });
 
   const searching = query.length >= MIN_QUERY;
-              const searchQuery = useQuery({
-                queryKey: [
-              'talent',
-              'search',
-              portal.isAdmin ? 'admin' : portal.isBrowse ? 'browse' : portal.companyId,
-              query,
-              page,
-              ],
-    queryFn: () => portal.search({q: query, page, limit: PAGE_SIZE }),
-              enabled: portal.canQuery && searching,
+  const searchQuery = useQuery({
+    queryKey: ['talent', 'search', poolKey, query, page],
+    queryFn: () => portal.search({ q: searching ? query : '', page, limit: PAGE_SIZE }),
+    enabled: portal.canQuery,
+    placeholderData: keepPreviousData,
   });
 
   const applySearch = (value: string, nextPage = 1) => {
     const term = value.trim();
               const next = new URLSearchParams();
-              if (term) next.set('q', term);
+              if (term.length >= MIN_QUERY) next.set('q', term);
     if (nextPage > 1) next.set('page', String(nextPage));
               setSearchParams(next);
   };
@@ -189,12 +185,13 @@ export const CompanyCvSearchPage: React.FC = () => {
                 );
   }
 
-                const searchableCount = spotlightQuery.data?.searchableCount ?? 0;
-                const results = searching ? (searchQuery.data?.items ?? []) : (spotlightQuery.data?.items ?? []);
-                const total = searchQuery.data?.total ?? 0;
-                const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-                const listLoading = searching ? searchQuery.isLoading : spotlightQuery.isLoading;
-                const listError = searching ? searchQuery.error : spotlightQuery.error;
+  const searchableCount = spotlightQuery.data?.searchableCount ?? searchQuery.data?.total ?? 0;
+  const results = searchQuery.data?.items ?? [];
+  const total = searchQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listLoading = searchQuery.isLoading;
+  const listError = searchQuery.error;
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
                 return (
                       <div className="jobs-list-container">
@@ -277,8 +274,15 @@ export const CompanyCvSearchPage: React.FC = () => {
 
                                     {/* Popular Tags */}
                                     <div className="cv-popular-row">
-                                      <span className="cv-popular-label">Popular Roles:</span>
+                                      <span className="cv-popular-label">Filter:</span>
                                       <div className="cv-popular-tags">
+                                        <button
+                                          type="button"
+                                          className={`cv-tag-pill ${!searching ? 'is-active' : ''}`}
+                                          onClick={() => applySearch('')}
+                                        >
+                                          All
+                                        </button>
                                         {POPULAR_ROLES.map((role) => {
                                           const active = query.toLowerCase() === role.toLowerCase();
                                           return (
@@ -300,14 +304,14 @@ export const CompanyCvSearchPage: React.FC = () => {
                                   <div className="cv-results-header">
                                     <div>
                                       <h2 className="cv-results-title">
-                                        {searching ? `Matching Candidates for “${query}”` : 'Featured Professional Talent'}
+                                        {searching ? `Matching candidates for “${query}”` : 'All professional talent'}
                                       </h2>
                                       <p className="cv-results-subtitle">
-                                        {searching
-                                          ? searchQuery.data
-                                            ? `Showing ${total} candidate profile${total === 1 ? '' : 's'} matching your search.`
-                                            : 'Searching candidate pool…'
-                                          : 'Recent talent profiles. Enter a role or skill above to search the full CV database.'}
+                                        {searchQuery.data
+                                          ? searching
+                                            ? `Showing ${results.length} of ${total} matching candidate profile${total === 1 ? '' : 's'}.`
+                                            : `Showing ${results.length} of ${total} candidate profile${total === 1 ? '' : 's'}.`
+                                          : 'Loading candidate pool…'}
                                       </p>
                                     </div>
                                   </div>
@@ -329,10 +333,10 @@ export const CompanyCvSearchPage: React.FC = () => {
                                   {!listLoading && !listError && results.length === 0 && (
                                         <div className="empty-results-box">
                                           <div className="empty-icon-circle">👤</div>
-                                          <h3>{searching ? 'No matching candidate CVs found' : 'No featured candidate profiles yet'}</h3>
+                                          <h3>{searching ? 'No matching candidate CVs found' : 'No candidate profiles yet'}</h3>
                                           <p>
                                             {searching
-                                            ? 'Try broader keywords such as "sales", "finance", "engineer", or clear your search to explore all talent.'
+                                            ? 'Try broader keywords such as "sales", "finance", "engineer", or select All to browse every profile.'
               : 'Candidates will appear here as profiles are published.'}
                                           </p>
                                           {searching && (
@@ -364,8 +368,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                             </div>
       )}
 
-                                            {/* Pagination */}
-                                            {searching && total > PAGE_SIZE && (
+                                            {total > PAGE_SIZE && (
                                                 <div className="pagination-wrapper" style={{ marginTop: '2.5rem' }}>
                                                   <button
                                                     type="button"
@@ -378,9 +381,20 @@ export const CompanyCvSearchPage: React.FC = () => {
                                                   >
                                                     ← Previous
                                                   </button>
-                                                    <span className="pagination-info">
-                                                      Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-                                                    </span>
+                                                  {pageNumbers.map((n) => (
+                                                    <button
+                                                      key={n}
+                                                      type="button"
+                                                      className={`pagination-btn${n === page ? ' is-current' : ''}`}
+                                                      disabled={n === page}
+                                                      onClick={() => {
+                                                        applySearch(query, n);
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                      }}
+                                                    >
+                                                      Page {n}
+                                                    </button>
+                                                  ))}
                                                     <button
                                                       type="button"
                                                       className="pagination-btn"

@@ -7,11 +7,13 @@ import type {
   CompanyPortalStatus,
   EmploymentType,
   Job,
+  JobStatus,
   QuestionType,
   TalentDetail,
   TalentSearchResponse,
   TalentSpotlightResponse,
   WorkplaceType,
+  AdminJobListResponse,
 } from '../types/api';
 
 export interface CompanyPayload {
@@ -75,6 +77,7 @@ export interface CreateAdminJobPayload {
   applicationMethod?: ApplicationMethod;
   applicationEmail?: string;
   applicationInstructions?: string;
+  isFeatured?: boolean;
 }
 
 export interface ScreeningQuestionInput {
@@ -85,9 +88,35 @@ export interface ScreeningQuestionInput {
   options?: string[];
 }
 
+export interface AdminJobListParams {
+  q?: string;
+  status?: JobStatus | '';
+  companyId?: string;
+  employmentType?: EmploymentType | '';
+  workplaceType?: WorkplaceType | '';
+  employerEdited?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 function withQuery(path: string, q?: string) {
   if (!q?.trim()) return path;
   return `${path}?q=${encodeURIComponent(q.trim())}`;
+}
+
+function withJobListQuery(path: string, params?: AdminJobListParams) {
+  const qs = new URLSearchParams();
+  if (params?.q?.trim()) qs.set('q', params.q.trim());
+  if (params?.status) qs.set('status', params.status);
+  if (params?.companyId) qs.set('companyId', params.companyId);
+  if (params?.employmentType) qs.set('employmentType', params.employmentType);
+  if (params?.workplaceType) qs.set('workplaceType', params.workplaceType);
+  if (params?.employerEdited === true) qs.set('employerEdited', 'true');
+  if (params?.employerEdited === false) qs.set('employerEdited', 'false');
+  if (params?.page && params.page > 1) qs.set('page', String(params.page));
+  if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
+  const query = qs.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 export const adminApi = {
@@ -142,10 +171,13 @@ export const adminApi = {
       `/admin/candidates/${userId}/application-access`,
       { method: 'PATCH', body: { blocked } },
     ),
-  listJobs: (q?: string) => apiFetch<Job[]>(withQuery('/admin/jobs', q)),
-  listPendingJobs: (q?: string) => apiFetch<Job[]>(withQuery('/admin/jobs/pending', q)),
+  listJobs: (params?: AdminJobListParams) =>
+    apiFetch<AdminJobListResponse>(withJobListQuery('/admin/jobs', params)),
+  getJob: (jobId: string) => apiFetch<Job>(`/admin/jobs/${jobId}`),
   createJob: (payload: CreateAdminJobPayload) =>
     apiFetch<Job>('/admin/jobs', { method: 'POST', body: payload }),
+  updateJob: (jobId: string, payload: Partial<CreateAdminJobPayload>) =>
+    apiFetch<Job>(`/admin/jobs/${jobId}`, { method: 'PATCH', body: payload }),
   publishJob: (jobId: string) =>
     apiFetch<Job>(`/admin/jobs/${jobId}/publish`, { method: 'POST' }),
   rejectJob: (jobId: string) =>
@@ -160,9 +192,9 @@ export const adminApi = {
       body: { questions },
     }),
   talentSpotlight: () => apiFetch<TalentSpotlightResponse>('/admin/talent/spotlight'),
-  searchTalent: (params: { q: string; page?: number; limit?: number }) => {
+  searchTalent: (params: { q?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
-    if (params.q.trim()) qs.set('q', params.q.trim());
+    if (params.q?.trim()) qs.set('q', params.q.trim());
     if (params.page) qs.set('page', String(params.page));
     if (params.limit) qs.set('limit', String(params.limit));
     const query = qs.toString();

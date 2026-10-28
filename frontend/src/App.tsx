@@ -27,6 +27,7 @@ import { CompanyCvSearchPage } from './pages/CompanyCvSearchPage';
 import { CompanyCvDetailPage } from './pages/CompanyCvDetailPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
+import { AdminJobDetailPage } from './pages/AdminJobDetailPage';
 import { AdminCompaniesPage } from './pages/AdminCompaniesPage';
 import { AdminCandidatesPage } from './pages/AdminCandidatesPage';
 
@@ -115,6 +116,7 @@ export function App(): React.ReactElement {
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
               <Route path="/admin/jobs" element={<AdminJobsPage />} />
+              <Route path="/admin/jobs/:jobId" element={<AdminJobDetailPage />} />
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
               <Route path="/admin/cv-search" element={<CompanyCvSearchPage />} />
               <Route path="/admin/cv-search/:candidateId" element={<CompanyCvDetailPage />} />
