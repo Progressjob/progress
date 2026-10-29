@@ -56,7 +56,7 @@ describe('AuthService role enablement', () => {
     prisma.role.findUnique.mockResolvedValue({ id: 3, name: 'employer' });
 
     const service = new AuthService(prisma, jwt, config);
-    const result = await service.enableEmployer('user-1', { name: 'Acme' });
+    const result = await service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344' });
 
     expect(result).toEqual({ company, created: false });
     expect(prisma.company.create).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('AuthService role enablement', () => {
         data: expect.objectContaining({
           name: 'Abebe Hiring',
           verificationStatus: 'pending',
-          canSelfPublishJobs: false,
+          canSelfPublishJobs: true,
         }),
       }),
     );
@@ -112,7 +112,7 @@ describe('AuthService role enablement', () => {
     prisma.role.findUnique.mockResolvedValue(null);
 
     const service = new AuthService(prisma, jwt, config);
-    await expect(service.enableEmployer('user-1', { name: 'Acme' })).rejects.toBeInstanceOf(
+    await expect(service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344' })).rejects.toBeInstanceOf(
       ConflictException,
     );
   });

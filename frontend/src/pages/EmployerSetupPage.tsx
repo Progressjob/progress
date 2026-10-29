@@ -1,20 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { destinationAfterHire } from '../auth/workspace';
 import { ApiError } from '../api/client';
+import { employerApi } from '../api/employer';
 import { ProgressLogo } from '../components/ProgressLogo';
 
 export const EmployerSetupPage: React.FC = () => {
-  const { user, enableEmployer, setWorkspace } = useAuth();
+  const { user, loading: authLoading, enableEmployer, setWorkspace } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next');
-  const existingCompanyId = user?.companyMemberships[0]?.companyId;
+
+  const companiesQuery = useQuery({
+    queryKey: ['company', 'memberships'],
+    queryFn: () => employerApi.listCompanies(),
+    enabled: Boolean(user),
+  });
+
+  const existingCompanyId =
+    user?.companyMemberships?.[0]?.companyId || companiesQuery.data?.[0]?.id;
 
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [contactPerson, setContactPerson] = useState(
     user ? `${user.firstName} ${user.lastName}`.trim() : '',
@@ -24,25 +34,55 @@ export const EmployerSetupPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (user?.phone && !phone) {
+      setPhone(user.phone);
+    }
+  }, [user?.phone, phone]);
+
+  useEffect(() => {
     if (existingCompanyId) {
       setWorkspace('employer');
       navigate(destinationAfterHire(existingCompanyId, next), { replace: true });
     }
   }, [existingCompanyId, navigate, next, setWorkspace]);
 
+  if (authLoading || (Boolean(user) && companiesQuery.isLoading)) {
+    return (
+      <div className="card" style={{ maxWidth: '480px', margin: '4rem auto', textAlign: 'center', padding: '2rem' }}>
+        Checking employer credentials...
+      </div>
+    );
+  }
+
+  if (existingCompanyId) {
+    return (
+      <div className="card" style={{ maxWidth: '480px', margin: '3rem auto', textAlign: 'center', padding: '2rem' }}>
+        Opening your job dashboard...
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const cleanPhone = phone.trim();
+    if (!cleanPhone || cleanPhone.length < 9) {
+      setError('A valid phone number (at least 9 digits) is strictly required.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const result = await enableEmployer({
         name: name.trim(),
+        phone: cleanPhone,
         ...(city.trim() ? { city: city.trim() } : {}),
-        ...(phone.trim() ? { phone: phone.trim() } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(contactPerson.trim() ? { contactPerson: contactPerson.trim() } : {}),
         ...(description.trim() ? { description: description.trim() } : {}),
       });
+      setWorkspace('employer');
       navigate(destinationAfterHire(result.company.id, next), { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -54,14 +94,6 @@ export const EmployerSetupPage: React.FC = () => {
       setSubmitting(false);
     }
   };
-
-  if (existingCompanyId) {
-    return (
-      <div className="card" style={{ maxWidth: '480px', margin: '3rem auto', textAlign: 'center' }}>
-        Opening your job post form...
-      </div>
-    );
-  }
 
   return (
     <div className="auth-page-container">
@@ -105,11 +137,13 @@ export const EmployerSetupPage: React.FC = () => {
               />
             </div>
             <div className="form-input-group">
-              <label htmlFor="employer-phone">Phone</label>
+              <label htmlFor="employer-phone">Phone *</label>
               <input
                 id="employer-phone"
-                type="text"
-                placeholder="+251 9..."
+                type="tel"
+                required
+                minLength={9}
+                placeholder="+251 9... (Strictly required)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />

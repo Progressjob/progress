@@ -549,9 +549,9 @@ function postedLabel(iso?: string | null): string {
                                                       </svg>
                                                     </a>
                                                   ) : (
-                                                    <strong className="jd-how-via-text">{applyVia.via}</strong>
+                                                    <strong className="jd-how-via-text" style={{ whiteSpace: "pre-wrap", display: "block" }}>{applyVia.via}</strong>
                                                   )}
-                                                  {applyVia.extra && <p className="jd-how-extra">{applyVia.extra}</p>}
+                                                  {applyVia.extra && <div className="jd-how-extra" style={{ whiteSpace: "pre-wrap", marginTop: "0.75rem", lineHeight: 1.6 }}>{applyVia.extra}</div>}
                                                 </div>
                                               ) : (
                                                 <p className="muted">Direct contact channel handled via Progress Manpower HQ.</p>

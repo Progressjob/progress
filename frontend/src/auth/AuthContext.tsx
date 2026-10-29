@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   apiFetch,
   clearStoredTokens,
@@ -18,6 +19,7 @@ import {
 export interface AuthUser {
   id: string;
   email: string;
+  phone?: string | null;
   firstName: string;
   lastName: string;
   roles: string[];
@@ -32,7 +34,7 @@ export interface RegisterInput {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone: string;
 }
 
 interface AuthContextValue {
@@ -57,6 +59,7 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
     email: raw.email,
     firstName: raw.firstName,
     lastName: raw.lastName,
+    phone: raw.phone ?? null,
     roles: raw.roles.map((r) => r.role.name),
     candidateProfileId: raw.candidateProfile?.id ?? null,
     applicationsBlocked: raw.candidateProfile?.applicationsBlocked ?? false,
@@ -66,6 +69,7 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [workspace, setWorkspaceState] = useState<Workspace>(
@@ -100,6 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     setOnUnauthorized(() => {
+      clearStoredTokens();
+      queryClient.clear();
       setUser(null);
     });
     void refreshUser().finally(() => setLoading(false));
@@ -107,6 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(
     async (identifier: string, password: string): Promise<AuthUser> => {
+      clearStoredTokens();
+      queryClient.clear();
+      setUser(null);
       const tokens = await apiFetch<TokenResponse>('/auth/login', {
         method: 'POST',
         body: { identifier, password },
@@ -117,17 +126,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!loaded) throw new Error('Failed to load user profile after login');
       return loaded;
     },
-    [refreshUser],
+    [refreshUser, queryClient],
   );
 
   const register = useCallback(
     async (input: RegisterInput): Promise<AuthUser> => {
+      clearStoredTokens();
+      queryClient.clear();
+      setUser(null);
       const payload = {
-        email: input.email,
+        email: input.email.trim(),
         password: input.password,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        ...(input.phone?.trim() ? { phone: input.phone.trim() } : {}),
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        phone: input.phone.trim(),
       };
       const tokens = await apiFetch<TokenResponse>('/auth/register', {
         method: 'POST',
@@ -139,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!loaded) throw new Error('Failed to load user profile after registration');
       return loaded;
     },
-    [refreshUser],
+    [refreshUser, queryClient],
   );
 
   const enableCandidate = useCallback(async (): Promise<AuthUser | null> => {
@@ -171,8 +183,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     clearStoredTokens();
+    queryClient.clear();
     setUser(null);
-  }, []);
+  }, [queryClient]);
 
   const hasRole = useCallback(
     (...roles: string[]) => {

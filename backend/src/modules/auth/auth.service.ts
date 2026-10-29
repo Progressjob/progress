@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -30,13 +31,20 @@ export class AuthService {
     if (await this.prisma.user.findUnique({ where: { email } })) {
       throw new ConflictException('Email is already registered');
     }
+    const phone = dto.phone.trim();
+    if (!phone) {
+      throw new BadRequestException('Phone number is strictly required');
+    }
+    if (await this.prisma.user.findUnique({ where: { phone } })) {
+      throw new ConflictException('Phone number is already registered');
+    }
     const candidateRole = await this.prisma.role.findUnique({ where: { name: 'candidate' } });
     if (!candidateRole) throw new ConflictException('Roles have not been seeded');
 
     const user = await this.prisma.user.create({
       data: {
         email,
-        phone: dto.phone,
+        phone,
         passwordHash: await argon2.hash(dto.password, { type: argon2.argon2id }),
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -217,7 +225,7 @@ export class AuthService {
           contactPerson,
           description: dto.description?.trim() || undefined,
           verificationStatus: 'pending',
-          canSelfPublishJobs: false,
+          canSelfPublishJobs: true,
         },
         include: { industry: true },
       });

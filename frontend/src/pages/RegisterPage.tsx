@@ -19,13 +19,22 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const cleanPhone = phone.trim();
+    if (!cleanPhone) {
+      setError('Phone number is strictly required.');
+      return;
+    }
+    if (cleanPhone.length < 9) {
+      setError('Phone number must be at least 9 characters.');
+      return;
+    }
     setSubmitting(true);
     try {
       await register({
-        firstName,
-        lastName,
-        email,
-        phone: phone.trim() || undefined,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phone: cleanPhone,
         password,
       });
       navigate('/jobs', { replace: true });
@@ -100,7 +109,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="form-input-group">
-            <label htmlFor="reg-phone">Mobile Phone (Optional)</label>
+            <label htmlFor="reg-phone">Mobile Phone *</label>
             <div className="auth-input-wrapper">
               <svg className="auth-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path
@@ -110,8 +119,10 @@ export const RegisterPage: React.FC = () => {
               </svg>
               <input
                 id="reg-phone"
-                type="text"
-                placeholder="+251 9..."
+                type="tel"
+                required
+                minLength={9}
+                placeholder="+251 9... (Strictly required)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />

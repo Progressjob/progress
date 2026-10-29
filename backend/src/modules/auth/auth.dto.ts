@@ -16,9 +16,9 @@ export class RegisterDto {
   @Length(1, 100)
   lastName!: string;
 
-  @IsOptional()
   @IsString()
-  phone?: string;
+  @Length(9, 30, { message: 'Phone number is required and must be at least 9 characters' })
+  phone!: string;
 }
 
 export class LoginDto {
@@ -57,9 +57,9 @@ export class EnableEmployerDto {
   @IsString()
   city?: string;
 
-  @IsOptional()
   @IsString()
-  phone?: string;
+  @Length(9, 30, { message: 'Phone number is required and must be at least 9 characters' })
+  phone!: string;
 
   @IsOptional()
   @ValidateIf((_, value) => Boolean(typeof value === 'string' ? value.trim() : value))

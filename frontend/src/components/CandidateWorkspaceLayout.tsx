@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
+import { useAuth } from '../auth/AuthContext';
 import { filesApi, publicFileUrl } from '../api/files';
 import {
   displayOrFallback,
@@ -63,6 +64,12 @@ export const CandidateWorkspaceLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const { user } = useAuth();
+  const employerCompanyId = user?.companyMemberships?.[0]?.companyId;
+  const tabs = [
+    ...TABS,
+    ...(employerCompanyId ? [{ to: `/company/${employerCompanyId}/jobs`, label: 'My Posted Jobs' }] : []),
+  ];
 
   const profileQuery = useQuery({
     queryKey: ['candidate', 'profile'],
@@ -268,7 +275,7 @@ export const CandidateWorkspaceLayout: React.FC = () => {
       </section>
 
       <nav className="cw-tabs" aria-label="Candidate workspace">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}

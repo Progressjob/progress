@@ -23,6 +23,14 @@ export function clearStoredTokens(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(EXPIRES_KEY);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('progress.workspace');
+    localStorage.removeItem('progress.saved_jobs');
+  }
+}
+
+export function clearAllUserSession(): void {
+  clearStoredTokens();
 }
 
 export class ApiError extends Error {

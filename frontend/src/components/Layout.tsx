@@ -14,6 +14,7 @@ export const Layout: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const firstCompanyId = user?.companyMemberships[0]?.companyId;
+  const hasEmployerAccess = Boolean(user && (firstCompanyId || hasRole('employer')));
   const inCandidateWorkspace = !user || workspace === 'candidate';
   const showProfileEntry = Boolean(user && inCandidateWorkspace && hasRole('candidate'));
   const profileQuery = useQuery({
@@ -75,7 +76,11 @@ export const Layout: React.FC = () => {
     }
     setWorkspace('employer');
     setMenuOpen(false);
-    navigate(hiringDestination(firstCompanyId));
+    if (firstCompanyId) {
+      navigate(`/company/${firstCompanyId}/jobs/new`);
+    } else {
+      navigate(hiringDestination(firstCompanyId));
+    }
   };
 
   return (
@@ -142,6 +147,27 @@ export const Layout: React.FC = () => {
               Contact
             </NavLink>
 
+            {hasEmployerAccess && (
+              <NavLink
+                to={firstCompanyId ? `/company/${firstCompanyId}/jobs` : '/company'}
+                className={() => navActive(location.pathname.startsWith('/company'))}
+                title="Track your posted jobs and view post record"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  fontWeight: 600,
+                  color: '#0284c7',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" strokeWidth="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
+                </svg>
+                <span>Track Posted Jobs</span>
+              </NavLink>
+            )}
+
             {hasRole('admin', 'moderator') && (
               <>
                 <span className="nav-divider">|</span>
@@ -169,8 +195,8 @@ export const Layout: React.FC = () => {
                     ? 'Switching…'
                     : workspace === 'employer'
                       ? 'Switch to finding work'
-                      : hasRole('employer')
-                        ? 'Switch to hiring'
+                      : hasEmployerAccess
+                        ? '+ Post Vacancy'
                         : 'Post a job'}
                 </button>
                 {showProfileEntry && (
@@ -275,8 +301,17 @@ export const Layout: React.FC = () => {
                 <Link to="/login">Account Sign In</Link>
               </li>
               <li>
-                <Link to="/employer/setup">Post a job</Link>
+                <Link to={firstCompanyId ? `/company/${firstCompanyId}/jobs/new` : '/employer/setup'}>
+                  Post a job
+                </Link>
               </li>
+              {hasEmployerAccess && (
+                <li>
+                  <Link to={firstCompanyId ? `/company/${firstCompanyId}/jobs` : '/company'}>
+                    Track Posted Jobs
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link to="/admin">Admin portal</Link>
               </li>

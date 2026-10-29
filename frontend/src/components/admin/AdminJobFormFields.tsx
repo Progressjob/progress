@@ -372,7 +372,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
             <label htmlFor="adm-hire-contact">How should candidates contact you? *</label>
             <textarea
               id="adm-hire-contact"
-              rows={3}
+              rows={4}
+              style={{ whiteSpace: 'pre-wrap' }}
               required
               value={hireBoxDisplay(value.applicationEmail, value.applicationInstructions)}
               onChange={(e) => set(parseHireBox(e.target.value))}
