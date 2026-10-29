@@ -1,12 +1,18 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
+import { verifyGoogleIdToken } from './google-token';
+
+vi.mock('./google-token', () => ({
+  verifyGoogleIdToken: vi.fn(),
+}));
 
 function createPrismaMock() {
   const prisma: any = {
     role: { findUnique: vi.fn() },
-    user: { findUniqueOrThrow: vi.fn() },
+    user: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn(), update: vi.fn() },
+    refreshToken: { create: vi.fn(), update: vi.fn() },
     userRole: { upsert: vi.fn() },
     candidateProfile: { findUnique: vi.fn(), create: vi.fn() },
     company: { findUnique: vi.fn(), create: vi.fn() },
@@ -115,5 +121,100 @@ describe('AuthService role enablement', () => {
     await expect(service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344' })).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+});
+
+describe('AuthService Google sign-in', () => {
+  const jwt = {
+    signAsync: vi.fn().mockResolvedValue('signed-token'),
+  } as unknown as JwtService;
+
+  function googleConfig(clientId?: string) {
+    return {
+      get: vi.fn((key: string) => {
+        if (key === 'GOOGLE_CLIENT_ID') return clientId;
+        if (key === 'JWT_ACCESS_TTL') return '15m';
+        if (key === 'JWT_REFRESH_TTL_DAYS') return 30;
+        return undefined;
+      }),
+      getOrThrow: vi.fn().mockReturnValue('jwt-secret'),
+    } as unknown as ConfigService;
+  }
+
+  function googleIdentity() {
+    return {
+      sub: 'google-sub-1',
+      email: 'new.user@gmail.com',
+      emailVerified: true,
+      firstName: 'New',
+      lastName: 'User',
+    };
+  }
+
+  beforeEach(() => {
+    vi.mocked(verifyGoogleIdToken).mockReset();
+  });
+
+  it('rejects Google sign-in when the client id is not configured', async () => {
+    const service = new AuthService(createPrismaMock(), jwt, googleConfig(''));
+    await expect(service.loginWithGoogle('token')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects unverified Google emails', async () => {
+    vi.mocked(verifyGoogleIdToken).mockResolvedValue({ ...googleIdentity(), emailVerified: false });
+    const prisma = createPrismaMock();
+    const service = new AuthService(prisma, jwt, googleConfig('client-id'));
+    await expect(service.loginWithGoogle('token')).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a candidate account for a first-time Google user', async () => {
+    vi.mocked(verifyGoogleIdToken).mockResolvedValue(googleIdentity());
+    const prisma = createPrismaMock();
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.role.findUnique.mockResolvedValue({ id: 4, name: 'candidate' });
+    prisma.user.create.mockResolvedValue({
+      id: 'user-new',
+      email: 'new.user@gmail.com',
+      roles: [{ role: { name: 'candidate' } }],
+    });
+    prisma.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+    prisma.refreshToken.update.mockResolvedValue({});
+
+    const service = new AuthService(prisma, jwt, googleConfig('client-id'));
+    const result = await service.loginWithGoogle('id-token');
+
+    expect(result.isNew).toBe(true);
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: 'new.user@gmail.com',
+          googleSub: 'google-sub-1',
+          firstName: 'New',
+          lastName: 'User',
+        }),
+      }),
+    );
+  });
+
+  it('signs in an existing Google user without creating another account', async () => {
+    vi.mocked(verifyGoogleIdToken).mockResolvedValue(googleIdentity());
+    const prisma = createPrismaMock();
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 'user-1',
+      email: 'new.user@gmail.com',
+      accountStatus: 'active',
+      emailVerifiedAt: new Date(),
+      roles: [{ role: { name: 'candidate' } }],
+    });
+    prisma.user.update.mockResolvedValue({});
+    prisma.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+    prisma.refreshToken.update.mockResolvedValue({});
+
+    const service = new AuthService(prisma, jwt, googleConfig('client-id'));
+    const result = await service.loginWithGoogle('id-token');
+
+    expect(result.isNew).toBe(false);
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 });

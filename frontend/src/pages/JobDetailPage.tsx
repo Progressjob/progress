@@ -9,6 +9,7 @@ import { useAuth } from '../auth/AuthContext';
 import { JobProse, textHasHeadings } from '../components/JobProse';
 import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
 import { applyViaParts, extractEmail } from '../utils/hireContact';
+import { profileStrength } from '../utils/candidateProfile';
 import type { Job } from '../types/api';
 
 function compensationLabel(job: Job): string {
@@ -140,6 +141,13 @@ function postedLabel(iso?: string | null): string {
     const [reportReason, setReportReason] = useState('misleading');
     const [reportNote, setReportNote] = useState('');
     const [reportStatus, setReportStatus] = useState<'idle' | 'sent' | 'error'>('idle');
+    const [applyTipOpen, setApplyTipOpen] = useState(false);
+
+    const candidateProfileQuery = useQuery({
+      queryKey: ['candidate', 'profile'],
+      queryFn: () => candidateApi.getProfile(),
+      enabled: Boolean(user && hasRole('candidate')),
+    });
 
     const jobQuery = useQuery({
       queryKey: ['job', slug],
@@ -299,6 +307,27 @@ function postedLabel(iso?: string | null): string {
 
     const title = job.title.trim();
     const applyVia = applyViaParts(contact);
+    const candidateProfile = candidateProfileQuery.data;
+    const thinProfile = candidateProfile ? profileStrength(candidateProfile) < 50 : false;
+
+    const proceedApply = () => {
+      setApplyTipOpen(false);
+      if (apply.href.startsWith('#')) {
+        document.querySelector(apply.href)?.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      if (apply.external) {
+        window.open(apply.href, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      window.location.href = apply.href;
+    };
+
+    const onApplyClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!thinProfile) return;
+      event.preventDefault();
+      setApplyTipOpen(true);
+    };
     const featuredJobs = (featuredQuery.data?.data ?? []).filter((item) => item.id !== job.id).slice(0, 4);
     const mainHasHeadings = textHasHeadings(bodyTexts.main);
     const logoUrl = job.company?.logo?.id ? publicFileUrl(job.company.logo.id) : null;
@@ -388,6 +417,7 @@ function postedLabel(iso?: string | null): string {
                       <a
                         className="btn-jd-apply-main"
                         href={apply.href}
+                        onClick={onApplyClick}
                         {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                       >
                         <span>Apply Now</span>
@@ -798,12 +828,38 @@ function postedLabel(iso?: string | null): string {
                                               <a
                                                 className="btn-mobile-apply"
                                                 href={apply.href}
+                                                onClick={onApplyClick}
                                                 {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                                               >
                                                 Apply Now
                                               </a>
                                             </div>
                                           </div>
+                                          {applyTipOpen && (
+                                            <div
+                                              className="jd-profile-tip-overlay"
+                                              role="dialog"
+                                              aria-modal="true"
+                                              aria-labelledby="jd-profile-tip-title"
+                                              onClick={() => setApplyTipOpen(false)}
+                                            >
+                                              <div className="jd-profile-tip" onClick={(event) => event.stopPropagation()}>
+                                                <h3 id="jd-profile-tip-title">Finish your profile first</h3>
+                                                <p>
+                                                  Profiles with no CV or details have a lower chance of being hired.
+                                                  You can apply anyway, but completing your profile helps employers find you.
+                                                </p>
+                                                <div className="jd-profile-tip-actions">
+                                                  <Link to="/candidate/profile?edit=1" className="btn">
+                                                    Complete profile
+                                                  </Link>
+                                                  <button type="button" className="btn btn-secondary" onClick={proceedApply}>
+                                                    Continue anyway
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                         );
 };

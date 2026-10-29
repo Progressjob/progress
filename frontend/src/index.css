@@ -3167,6 +3167,79 @@ hr {
   text-decoration: underline;
 }
 
+.auth-google {
+  margin-top: 1.25rem;
+}
+
+.auth-google-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.auth-google-divider::before,
+.auth-google-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.auth-google-stack {
+  position: relative;
+}
+
+.btn-google-continue {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 48px;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid #dadce0;
+  border-radius: 999px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 0.98rem;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.btn-google-continue:hover:not(:disabled) {
+  background: #f8fafc;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.btn-google-mark {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.auth-google-official {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.02;
+}
+
+.auth-google-official:empty {
+  pointer-events: none;
+}
+
+.auth-google.is-disabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
 .dev-accounts-toggle-wrap {
   margin-top: 1.5rem;
   text-align: center;
@@ -3836,6 +3909,38 @@ hr {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.pb-welcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  border-radius: 14px;
+  color: #1e3a8a;
+}
+
+.pb-welcome p {
+  margin: 0;
+  flex: 1 1 16rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.pb-welcome-skip {
+  font-weight: 700;
+  color: #0b57d0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pb-welcome-skip:hover {
+  text-decoration: underline;
 }
 
 .pb-card {
@@ -5620,6 +5725,42 @@ hr {
   margin: 0;
   font-size: 0.88rem;
   color: #0369a1;
+}
+
+.jd-profile-tip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.jd-profile-tip {
+  width: min(440px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.35rem 1.4rem 1.25rem;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.jd-profile-tip h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.15rem;
+}
+
+.jd-profile-tip p {
+  margin: 0 0 1.1rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.jd-profile-tip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 /* Sidebar Widgets */

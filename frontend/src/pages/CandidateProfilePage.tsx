@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
 import { apiDownloadFile, apiOpenFile } from '../api/client';
@@ -829,8 +829,22 @@ export const CandidateProfilePage: React.FC = () => {
     </form>
   );
 
+  const welcome = searchParams.get('welcome') === '1';
+
   return (
     <>
+      {welcome && (
+        <div className="pb-welcome">
+          <p>
+            Your Google email is already verified. Add a photo, CV, and a few details so employers can find you.
+            Thin profiles are less likely to get hired.
+          </p>
+          <Link to="/jobs" className="pb-welcome-skip">
+            Skip for now
+          </Link>
+        </div>
+      )}
+
       {actionError && (
         <div className="alert-error" style={{ marginBottom: '1rem' }}>
           {actionError}

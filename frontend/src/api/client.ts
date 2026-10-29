@@ -152,6 +152,7 @@ export async function apiFetch<T = unknown>(
   const isAuthEndpoint =
     normalizedPath.startsWith('/auth/login') ||
     normalizedPath.startsWith('/auth/register') ||
+    normalizedPath.startsWith('/auth/google') ||
     normalizedPath.startsWith('/auth/refresh');
 
   if (res.status === 401 && !options.skipAuth && !isAuthEndpoint) {

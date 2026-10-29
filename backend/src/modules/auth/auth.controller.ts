@@ -5,6 +5,7 @@ import { AuthUser, CurrentUser, JwtAuthGuard } from '../../common/auth';
 import {
   EnableEmployerDto,
   ForgotPasswordDto,
+  GoogleLoginDto,
   LoginDto,
   RefreshDto,
   RegisterDto,
@@ -28,6 +29,13 @@ export class AuthController {
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @Post('google')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  loginGoogle(@Body() dto: GoogleLoginDto) {
+    return this.auth.loginWithGoogle(dto.idToken);
   }
 
   @Post('refresh')

@@ -29,6 +29,11 @@ export class LoginDto {
   password!: string;
 }
 
+export class GoogleLoginDto {
+  @IsString()
+  idToken!: string;
+}
+
 export class RefreshDto {
   @IsString()
   refreshToken!: string;

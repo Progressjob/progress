@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { AuthMeResponse, Company } from '../types/api';
+import type { AuthMeResponse, Company, TokenResponse } from '../types/api';
 
 export interface EnableEmployerInput {
   name: string;
@@ -16,6 +16,8 @@ export interface EnableEmployerResponse {
 }
 
 export const authApi = {
+  loginWithGoogle: (idToken: string) =>
+    apiFetch<TokenResponse>('/auth/google', { method: 'POST', body: { idToken }, skipAuth: true }),
   enableCandidate: () => apiFetch<AuthMeResponse>('/auth/enable-candidate', { method: 'POST' }),
   enableEmployer: (payload: EnableEmployerInput) =>
     apiFetch<EnableEmployerResponse>('/auth/enable-employer', { method: 'POST', body: payload }),

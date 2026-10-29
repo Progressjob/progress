@@ -43,6 +43,7 @@ interface AuthContextValue {
   workspace: Workspace;
   setWorkspace: (workspace: Workspace) => void;
   login: (identifier: string, password: string) => Promise<AuthUser>;
+  loginWithGoogle: (idToken: string) => Promise<{ user: AuthUser; isNew: boolean }>;
   register: (input: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<AuthUser | null>;
@@ -129,6 +130,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [refreshUser, queryClient],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string): Promise<{ user: AuthUser; isNew: boolean }> => {
+      clearStoredTokens();
+      queryClient.clear();
+      setUser(null);
+      const tokens = await authApi.loginWithGoogle(idToken);
+      setStoredTokens(tokens);
+      const loaded = await refreshUser();
+      if (!loaded) throw new Error('Failed to load user profile after Google sign-in');
+      return { user: loaded, isNew: Boolean(tokens.isNew) };
+    },
+    [refreshUser, queryClient],
+  );
+
   const register = useCallback(
     async (input: RegisterInput): Promise<AuthUser> => {
       clearStoredTokens();
@@ -203,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         workspace,
         setWorkspace,
         login,
+        loginWithGoogle,
         register,
         logout,
         refreshUser,

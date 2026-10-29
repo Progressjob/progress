@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { GoogleContinueButton } from '../components/GoogleContinueButton';
 import { ProgressLogo } from '../components/ProgressLogo';
 
 export const RegisterPage: React.FC = () => {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState('');
@@ -43,6 +44,23 @@ export const RegisterPage: React.FC = () => {
         setError(err.message);
       } else {
         setError((err as Error).message || 'Registration failed. Please verify your details.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const { isNew } = await loginWithGoogle(idToken);
+      navigate(isNew ? '/candidate/profile?edit=1&welcome=1' : '/jobs', { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError((err as Error).message || 'Google sign-in failed.');
       }
     } finally {
       setSubmitting(false);
@@ -152,6 +170,16 @@ export const RegisterPage: React.FC = () => {
             {submitting ? 'Creating account...' : 'Create Account & Continue →'}
           </button>
         </form>
+
+        <GoogleContinueButton
+          onCredential={handleGoogle}
+          onUnconfigured={() =>
+            setError(
+              'Google sign-in is not configured yet. Add the Web client ID to VITE_GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID, then restart.',
+            )
+          }
+          disabled={submitting}
+        />
 
         <div className="auth-footer-prompt">
           <span>Already registered with Progress?</span>

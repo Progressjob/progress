@@ -17,6 +17,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
 } from './auth.dto';
+import { verifyGoogleIdToken } from './google-token';
 
 @Injectable()
 export class AuthService {
@@ -62,22 +63,104 @@ export class AuthService {
       where: { OR: [{ email: identifier }, { phone: dto.identifier.trim() }] },
       include: { roles: { include: { role: true } } },
     });
-    if (!user || !(await argon2.verify(user.passwordHash, dto.password))) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    if (user.accountStatus === 'suspended') {
-      throw new UnauthorizedException(
-        'Your account access has been suspended. Please contact the platform administrator.',
-      );
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('This account uses Google sign-in. Continue with Google instead.');
     }
-    if (user.accountStatus !== 'active') {
+    if (!(await argon2.verify(user.passwordHash, dto.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    this.assertActiveAccount(user.accountStatus);
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
     return this.issueTokens(user.id, user.email, user.roles.map((r) => r.role.name));
+  }
+
+  async loginWithGoogle(idToken: string) {
+    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID')?.trim();
+    if (!clientId) {
+      throw new BadRequestException('Google sign-in is not configured');
+    }
+
+    let identity: Awaited<ReturnType<typeof verifyGoogleIdToken>>;
+    try {
+      identity = await verifyGoogleIdToken(idToken, clientId);
+    } catch {
+      throw new UnauthorizedException('Google sign-in failed');
+    }
+    if (!identity.emailVerified) {
+      throw new UnauthorizedException('Google did not verify this email address');
+    }
+
+    const existingBySub = await this.prisma.user.findUnique({
+      where: { googleSub: identity.sub },
+      include: { roles: { include: { role: true } } },
+    });
+    if (existingBySub) {
+      this.assertActiveAccount(existingBySub.accountStatus);
+      await this.prisma.user.update({
+        where: { id: existingBySub.id },
+        data: { lastLoginAt: new Date(), emailVerifiedAt: existingBySub.emailVerifiedAt ?? new Date() },
+      });
+      const tokens = await this.issueTokens(
+        existingBySub.id,
+        existingBySub.email,
+        existingBySub.roles.map((r) => r.role.name),
+      );
+      return { ...tokens, isNew: false };
+    }
+
+    const existingByEmail = await this.prisma.user.findUnique({
+      where: { email: identity.email },
+      include: { roles: { include: { role: true } } },
+    });
+    if (existingByEmail) {
+      this.assertActiveAccount(existingByEmail.accountStatus);
+      if (existingByEmail.googleSub && existingByEmail.googleSub !== identity.sub) {
+        throw new ConflictException('This email is already linked to a different Google account');
+      }
+      await this.prisma.user.update({
+        where: { id: existingByEmail.id },
+        data: {
+          googleSub: identity.sub,
+          emailVerifiedAt: existingByEmail.emailVerifiedAt ?? new Date(),
+          lastLoginAt: new Date(),
+        },
+      });
+      const tokens = await this.issueTokens(
+        existingByEmail.id,
+        existingByEmail.email,
+        existingByEmail.roles.map((r) => r.role.name),
+      );
+      return { ...tokens, isNew: false };
+    }
+
+    const candidateRole = await this.prisma.role.findUnique({ where: { name: 'candidate' } });
+    if (!candidateRole) throw new ConflictException('Roles have not been seeded');
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: identity.email,
+        googleSub: identity.sub,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        emailVerifiedAt: new Date(),
+        lastLoginAt: new Date(),
+        roles: { create: { roleId: candidateRole.id } },
+        candidateProfile: { create: {} },
+      },
+      include: { roles: { include: { role: true } } },
+    });
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.roles.map((r) => r.role.name),
+    );
+    return { ...tokens, isNew: true };
   }
 
   async refresh(rawToken: string) {
@@ -276,6 +359,17 @@ export class AuthService {
         },
       },
     });
+  }
+
+  private assertActiveAccount(accountStatus: string): void {
+    if (accountStatus === 'suspended') {
+      throw new UnauthorizedException(
+        'Your account access has been suspended. Please contact the platform administrator.',
+      );
+    }
+    if (accountStatus !== 'active') {
+      throw new UnauthorizedException('Invalid credentials');
+    }
   }
 
   private async issueTokens(userId: string, email: string | null, roles: string[]) {

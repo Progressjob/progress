@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getStoredWorkspace, resolveWorkspace } from '../auth/workspace';
 import { ApiError } from '../api/client';
+import { GoogleContinueButton } from '../components/GoogleContinueButton';
 import { ProgressLogo } from '../components/ProgressLogo';
 
 export function getValidRedirect(from: string | null | undefined, roles: string[]): string {
@@ -50,7 +51,7 @@ export function getValidRedirect(from: string | null | undefined, roles: string[
 }
 
 export const LoginPage: React.FC = () => {
-  const { user: currentUser, login, logout } = useAuth();
+  const { user: currentUser, login, loginWithGoogle, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -75,6 +76,26 @@ export const LoginPage: React.FC = () => {
         setError(err.message);
       } else {
         setError((err as Error).message || 'Invalid email or password.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const { user, isNew } = await loginWithGoogle(idToken);
+      const target = isNew
+        ? '/candidate/profile?edit=1&welcome=1'
+        : getValidRedirect(from, user.roles);
+      navigate(target, { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError((err as Error).message || 'Google sign-in failed.');
       }
     } finally {
       setSubmitting(false);
@@ -194,6 +215,16 @@ export const LoginPage: React.FC = () => {
             {submitting ? 'Authenticating...' : 'Sign In →'}
           </button>
         </form>
+
+        <GoogleContinueButton
+          onCredential={handleGoogle}
+          onUnconfigured={() =>
+            setError(
+              'Google sign-in is not configured yet. Add the Web client ID to VITE_GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID, then restart.',
+            )
+          }
+          disabled={submitting}
+        />
 
         <div className="auth-footer-prompt">
           <span>Don't have an account yet?</span>
