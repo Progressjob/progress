@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { adminApi } from '../api/admin';
 import { useAuth } from '../auth/AuthContext';
 import { isAdminCvSearch, isExactPath, isSectionPath, navActive } from '../auth/nav';
 import { ProgressLogo } from './ProgressLogo';
@@ -9,6 +11,12 @@ export const AdminPortalLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const pendingQuery = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: () => adminApi.dashboard(),
+    refetchInterval: 60_000,
+  });
+  const pendingReviewJobs = pendingQuery.data?.pendingReviewJobs ?? 0;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -57,10 +65,10 @@ export const AdminPortalLayout: React.FC = () => {
               Companies
             </NavLink>
             <NavLink
-              to="/admin/jobs"
+              to={pendingReviewJobs > 0 ? '/admin/jobs?status=pending_review' : '/admin/jobs'}
               className={() => navActive(isSectionPath(location.pathname, '/admin/jobs'))}
             >
-              Jobs
+              Jobs{pendingReviewJobs > 0 ? ` (${pendingReviewJobs})` : ''}
             </NavLink>
             <NavLink
               to="/admin/candidates"

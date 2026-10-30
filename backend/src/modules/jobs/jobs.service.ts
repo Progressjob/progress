@@ -13,7 +13,6 @@ import {
   Prisma,
   WorkplaceType,
 } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
 import { PROGRESS_HIRE_EMAIL } from '../../common/progress-contact';
 import { slugify } from '../../common/slug';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -40,10 +39,7 @@ const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = [
 
 @Injectable()
 export class JobPostingPolicy {
-  constructor(
-    private readonly config: ConfigService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getCompanyPostingContext(companyId: string) {
     const company = await this.prisma.company.findUnique({ where: { id: companyId } });
@@ -54,8 +50,8 @@ export class JobPostingPolicy {
     if (company.portalStatus === 'suspended') {
       throw new ForbiddenException('This company cannot post jobs while access is suspended');
     }
-    const envOverride = this.config.get<boolean>('EMPLOYER_SELF_POSTING', false);
-    const canSelfPublish = company.canSelfPublishJobs || envOverride;
+    const canSelfPublish =
+      company.canSelfPublishJobs && company.verificationStatus === 'verified';
     return { company, canSelfPublish };
   }
 
@@ -394,7 +390,39 @@ export class JobsService {
     if (!['draft', 'rejected'].includes(job.status)) {
       throw new BadRequestException('Only draft or rejected jobs can be submitted');
     }
-    return this.transition(jobId, next, userId);
+    const updated = await this.transition(jobId, next, userId);
+    if (next === 'pending_review') {
+      await this.notifyReviewers(updated);
+    }
+    return updated;
+  }
+
+  private async notifyReviewers(job: { id: string; title: string; companyId: string }) {
+    const [reviewers, company] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          accountStatus: 'active',
+          roles: { some: { role: { name: { in: ['admin', 'moderator'] } } } },
+        },
+        select: { id: true },
+      }),
+      this.prisma.company.findUnique({
+        where: { id: job.companyId },
+        select: { name: true },
+      }),
+    ]);
+    if (!reviewers.length) return;
+    const employerName = company?.name ?? 'An employer';
+    await this.prisma.notification.createMany({
+      data: reviewers.map((reviewer) => ({
+        userId: reviewer.id,
+        title: 'Job waiting to be posted',
+        message: `${employerName} submitted "${job.title}" for review. It stays off the public board until an administrator posts it.`,
+        type: 'job_pending_review',
+        referenceType: 'job',
+        referenceId: job.id,
+      })),
+    });
   }
 
   async employerStats(userId: string, companyId: string, jobId: string) {

@@ -308,7 +308,7 @@ export class AuthService {
           contactPerson,
           description: dto.description?.trim() || undefined,
           verificationStatus: 'pending',
-          canSelfPublishJobs: true,
+          canSelfPublishJobs: false,
         },
         include: { industry: true },
       });

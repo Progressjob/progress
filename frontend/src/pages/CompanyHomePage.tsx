@@ -89,10 +89,10 @@ export const CompanyHomePage: React.FC = () => {
 
                                       <div className="company-tags-row">
                                         <span className="tag-pill tag-category">{c.industry?.name ?? 'Industry'}</span>
-                                        {c.canSelfPublishJobs ? (
+                                        {c.canSelfPublishJobs && c.verificationStatus === 'verified' ? (
                                           <span className="tag-pill tag-type">Direct Publishing</span>
                                         ) : (
-                                          <span className="tag-pill">Admin Review</span>
+                                          <span className="tag-pill">Waiting for admin review</span>
                                         )}
                                       </div>
 

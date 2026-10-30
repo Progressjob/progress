@@ -398,7 +398,7 @@ model Company {
   verificationStatus VerificationStatus            @default(pending) @map("verification_status")
   verifiedAt         DateTime?                     @map("verified_at") @db.Timestamptz
   isFeatured         Boolean                       @default(false) @map("is_featured")
-  canSelfPublishJobs Boolean                       @default(true) @map("can_self_publish_jobs")
+  canSelfPublishJobs Boolean                       @default(false) @map("can_self_publish_jobs")
   portalStatus       CompanyPortalStatus           @default(active) @map("portal_status")
   suspendedAt        DateTime?                     @map("suspended_at") @db.Timestamptz
   suspendedReason    String?                       @map("suspended_reason")

@@ -64,7 +64,7 @@ export const AdminDashboardPage: React.FC = () => {
             Manage companies →
           </Link>
           <Link to="/admin/jobs?status=pending_review" className="btn">
-            Jobs & review queue →
+            Review pending job posts →
           </Link>
           <Link to="/admin/candidates" className="btn">
             View candidates →

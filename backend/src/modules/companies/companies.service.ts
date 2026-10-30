@@ -98,10 +98,12 @@ export class CompaniesService {
 
   async create(dto: CompanyDto) {
     const slug = await this.uniqueSlug(dto.name);
-    return this.prisma.company.create({ data: { ...dto, slug } });
+    return this.prisma.company.create({
+      data: { ...dto, slug, canSelfPublishJobs: false },
+    });
   }
 
-  async createAdminVerified(dto: CompanyDto, canSelfPublishJobs = true) {
+  async createAdminVerified(dto: CompanyDto, canSelfPublishJobs = false) {
     const slug = await this.uniqueSlug(dto.name);
     const now = new Date();
     return this.prisma.company.create({
@@ -117,7 +119,7 @@ export class CompaniesService {
 
   async provision(actorId: string, dto: ProvisionCompanyDto) {
     const verify = dto.verify !== false;
-    const canSelfPublishJobs = dto.canSelfPublishJobs ?? true;
+    const canSelfPublishJobs = dto.canSelfPublishJobs ?? false;
     const slug = await this.uniqueSlug(dto.company.name);
     const now = new Date();
     const temporaryPassword = dto.employer.temporaryPassword;

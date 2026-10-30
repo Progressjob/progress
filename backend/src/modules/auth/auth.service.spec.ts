@@ -95,7 +95,7 @@ describe('AuthService role enablement', () => {
         data: expect.objectContaining({
           name: 'Abebe Hiring',
           verificationStatus: 'pending',
-          canSelfPublishJobs: true,
+          canSelfPublishJobs: false,
         }),
       }),
     );

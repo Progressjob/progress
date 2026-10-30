@@ -56,9 +56,10 @@ import { employerApi } from '../api/employer';
                   {companyQuery.data?.name ?? 'Company'} — Job Postings
                 </h1>
                 <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
-                  {companyQuery.data?.canSelfPublishJobs
-                  ? 'Your organization is verified to publish vacancies directly to the board.'
-                : 'New vacancies are reviewed by Progress Manpower administrators before going live.'}
+                  {companyQuery.data?.canSelfPublishJobs &&
+                  companyQuery.data.verificationStatus === 'verified'
+                    ? 'Your organization is verified to publish vacancies directly to the board.'
+                    : 'New vacancies wait for an administrator to review and post them.'}
                 </p>
               </div>
 

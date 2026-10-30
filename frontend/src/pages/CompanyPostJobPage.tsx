@@ -87,7 +87,7 @@ export const CompanyPostJobPage: React.FC = () => {
       if (job.status === 'published') {
         setMessage('Your job is live on the public board.');
       } else {
-        setMessage('Your job was submitted and is under admin review.');
+        setMessage('Sent for review. An administrator has to post it before it appears on the public board.');
       }
       setTimeout(() => navigate(`/company/${companyId}/jobs`), 2000);
     },
@@ -117,9 +117,9 @@ export const CompanyPostJobPage: React.FC = () => {
           {company?.name ?? 'Company'} —{' '}
           {isEdit
             ? 'Update any listing details, including the deadline and role area, then save.'
-            : company?.canSelfPublishJobs
+            : company?.canSelfPublishJobs && company.verificationStatus === 'verified'
               ? 'Your organization has direct posting permissions. Posts go live immediately.'
-              : 'New job postings are submitted for administrator review before going live on the public board.'}
+              : 'This posting is sent to an administrator. It stays off the public board until they review and post it.'}
         </p>
       </div>
 
