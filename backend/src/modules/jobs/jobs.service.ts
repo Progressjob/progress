@@ -50,6 +50,11 @@ export class JobPostingPolicy {
     if (company.portalStatus === 'suspended') {
       throw new ForbiddenException('This company cannot post jobs while access is suspended');
     }
+    if (!company.logoFileId) {
+      throw new BadRequestException(
+        'Add a company logo before posting jobs. The same logo is used on every vacancy.',
+      );
+    }
     const canSelfPublish =
       company.canSelfPublishJobs && company.verificationStatus === 'verified';
     return { company, canSelfPublish };

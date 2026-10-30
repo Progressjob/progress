@@ -9,6 +9,8 @@ export function emptyCompanyForm(): CompanyPayload {
     name: '',
     country: 'Ethiopia',
     description: '',
+    vision: '',
+    mission: '',
     email: '',
     phone: '',
     region: '',
@@ -29,6 +31,8 @@ export function sanitizeCompanyPayload(company: CompanyPayload): CompanyPayload 
     ...company,
     industryId: company.industryId || undefined,
     description: trim(company.description),
+    vision: trim(company.vision),
+    mission: trim(company.mission),
     websiteUrl: trim(company.websiteUrl),
     email: trim(company.email),
     phone: trim(company.phone),
@@ -80,6 +84,8 @@ export function companyFromRecord(c: {
   name: string;
   industryId?: string | null;
   description?: string | null;
+  vision?: string | null;
+  mission?: string | null;
   websiteUrl?: string | null;
   email?: string | null;
   phone?: string | null;
@@ -99,6 +105,8 @@ export function companyFromRecord(c: {
     name: c.name,
     industryId: c.industryId ?? c.industry?.id ?? undefined,
     description: c.description ?? undefined,
+    vision: c.vision ?? undefined,
+    mission: c.mission ?? undefined,
     websiteUrl: c.websiteUrl ?? undefined,
     email: c.email ?? undefined,
     phone: c.phone ?? undefined,

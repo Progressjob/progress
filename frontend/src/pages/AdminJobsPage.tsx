@@ -243,6 +243,10 @@ export const AdminJobsPage: React.FC = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setActionError(null);
+    if (postMode === 'new' && !newCompanyForm.logoFileId) {
+      setActionError('Upload a company logo before posting jobs.');
+      return;
+    }
     createMutation.mutate();
   };
 

@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { isExactPath, isPublicCvSearch, isSectionPath, navActive } from '../auth/nav';
-import { hiringDestination } from '../auth/workspace';
-import { candidateApi } from '../api/candidate';
+import { employerProfileEditPath, hiringDestination } from '../auth/workspace';
 import { ProgressLogo } from './ProgressLogo';
 
 export const Layout: React.FC = () => {
@@ -16,24 +14,14 @@ export const Layout: React.FC = () => {
   const firstCompanyId = user?.companyMemberships[0]?.companyId;
   const hasEmployerAccess = Boolean(user && (firstCompanyId || hasRole('employer')));
   const inCandidateWorkspace = !user || workspace === 'candidate';
-  const showProfileEntry = Boolean(user && inCandidateWorkspace && hasRole('candidate'));
-  const profileQuery = useQuery({
-    queryKey: ['candidate', 'profile'],
-    queryFn: () => candidateApi.getProfile(),
-    enabled: showProfileEntry,
-  });
-  const profile = profileQuery.data;
-  const profileStarted = Boolean(
-    profile?.photoFileId ||
-    profile?.summary?.trim() ||
-    profile?.city ||
-    profile?.region ||
-    profile?.educations?.length ||
-    profile?.experiences?.length ||
-    profile?.skills?.length ||
-    profile?.certifications?.length ||
-    profile?.languages?.length ||
-    profile?.resumes?.length,
+  const profileTo =
+    workspace === 'employer'
+      ? firstCompanyId
+        ? employerProfileEditPath(firstCompanyId)
+        : '/employer/setup'
+      : '/candidate/profile';
+  const showProfileEdit = Boolean(
+    user && (workspace === 'employer' || (inCandidateWorkspace && hasRole('candidate'))),
   );
 
   useEffect(() => {
@@ -199,27 +187,6 @@ export const Layout: React.FC = () => {
                         ? '+ Post Vacancy'
                         : 'Post a job'}
                 </button>
-                {showProfileEntry && (
-                  <NavLink
-                    to="/candidate/profile"
-                    className={() =>
-                      `btn-nav-profile${isSectionPath(location.pathname, '/candidate') ? ' is-active' : ''}`
-                    }
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                      <path
-                        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <circle cx="9" cy="7" r="4" strokeWidth="2" />
-                      {profileStarted ? null : (
-                        <path d="M19 8v6M22 11h-6" strokeWidth="2" strokeLinecap="round" />
-                      )}
-                    </svg>
-                    <span>{profileStarted ? 'Profile' : 'Create profile'}</span>
-                  </NavLink>
-                )}
                 <div className="user-pill">
                   <div className="user-avatar-initial">
                     {user.firstName?.charAt(0) || 'U'}
@@ -230,6 +197,11 @@ export const Layout: React.FC = () => {
                     </strong>
                     <small>
                       {workspace === 'employer' ? 'Hiring' : 'Looking for work'}
+                      {showProfileEdit && (
+                        <Link to={profileTo} className="user-pill-edit">
+                          Edit profile
+                        </Link>
+                      )}
                     </small>
                   </span>
                   <button type="button" className="btn-logout" onClick={handleLogout}>

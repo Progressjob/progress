@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { CompanyPayload } from '../../api/admin';
 import { filesApi, publicFileUrl } from '../../api/files';
 import { taxonomyApi } from '../../api/taxonomy';
+import { COMPANY_SIZE_OPTIONS } from '../../constants/companySize';
 
 const selectStyle: React.CSSProperties = {
   width: '100%',
@@ -15,12 +16,14 @@ export interface CompanyFormFieldsProps {
   value: CompanyPayload;
   onChange: (next: CompanyPayload) => void;
   idPrefix?: string;
+  audience?: 'admin' | 'employer';
 }
 
 export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
   value,
   onChange,
   idPrefix = 'co',
+  audience = 'admin',
 }) => {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -51,7 +54,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
   return (
     <div className="contact-form-fields">
       <div className="form-input-group">
-        <label htmlFor={`${idPrefix}-logo`}>Company logo (optional)</label>
+        <label htmlFor={`${idPrefix}-logo`}>Company logo *</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           {value.logoFileId ? (
             <img
@@ -118,7 +121,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
       </div>
 
       <div className="form-input-group">
-        <label htmlFor={`${idPrefix}-desc`}>Description</label>
+        <label htmlFor={`${idPrefix}-desc`}>About the company</label>
         <textarea
           id={`${idPrefix}-desc`}
           rows={3}
@@ -126,6 +129,29 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
           onChange={(e) => set({ description: e.target.value })}
           placeholder="What the company does, size, culture…"
         />
+      </div>
+
+      <div className="form-row-two">
+        <div className="form-input-group">
+          <label htmlFor={`${idPrefix}-vision`}>Vision</label>
+          <textarea
+            id={`${idPrefix}-vision`}
+            rows={3}
+            value={value.vision ?? ''}
+            onChange={(e) => set({ vision: e.target.value })}
+            placeholder="Where the company is heading"
+          />
+        </div>
+        <div className="form-input-group">
+          <label htmlFor={`${idPrefix}-mission`}>Mission</label>
+          <textarea
+            id={`${idPrefix}-mission`}
+            rows={3}
+            value={value.mission ?? ''}
+            onChange={(e) => set({ mission: e.target.value })}
+            placeholder="What the company exists to do"
+          />
+        </div>
       </div>
 
       <div className="form-row-two">
@@ -141,12 +167,19 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
         </div>
         <div className="form-input-group">
           <label htmlFor={`${idPrefix}-size`}>Company size</label>
-          <input
+          <select
             id={`${idPrefix}-size`}
             value={value.companySize ?? ''}
             onChange={(e) => set({ companySize: e.target.value || undefined })}
-            placeholder="e.g. 51–200 employees"
-          />
+            style={selectStyle}
+          >
+            <option value="">— Optional —</option>
+            {COMPANY_SIZE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -170,26 +203,28 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
         </div>
       </div>
 
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor={`${idPrefix}-contact`}>Contact person (HR manager)</label>
-          <input
-            id={`${idPrefix}-contact`}
-            value={value.contactPerson ?? ''}
-            onChange={(e) => set({ contactPerson: e.target.value || undefined })}
-            placeholder="For admin verification only"
-          />
+      {audience === 'admin' && (
+        <div className="form-row-two">
+          <div className="form-input-group">
+            <label htmlFor={`${idPrefix}-contact`}>Contact person (HR manager)</label>
+            <input
+              id={`${idPrefix}-contact`}
+              value={value.contactPerson ?? ''}
+              onChange={(e) => set({ contactPerson: e.target.value || undefined })}
+              placeholder="For admin verification only"
+            />
+          </div>
+          <div className="form-input-group">
+            <label htmlFor={`${idPrefix}-licence`}>Company licence registration number</label>
+            <input
+              id={`${idPrefix}-licence`}
+              value={value.licenceNumber ?? ''}
+              onChange={(e) => set({ licenceNumber: e.target.value || undefined })}
+              placeholder="For verification"
+            />
+          </div>
         </div>
-        <div className="form-input-group">
-          <label htmlFor={`${idPrefix}-licence`}>Company licence registration number</label>
-          <input
-            id={`${idPrefix}-licence`}
-            value={value.licenceNumber ?? ''}
-            onChange={(e) => set({ licenceNumber: e.target.value || undefined })}
-            placeholder="For verification"
-          />
-        </div>
-      </div>
+      )}
 
       <div className="form-row-two">
         <div className="form-input-group">

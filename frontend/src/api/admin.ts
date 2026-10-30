@@ -20,6 +20,8 @@ export interface CompanyPayload {
   name: string;
   industryId?: string;
   description?: string;
+  vision?: string;
+  mission?: string;
   websiteUrl?: string;
   email?: string;
   phone?: string;

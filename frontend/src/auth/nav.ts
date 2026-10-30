@@ -24,6 +24,10 @@ export function isCompanyEditJob(pathname: string, companyId: string): boolean {
   return new RegExp(`^/company/${companyId}/jobs/[^/]+/edit$`).test(pathname);
 }
 
+export function isCompanyProfile(pathname: string, companyId: string): boolean {
+  return pathname === `/company/${companyId}/profile`;
+}
+
 export function isCompanyCvSearch(pathname: string, companyId?: string): boolean {
   if (companyId) return isSectionPath(pathname, `/company/${companyId}/cv-search`);
   return /^\/company\/[^/]+\/cv-search(?:\/|$)/.test(pathname);

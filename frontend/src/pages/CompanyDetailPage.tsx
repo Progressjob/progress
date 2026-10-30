@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
-import { publicFileUrl } from '../api/files';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
+import { formatCompanySize } from '../constants/companySize';
 
 export const CompanyDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -36,8 +37,8 @@ export const CompanyDetailPage: React.FC = () => {
   }
 
         const company = companyQuery.data;
-        const logoUrl = company.logo?.id ? publicFileUrl(company.logo.id) : null;
-        const initial = company.name ? company.name.charAt(0).toUpperCase() : 'C';
+        const logoId = company.logo?.id ?? company.logoFileId ?? null;
+        const companySizeLabel = formatCompanySize(company.companySize);
 
         return (
           <div className="jobs-list-container">
@@ -54,11 +55,12 @@ export const CompanyDetailPage: React.FC = () => {
               <header className="jd-header-hero">
                 <div className="jd-header-top">
                   <div className="jd-company-avatar">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt={company.name} className="jd-company-logo-img" />
-                    ) : (
-                      <div className="jd-company-monogram">{initial}</div>
-                    )}
+                    <CompanyLogoMark
+                      name={company.name}
+                      logoId={logoId}
+                      className="jd-company-monogram"
+                      imgClassName="jd-company-logo-img"
+                    />
                   </div>
 
                   <div className="jd-header-info">
@@ -85,10 +87,22 @@ export const CompanyDetailPage: React.FC = () => {
                           {company.city}{company.region ? `, ${company.region}` : ''}
                         </span>
                       )}
-                      {company.companySize && (
+                      {companySizeLabel && (
                         <span className="tag-pill">
-                          👥 {company.companySize} employees
+                          👥 {companySizeLabel}
                         </span>
+                      )}
+                      {company.contactPerson && (
+                        <span className="tag-pill">{company.contactPerson}</span>
+                      )}
+                      {company.email && (
+                        <span className="tag-pill">{company.email}</span>
+                      )}
+                      {company.phone && (
+                        <span className="tag-pill">{company.phone}</span>
+                      )}
+                      {company.address && (
+                        <span className="tag-pill">{company.address}</span>
                       )}
                     </div>
                   </div>
@@ -120,6 +134,20 @@ export const CompanyDetailPage: React.FC = () => {
               </section>
             )}
 
+            {company.vision && (
+              <section className="jd-card" style={{ marginBottom: '2.5rem' }}>
+                <h2 className="jd-heading">Vision</h2>
+                <p className="jd-plain-text" style={{ whiteSpace: 'pre-line' }}>{company.vision}</p>
+              </section>
+            )}
+
+            {company.mission && (
+              <section className="jd-card" style={{ marginBottom: '2.5rem' }}>
+                <h2 className="jd-heading">Mission</h2>
+                <p className="jd-plain-text" style={{ whiteSpace: 'pre-line' }}>{company.mission}</p>
+              </section>
+            )}
+
               {/* Published Vacancies Section */}
               <section className="company-jobs-section">
                 <div className="section-header-row" style={{ marginBottom: '1.5rem' }}>
@@ -146,11 +174,12 @@ export const CompanyDetailPage: React.FC = () => {
                                 <div key={job.id} className="premium-job-card">
                                   <div className="job-card-main-content">
                                     <div className="company-badge-wrap">
-                                      {logoUrl ? (
-                                        <img src={logoUrl} alt={company.name} className="company-logo-img" />
-                                      ) : (
-                                        <div className="company-badge">{initial}</div>
-                                      )}
+                                      <CompanyLogoMark
+                                        name={company.name}
+                                        logoId={logoId}
+                                        className="company-badge"
+                                        imgClassName="company-logo-img"
+                                      />
                                     </div>
                                     <div className="job-card-meta">
                                       <span className="job-company-name">{company.name}</span>

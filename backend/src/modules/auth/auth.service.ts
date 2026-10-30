@@ -287,6 +287,13 @@ export class AuthService {
       return { company: existing.company, created: false };
     }
 
+    const logo = await this.prisma.file.findFirst({
+      where: { id: dto.logoFileId, fileCategory: 'logo' },
+    });
+    if (!logo) {
+      throw new BadRequestException('A company logo is required before you can continue to job posting.');
+    }
+
     const employerRole = await this.prisma.role.findUnique({ where: { name: 'employer' } });
     if (!employerRole) throw new ConflictException('Roles have not been seeded');
 
@@ -307,10 +314,12 @@ export class AuthService {
           email,
           contactPerson,
           description: dto.description?.trim() || undefined,
+          companySize: dto.companySize?.trim() || undefined,
+          logoFileId: logo.id,
           verificationStatus: 'pending',
           canSelfPublishJobs: false,
         },
-        include: { industry: true },
+        include: { industry: true, logo: true },
       });
 
       await tx.userRole.upsert({

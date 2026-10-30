@@ -4,8 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { destinationAfterHire } from '../auth/workspace';
 import { ApiError } from '../api/client';
+import { filesApi, publicFileUrl } from '../api/files';
 import { employerApi } from '../api/employer';
 import { ProgressLogo } from '../components/ProgressLogo';
+import { COMPANY_SIZE_OPTIONS } from '../constants/companySize';
 
 export const EmployerSetupPage: React.FC = () => {
   const { user, loading: authLoading, enableEmployer, setWorkspace } = useAuth();
@@ -30,6 +32,9 @@ export const EmployerSetupPage: React.FC = () => {
     user ? `${user.firstName} ${user.lastName}`.trim() : '',
   );
   const [description, setDescription] = useState('');
+  const [companySize, setCompanySize] = useState('');
+  const [logoFileId, setLogoFileId] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -71,16 +76,22 @@ export const EmployerSetupPage: React.FC = () => {
       setError('A valid phone number (at least 9 digits) is strictly required.');
       return;
     }
+    if (!logoFileId) {
+      setError('Upload a company logo before continuing to job posting.');
+      return;
+    }
 
     setSubmitting(true);
     try {
       const result = await enableEmployer({
         name: name.trim(),
         phone: cleanPhone,
+        logoFileId,
         ...(city.trim() ? { city: city.trim() } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(contactPerson.trim() ? { contactPerson: contactPerson.trim() } : {}),
         ...(description.trim() ? { description: description.trim() } : {}),
+        ...(companySize ? { companySize } : {}),
       });
       setWorkspace('employer');
       navigate(destinationAfterHire(result.company.id, next), { replace: true });
@@ -112,6 +123,57 @@ export const EmployerSetupPage: React.FC = () => {
         {error && <div className="alert-box-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-input-group">
+            <label htmlFor="employer-logo">Company logo *</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {logoFileId ? (
+                <img
+                  src={publicFileUrl(logoFileId)}
+                  alt="Company logo preview"
+                  style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 8,
+                    background: '#f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#64748b',
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  No logo
+                </div>
+              )}
+              <input
+                id="employer-logo"
+                type="file"
+                accept="image/png,image/jpeg"
+                disabled={uploadingLogo}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!file) return;
+                  setError(null);
+                  setUploadingLogo(true);
+                  try {
+                    const uploaded = await filesApi.uploadLogo(file);
+                    setLogoFileId(uploaded.id);
+                  } catch (err) {
+                    setError((err as Error).message);
+                  } finally {
+                    setUploadingLogo(false);
+                  }
+                }}
+              />
+              {uploadingLogo && <span className="muted">Uploading…</span>}
+            </div>
+          </div>
+
           <div className="form-input-group">
             <label htmlFor="employer-name">Hiring as *</label>
             <input
@@ -171,6 +233,22 @@ export const EmployerSetupPage: React.FC = () => {
                 onChange={(e) => setContactPerson(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="form-input-group">
+            <label htmlFor="employer-size">Company size</label>
+            <select
+              id="employer-size"
+              value={companySize}
+              onChange={(e) => setCompanySize(e.target.value)}
+            >
+              <option value="">— Optional —</option>
+              {COMPANY_SIZE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-input-group">

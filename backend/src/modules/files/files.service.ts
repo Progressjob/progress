@@ -116,11 +116,17 @@ export class FilesService {
       image:
         file.buffer.subarray(0, 4).toString('hex').startsWith('89504e47') ||
         file.buffer.subarray(0, 3).toString('hex') === 'ffd8ff',
+      svg:
+        file.mimetype === 'image/svg+xml' &&
+        file.buffer.toString('utf8', 0, 256).includes('<svg'),
     };
     const valid = category === 'cv' ? signatures.pdf || signatures.docx || signatures.doc : true;
     if (!valid) throw new BadRequestException('Unsupported or invalid file content');
-    if ((category === 'logo' || category === 'profile_image') && !signatures.image) {
+    if (category === 'profile_image' && !signatures.image) {
       throw new BadRequestException('Only PNG and JPEG images are supported');
+    }
+    if (category === 'logo' && !signatures.image && !signatures.svg) {
+      throw new BadRequestException('Only PNG, JPEG, and SVG images are supported');
     }
   }
 }

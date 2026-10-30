@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
 
 export const CandidateSavedJobsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -73,7 +74,11 @@ export const CandidateSavedJobsPage: React.FC = () => {
             <article key={item.jobId} className="premium-job-card">
               <div className="job-card-header">
                 <div className="company-badge">
-                  {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
+                  <CompanyLogoMark
+                    name={job.company?.name}
+                    logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                    imgClassName="company-logo-img"
+                  />
                 </div>
                 <div className="job-card-meta">
                   <span className="job-company-name">{job.company?.name ?? 'Progress Partner'}</span>

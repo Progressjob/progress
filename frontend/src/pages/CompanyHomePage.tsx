@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { employerApi } from '../api/employer';
-import { publicFileUrl } from '../api/files';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
 
 export const CompanyHomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -70,14 +70,15 @@ export const CompanyHomePage: React.FC = () => {
                       ) : (
                               <div className="companies-grid">
                                 {companies.map((c) => {
-                                  const logoUrl = c.logo?.id ? publicFileUrl(c.logo.id) : null;
-                                  const initial = c.name ? c.name.charAt(0).toUpperCase() : 'C';
-
                                   return (
                                     <div key={c.id} className="company-directory-card">
                                       <div className="company-card-top">
                                         <div className="company-avatar-box">
-                                          {logoUrl ? <img src={logoUrl} alt={c.name} /> : initial}
+                                          <CompanyLogoMark
+                                            name={c.name}
+                                            logoId={c.logo?.id ?? c.logoFileId}
+                                            imgClassName="company-logo-img"
+                                          />
                                         </div>
                                         <div className="company-card-headings">
                                           <span className="verified-badge">
@@ -102,6 +103,9 @@ export const CompanyHomePage: React.FC = () => {
                                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                             <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" />
                                           </svg>
+                                        </Link>
+                                        <Link to={`/company/${c.id}/profile`} className="btn btn-sm btn-secondary">
+                                          Profile
                                         </Link>
                                         <Link to={`/company/${c.id}/cv-search`} className="btn btn-sm btn-secondary">
                                           CV Search

@@ -11,6 +11,7 @@ import { SpotlightCard } from '../components/reactbits/SpotlightCard';
 import { CountUp } from '../components/reactbits/CountUp';
 import { useAuth } from '../auth/AuthContext';
 import { GuestJobAccessNote, JobDetailLink } from '../components/JobDetailLink';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -373,7 +374,11 @@ export const LandingPage: React.FC = () => {
               <SpotlightCard key={job.id} className="premium-job-card">
                 <div className="job-card-header">
                   <div className="company-badge">
-                    {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P'}
+                    <CompanyLogoMark
+                      name={job.company?.name}
+                      logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                      imgClassName="company-logo-img"
+                    />
                   </div>
                   <div className="job-card-meta">
                     <span className="job-company-name">{job.company?.name ?? 'Progress Partner'}</span>

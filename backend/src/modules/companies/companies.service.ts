@@ -29,6 +29,8 @@ export class CompaniesService {
     logoFileId: true,
     industryId: true,
     description: true,
+    vision: true,
+    mission: true,
     websiteUrl: true,
     email: true,
     phone: true,
@@ -38,6 +40,7 @@ export class CompaniesService {
     address: true,
     companySize: true,
     foundedYear: true,
+    contactPerson: true,
     verificationStatus: true,
     isFeatured: true,
     logo: true,
@@ -90,10 +93,25 @@ export class CompaniesService {
     });
   }
 
-  async uniqueSlug(name: string) {
-    return nextUniqueSlug(name, async (slug) =>
-      Boolean(await this.prisma.company.findUnique({ where: { slug } })),
-    );
+  async uniqueSlug(name: string, excludeId?: string) {
+    return nextUniqueSlug(name, async (slug) => {
+      const existing = await this.prisma.company.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
+      return Boolean(existing && existing.id !== excludeId);
+    });
+  }
+
+  private async slugIfNameChanged(id: string, name?: string) {
+    if (!name?.trim()) return undefined;
+    const current = await this.prisma.company.findUnique({
+      where: { id },
+      select: { name: true },
+    });
+    if (!current) throw new NotFoundException('Company not found');
+    if (current.name === name.trim()) return undefined;
+    return this.uniqueSlug(name, id);
   }
 
   async create(dto: CompanyDto) {
@@ -149,8 +167,12 @@ export class CompaniesService {
     });
   }
 
-  update(id: string, dto: UpdateCompanyDto) {
-    return this.prisma.company.update({ where: { id }, data: dto });
+  async update(id: string, dto: UpdateCompanyDto) {
+    const slug = await this.slugIfNameChanged(id, dto.name);
+    return this.prisma.company.update({
+      where: { id },
+      data: { ...dto, ...(slug ? { slug } : {}) },
+    });
   }
 
   async addMember(companyId: string, actorId: string, dto: CreateEmployerDto) {
@@ -328,19 +350,27 @@ export class CompaniesService {
     return company;
   }
 
-  employerUpdate(_userId: string, companyId: string, dto: UpdateCompanyDto) {
+  async employerUpdate(_userId: string, companyId: string, dto: UpdateCompanyDto) {
+    const slug = await this.slugIfNameChanged(companyId, dto.name);
     return this.prisma.company.update({
       where: { id: companyId },
       data: {
+        name: dto.name,
+        industryId: dto.industryId,
         description: dto.description,
+        vision: dto.vision,
+        mission: dto.mission,
         websiteUrl: dto.websiteUrl,
         email: dto.email,
         phone: dto.phone,
+        country: dto.country,
         region: dto.region,
         city: dto.city,
         address: dto.address,
         companySize: dto.companySize,
+        foundedYear: dto.foundedYear,
         logoFileId: dto.logoFileId,
+        ...(slug ? { slug } : {}),
       },
     });
   }

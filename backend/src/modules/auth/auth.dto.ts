@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, Length, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -79,4 +79,12 @@ export class EnableEmployerDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsUUID()
+  logoFileId!: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  companySize?: string;
 }

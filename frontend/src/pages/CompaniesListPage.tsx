@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
-import { publicFileUrl } from '../api/files';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
 
 export const CompaniesListPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -94,18 +94,15 @@ export const CompaniesListPage: React.FC = () => {
         {/* Modern Companies Grid */}
         <div className="companies-grid">
         {filtered.map((c) => {
-                      const logoUrl = c.logo?.id ? publicFileUrl(c.logo.id) : null;
-                      const initial = c.name ? c.name.charAt(0).toUpperCase() : 'C';
-
                       return (
             <div key={c.id} className="company-directory-card">
               <div className="company-card-top">
                 <div className="company-avatar-box">
-                  {logoUrl ? (
-                    <img src={logoUrl} alt={c.name} />
-                  ) : (
-                    initial
-                  )}
+                  <CompanyLogoMark
+                    name={c.name}
+                    logoId={c.logo?.id ?? c.logoFileId}
+                    imgClassName="company-logo-img"
+                  />
                 </div>
                 <div className="company-card-headings">
                   <span className="verified-badge">

@@ -37,6 +37,14 @@ export class CompanyDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  vision?: string;
+
+  @IsOptional()
+  @IsString()
+  mission?: string;
+
+  @IsOptional()
   @ValidateIf((o: CompanyDto) => Boolean(o.websiteUrl?.trim()))
   @IsUrl()
   websiteUrl?: string;
@@ -85,9 +93,8 @@ export class CompanyDto {
   @Max(2200)
   foundedYear?: number;
 
-  @IsOptional()
   @IsUUID()
-  logoFileId?: string;
+  logoFileId!: string;
 }
 
 export class UpdateCompanyDto extends PartialType(CompanyDto) {}

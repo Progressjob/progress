@@ -62,6 +62,8 @@ export interface Company {
   name: string;
   slug: string;
   description?: string | null;
+  vision?: string | null;
+  mission?: string | null;
   websiteUrl?: string | null;
   email?: string | null;
   phone?: string | null;
@@ -79,6 +81,7 @@ export interface Company {
   suspendedAt?: string | null;
   suspendedReason?: string | null;
   isFeatured: boolean;
+  logoFileId?: string | null;
   industry?: Industry | null;
   logo?: { id: string } | null;
   jobs?: Job[];

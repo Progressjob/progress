@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PROGRESS_HIRE_EMAIL } from '../src/common/progress-contact';
 import { seedDemoData } from './seed-demo-data';
+import { ensureCompanyLogo } from './seed-company-logos';
 
 const prisma = new PrismaClient();
 
@@ -163,6 +164,7 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
     },
     update: { canSelfPublishJobs: false },
   });
+  await ensureCompanyLogo(prisma, company);
   await prisma.companyMember.upsert({
     where: { companyId_userId: { companyId: company.id, userId: employer.id } },
     create: {

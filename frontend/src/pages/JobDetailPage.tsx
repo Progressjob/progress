@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { candidateApi } from '../api/candidate';
 import { supportApi } from '../api/support';
-import { publicFileUrl } from '../api/files';
+import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import { useAuth } from '../auth/AuthContext';
 import { JobProse, textHasHeadings } from '../components/JobProse';
 import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
@@ -330,8 +330,7 @@ function postedLabel(iso?: string | null): string {
     };
     const featuredJobs = (featuredQuery.data?.data ?? []).filter((item) => item.id !== job.id).slice(0, 4);
     const mainHasHeadings = textHasHeadings(bodyTexts.main);
-    const logoUrl = job.company?.logo?.id ? publicFileUrl(job.company.logo.id) : null;
-    const companyInitial = job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'P';
+    const logoId = job.company?.logo?.id ?? job.company?.logoFileId ?? null;
 
     return (
       <div className="job-detail-page">
@@ -349,11 +348,12 @@ function postedLabel(iso?: string | null): string {
                   < header className="jd-header-hero">
                 <div className="jd-header-top">
                   <div className="jd-company-avatar">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt={job.company?.name || ''} className="jd-company-logo-img" />
-                    ) : (
-                      <div className="jd-company-monogram">{companyInitial}</div>
-                    )}
+                    <CompanyLogoMark
+                      name={job.company?.name}
+                      logoId={logoId}
+                      className="jd-company-monogram"
+                      imgClassName="jd-company-logo-img"
+                    />
                   </div>
 
                   <div className="jd-header-info">
@@ -791,7 +791,11 @@ function postedLabel(iso?: string | null): string {
                                                       <article key={item.id} className="jd-mini-card">
                                                         <div className="jd-mini-top">
                                                           <div className="jd-mini-logo">
-                                                            {item.company?.name ? item.company.name.charAt(0).toUpperCase() : 'P'}
+                                                            <CompanyLogoMark
+                                                              name={item.company?.name}
+                                                              logoId={item.company?.logo?.id ?? item.company?.logoFileId}
+                                                              imgClassName="company-logo-img"
+                                                            />
                                                           </div>
                                                           <span className="jd-mini-type">{prettyEnum(item.employmentType)}</span>
                                                         </div>

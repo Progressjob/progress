@@ -299,6 +299,10 @@ export const AdminCompaniesPage: React.FC = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!registerCompany.logoFileId) {
+                setFormError('Upload a company logo before registering.');
+                return;
+              }
               provisionMutation.mutate();
             }}
           >
@@ -329,6 +333,10 @@ export const AdminCompaniesPage: React.FC = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!editForm.logoFileId) {
+                setFormError('Upload a company logo before saving.');
+                return;
+              }
               updateMutation.mutate();
             }}
           >

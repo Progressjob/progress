@@ -384,6 +384,8 @@ model Company {
   logoFileId         String?                       @map("logo_file_id") @db.Uuid
   industryId         String?                       @map("industry_id") @db.Uuid
   description        String?
+  vision             String?
+  mission            String?
   websiteUrl         String?                       @map("website_url")
   email              String?                       @db.VarChar(255)
   phone              String?                       @db.VarChar(30)

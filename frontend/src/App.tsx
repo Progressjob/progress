@@ -21,6 +21,7 @@ import { CandidateApplicationsPage } from './pages/CandidateApplicationsPage';
 import { CandidateSavedJobsPage } from './pages/CandidateSavedJobsPage';
 import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CompanyHomePage } from './pages/CompanyHomePage';
+import { CompanyProfilePage } from './pages/CompanyProfilePage';
 import { CompanyJobsPage } from './pages/CompanyJobsPage';
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
 import { CompanyCvSearchPage } from './pages/CompanyCvSearchPage';
@@ -131,6 +132,7 @@ export function App(): React.ReactElement {
               }
             >
               <Route path="/company" element={<CompanyHomePage />} />
+              <Route path="/company/:companyId/profile" element={<CompanyProfilePage />} />
               <Route path="/company/:companyId/jobs" element={<CompanyJobsPage />} />
               <Route path="/company/:companyId/jobs/new" element={<CompanyPostJobPage />} />
               <Route path="/company/:companyId/jobs/:jobId/edit" element={<CompanyPostJobPage />} />

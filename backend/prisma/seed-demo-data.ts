@@ -4,6 +4,7 @@ import * as argon2 from 'argon2';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { generateDemoPdf, DemoCandidateCvData } from './demo-pdf-builder';
+import { ensureCompanyLogo } from './seed-company-logos';
 import { PROGRESS_HIRE_EMAIL } from '../src/common/progress-contact';
 
 const prisma = new PrismaClient();
@@ -77,7 +78,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: itIndustry?.id,
       city: 'Addis Ababa',
       region: 'Addis Ababa',
-      companySize: '50-100',
       description: 'Leading Ethiopian enterprise cloud engineering, fintech integration, and software development provider.',
     },
     {
@@ -86,7 +86,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: mfgIndustry?.id,
       city: 'Dukem',
       region: 'Oromia',
-      companySize: '250-500',
       description: 'Heavy industrial manufacturing plant specializing in construction rebar, structural steel, and fabrication at Eastern Industry Zone Dukem.',
     },
     {
@@ -95,7 +94,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: mfgIndustry?.id,
       city: 'Adama',
       region: 'Oromia',
-      companySize: '100-250',
       description: 'Premier intermodal freight forwarding, dry-port container logistics, and industrial supply chain operations.',
     },
     {
@@ -104,7 +102,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: mfgIndustry?.id,
       city: 'Adama',
       region: 'Oromia',
-      companySize: '500-1000',
       description: 'Export-oriented apparel manufacturer producing woven fabrics, institutional uniforms, and industrial workwear.',
     },
     {
@@ -113,7 +110,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: bankIndustry?.id,
       city: 'Addis Ababa',
       region: 'Addis Ababa',
-      companySize: '20-50',
       description: 'Certified public accounting, corporate tax audit, IFRS compliance, and financial management consultancy in Ethiopia.',
     },
     {
@@ -122,7 +118,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       industryId: healthIndustry?.id,
       city: 'Bishoftu',
       region: 'Oromia',
-      companySize: '100-250',
       description: 'Licensed pharmaceutical manufacturing, clinical diagnostics, and medical supply distributor headquartered in Bishoftu.',
     },
   ];
@@ -137,7 +132,6 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
         industryId: comp.industryId,
         city: comp.city,
         region: comp.region,
-        companySize: comp.companySize,
         description: comp.description,
         verificationStatus: 'verified',
         verifiedAt: new Date(),
@@ -147,17 +141,21 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
         name: comp.name,
         city: comp.city,
         region: comp.region,
-        companySize: comp.companySize,
+        companySize: null,
         verificationStatus: 'verified',
         canSelfPublishJobs: true,
       },
     });
     companyMap.set(comp.slug, created.id);
+    await ensureCompanyLogo(client, created);
   }
 
   // Also include the existing Demo Technology PLC
   const demoComp = await client.company.findFirst({ where: { slug: 'demo-technology-plc' } });
-  if (demoComp) companyMap.set('demo-technology-plc', demoComp.id);
+  if (demoComp) {
+    companyMap.set('demo-technology-plc', demoComp.id);
+    await ensureCompanyLogo(client, demoComp);
+  }
 
   // 7. Seed 22 Diverse & Clustered Vacancies
   console.log('Seeding 22 open published jobs across sectors...');

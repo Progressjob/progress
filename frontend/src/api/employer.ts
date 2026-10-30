@@ -38,6 +38,8 @@ export const employerApi = {
   listCompanies: () => apiFetch<Company[]>('/employer/companies'),
   getCompany: (companyId: string) =>
     apiFetch<Company>(`/employer/companies/${companyId}`),
+  updateCompany: (companyId: string, payload: Partial<Company>) =>
+    apiFetch<Company>(`/employer/companies/${companyId}`, { method: 'PATCH', body: payload }),
   listJobs: (companyId: string) =>
     apiFetch<Job[]>(`/employer/companies/${companyId}/jobs`),
   createJob: (companyId: string, payload: CreateCompanyJobPayload) =>

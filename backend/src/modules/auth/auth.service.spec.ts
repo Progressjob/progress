@@ -17,6 +17,7 @@ function createPrismaMock() {
     candidateProfile: { findUnique: vi.fn(), create: vi.fn() },
     company: { findUnique: vi.fn(), create: vi.fn() },
     companyMember: { create: vi.fn() },
+    file: { findFirst: vi.fn() },
     $transaction: vi.fn(async (fn: (tx: typeof prisma) => unknown) => fn(prisma)),
   };
   return prisma;
@@ -80,6 +81,7 @@ describe('AuthService role enablement', () => {
     });
     prisma.role.findUnique.mockResolvedValue({ id: 3, name: 'employer' });
     prisma.company.findUnique.mockResolvedValue(null);
+    prisma.file.findFirst.mockResolvedValue({ id: 'logo-1', fileCategory: 'logo' });
     prisma.company.create.mockResolvedValue({
       id: 'co-new',
       name: 'Abebe Hiring',
@@ -87,7 +89,11 @@ describe('AuthService role enablement', () => {
     });
 
     const service = new AuthService(prisma, jwt, config);
-    const result = await service.enableEmployer('user-1', { name: 'Abebe Hiring' });
+    const result = await service.enableEmployer('user-1', {
+      name: 'Abebe Hiring',
+      phone: '+251911223344',
+      logoFileId: 'logo-1',
+    });
 
     expect(result.created).toBe(true);
     expect(prisma.company.create).toHaveBeenCalledWith(
@@ -96,6 +102,7 @@ describe('AuthService role enablement', () => {
           name: 'Abebe Hiring',
           verificationStatus: 'pending',
           canSelfPublishJobs: false,
+          logoFileId: 'logo-1',
         }),
       }),
     );
@@ -116,11 +123,30 @@ describe('AuthService role enablement', () => {
       companyMemberships: [],
     });
     prisma.role.findUnique.mockResolvedValue(null);
+    prisma.file.findFirst.mockResolvedValue({ id: 'logo-1', fileCategory: 'logo' });
 
     const service = new AuthService(prisma, jwt, config);
-    await expect(service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344' })).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'logo-1' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('enableEmployer requires a logo before creating a company', async () => {
+    const prisma = createPrismaMock();
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: 'user-1',
+      firstName: 'Abebe',
+      lastName: 'Kebede',
+      email: 'abebe@example.com',
+      companyMemberships: [],
+    });
+    prisma.file.findFirst.mockResolvedValue(null);
+
+    const service = new AuthService(prisma, jwt, config);
+    await expect(
+      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'missing' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.company.create).not.toHaveBeenCalled();
   });
 });
 

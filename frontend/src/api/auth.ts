@@ -8,6 +8,8 @@ export interface EnableEmployerInput {
   email?: string;
   contactPerson?: string;
   description?: string;
+  logoFileId: string;
+  companySize?: string;
 }
 
 export interface EnableEmployerResponse {

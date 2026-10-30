@@ -10,6 +10,7 @@ import {
   isExactPath,
   navActive,
 } from '../auth/nav';
+import { employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
 import { ProgressLogo } from './ProgressLogo';
 import { AdminContactCard } from './AdminContactCard';
@@ -156,7 +157,21 @@ export const CompanyPortalLayout: React.FC = () => {
                     <strong>
                       {user.firstName} {user.lastName}
                     </strong>
-                    <small>Hiring</small>
+                    <small>
+                      Hiring
+                      <Link
+                        to={
+                          companyId
+                            ? employerProfileEditPath(companyId)
+                            : companies[0]
+                              ? employerProfileEditPath(companies[0].id)
+                              : '/employer/setup'
+                        }
+                        className="user-pill-edit"
+                      >
+                        Edit profile
+                      </Link>
+                    </small>
                   </span>
                   <button type="button" className="btn-logout" onClick={handleLogout}>
                     Logout

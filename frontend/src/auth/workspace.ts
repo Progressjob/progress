@@ -29,6 +29,14 @@ export function employerJobsPath(companyId: string): string {
   return `/company/${companyId}/jobs`;
 }
 
+export function employerProfilePath(companyId: string): string {
+  return `/company/${companyId}/profile`;
+}
+
+export function employerProfileEditPath(companyId: string): string {
+  return `/company/${companyId}/profile?edit=1`;
+}
+
 export function postJobPath(companyId: string): string {
   return `/company/${companyId}/jobs/new`;
 }
