@@ -69,13 +69,13 @@ export class AdminCompaniesController {
   }
 
   @Post()
-  create(@Body() dto: CompanyDto) {
-    return this.companies.create(dto);
+  create(@Body() dto: CompanyDto, @CurrentUser() actor: AuthUser) {
+    return this.companies.create(dto, actor.id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateCompanyDto) {
-    return this.companies.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateCompanyDto, @CurrentUser() actor: AuthUser) {
+    return this.companies.update(id, dto, actor.id);
   }
 
   @Post(':id/members')
@@ -93,8 +93,8 @@ export class AdminCompaniesController {
   }
 
   @Patch(':id/verification')
-  verify(@Param('id') id: string, @Body() dto: VerifyCompanyDto) {
-    return this.companies.verify(id, dto);
+  verify(@Param('id') id: string, @Body() dto: VerifyCompanyDto, @CurrentUser() actor: AuthUser) {
+    return this.companies.verify(id, dto, actor.id);
   }
 
   @Patch(':id/featured')

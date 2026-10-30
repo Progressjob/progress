@@ -207,6 +207,7 @@ export const CandidateProfilePage: React.FC = () => {
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ['candidate', 'profile'] });
+    await queryClient.invalidateQueries({ queryKey: ['featured-jobs'] });
   };
 
   const closePanel = () => {

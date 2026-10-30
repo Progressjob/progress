@@ -1,3 +1,5 @@
+import { notifyReviewers } from '../notifications/notification-events';
+import { requireBusinessLicence } from '../companies/business-licence';
 import {
   BadRequestException,
   ConflictException,
@@ -294,6 +296,8 @@ export class AuthService {
       throw new BadRequestException('A company logo is required before you can continue to job posting.');
     }
 
+    const documents = await requireBusinessLicence(this.prisma, dto.businessLicenceFileId, userId);
+
     const employerRole = await this.prisma.role.findUnique({ where: { name: 'employer' } });
     if (!employerRole) throw new ConflictException('Roles have not been seeded');
 
@@ -316,6 +320,7 @@ export class AuthService {
           description: dto.description?.trim() || undefined,
           companySize: dto.companySize?.trim() || undefined,
           logoFileId: logo.id,
+          documents,
           verificationStatus: 'pending',
           canSelfPublishJobs: false,
         },
@@ -336,6 +341,7 @@ export class AuthService {
         },
       });
 
+      await notifyReviewers(tx, { title: 'Company awaiting verification', message: company.name, type: 'company_review', referenceType: 'company', referenceId: company.id });
       return { company, created: true };
     });
   }

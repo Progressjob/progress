@@ -1,3 +1,4 @@
+import { BackButton } from './BackButton';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Company, Job } from '../types/api';
@@ -32,13 +33,7 @@ export const CompanyOverview: React.FC<{
   return (
     <div className="co-profile">
       {showBreadcrumbs && (
-        <nav className="detail-breadcrumbs" aria-label="Breadcrumb">
-          <Link to="/">Home</Link>
-          <span>/</span>
-          <Link to="/companies">Employers</Link>
-          <span>/</span>
-          <span className="current-crumb">{company.name}</span>
-        </nav>
+        <BackButton fallback="/companies" />
       )}
 
       <header className="co-profile-hero">

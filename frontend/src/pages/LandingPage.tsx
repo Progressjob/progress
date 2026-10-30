@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { jobsApi } from '../api/jobs';
+import { useFeaturedJobs } from '../hooks/useFeaturedJobs';
 import { taxonomyApi } from '../api/taxonomy';
 import { HeroCanvas } from '../components/HeroCanvas';
 import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
@@ -21,10 +21,7 @@ export const LandingPage: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
 
   // Fetch featured vacancies
-  const jobsQuery = useQuery({
-    queryKey: ['landing-jobs'],
-    queryFn: () => jobsApi.list({ limit: 6 }),
-  });
+  const jobsQuery = useFeaturedJobs();
 
   // Fetch categories for search and category grid
   const categoriesQuery = useQuery({
@@ -346,11 +343,10 @@ export const LandingPage: React.FC = () => {
         <div className="section-header-row">
           <div>
             <span className="section-eyebrow">Verified Vacancies</span>
-            <h2 className="section-title">Featured Opportunities</h2>
+            <h2 className="section-title">{jobsQuery.title}</h2>
             <p className="section-subtitle">
-              {user
-                ? 'Handpicked roles open for direct candidate application'
-                : 'Handpicked roles — sign in to open a vacancy and see how to apply'}
+              {jobsQuery.description}
+              {jobsQuery.showProfileLink && <> <Link to="/candidate/profile">Update profile</Link></>}
             </p>
             {!user && <GuestJobAccessNote />}
           </div>
@@ -362,7 +358,9 @@ export const LandingPage: React.FC = () => {
           </Link>
         </div>
 
-        {jobsQuery.isLoading ? (
+        {jobsQuery.isError ? (
+          <p role="alert">Could not load opportunities. <button type="button" onClick={() => void jobsQuery.refetch()}>Try again</button></p>
+        ) : jobsQuery.isLoading ? (
           <div className="jobs-loading-grid">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="job-card-skeleton" />
@@ -373,7 +371,7 @@ export const LandingPage: React.FC = () => {
             {jobsQuery.data.data.map((job) => (
               <SpotlightCard key={job.id} className="premium-job-card">
                 <div className="job-card-header">
-                  <div className="company-badge">
+                  <div className="home-job-logo">
                     <CompanyLogoMark
                       name={job.company?.name}
                       logoId={job.company?.logo?.id ?? job.company?.logoFileId}

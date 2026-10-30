@@ -9,6 +9,7 @@ export interface EnableEmployerInput {
   contactPerson?: string;
   description?: string;
   logoFileId: string;
+  businessLicenceFileId: string;
   companySize?: string;
 }
 

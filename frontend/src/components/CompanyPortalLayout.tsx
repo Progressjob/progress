@@ -1,3 +1,4 @@
+import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -44,6 +45,11 @@ export const CompanyPortalLayout: React.FC = () => {
     setMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    document.body.classList.toggle('nav-locked', menuOpen);
+    return () => document.body.classList.remove('nav-locked');
+  }, [menuOpen]);
+
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
   const jobs = jobsQuery.data ?? [];
@@ -77,7 +83,7 @@ export const CompanyPortalLayout: React.FC = () => {
     <div className="app-shell">
       <header className={`top-nav ${menuOpen ? 'is-menu-open' : ''}`}>
         <div className="nav-brand">
-          <Link to="/company" className="brand-logo-link">
+          <Link to="/" className="brand-logo-link">
             <ProgressLogo size="sm" />
           </Link>
         </div>
@@ -87,6 +93,7 @@ export const CompanyPortalLayout: React.FC = () => {
           className="nav-toggle"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
+          aria-controls="employer-nav-panel"
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span className="nav-toggle-bar" />
@@ -94,8 +101,10 @@ export const CompanyPortalLayout: React.FC = () => {
           <span className="nav-toggle-bar" />
         </button>
 
-        <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <nav className="nav-links">
+        <div className={`nav-overlay ${menuOpen ? 'is-open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        <div id="employer-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
+          <nav className="nav-links" aria-label="Employer navigation">
+            <NavLink to="/">Home</NavLink>
             {companyId ? (
               <>
                 <NavLink
@@ -144,39 +153,18 @@ export const CompanyPortalLayout: React.FC = () => {
           <div className="nav-auth">
             {user && (
               <>
-                <button
-                  type="button"
-                  className="nav-switch-mode"
-                  onClick={() => void handleFindWork()}
-                  disabled={switching}
-                >
-                  {switching ? 'Switching…' : 'Switch to finding work'}
-                </button>
-                <div className="user-pill">
-                  <span className="user-pill-name">
-                    <strong>
-                      {user.firstName} {user.lastName}
-                    </strong>
-                    <small>
-                      Hiring
-                      <Link
-                        to={
-                          companyId
-                            ? employerProfileEditPath(companyId)
-                            : companies[0]
-                              ? employerProfileEditPath(companies[0].id)
-                              : '/employer/setup'
-                        }
-                        className="user-pill-edit"
-                      >
-                        Edit profile
-                      </Link>
-                    </small>
-                  </span>
-                  <button type="button" className="btn-logout" onClick={handleLogout}>
-                    Logout
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account">
+                  <p className="nav-account-heading">Hiring workspace</p>
+                  <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
+                  <NavLink to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
+                  <Link to="/">Homepage</Link>
+                  <Link to="/contact">Contact support</Link>
+                  <div className="nav-account-separator" />
+                  <button type="button" onClick={() => void handleFindWork()} disabled={switching}>
+                    {switching ? 'Switching…' : 'Switch to finding work'}
                   </button>
-                </div>
+                  <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
+                </AccountDropdown>
               </>
             )}
           </div>

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { BackButton } from '../components/BackButton';
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { taxonomyApi } from '../api/taxonomy';
@@ -9,7 +10,7 @@ import { useAuth } from '../auth/AuthContext';
 import { GuestJobAccessNote } from '../components/JobDetailLink';
 import { FeaturedVacancies } from '../components/jobs/FeaturedVacancies';
 import { LatestVacanciesGrid } from '../components/jobs/LatestVacanciesGrid';
-import { pickFeaturedJobs } from '../utils/jobListing';
+import { useFeaturedJobs } from '../hooks/useFeaturedJobs';
 
 function flattenCategories(categories: Category[]): Category[] {
   const result: Category[] = [];
@@ -54,10 +55,7 @@ export const JobsListPage: React.FC = () => {
     queryFn: () => taxonomyApi.locations(),
   });
 
-  const featuredQuery = useQuery({
-    queryKey: ['jobs', 'board-featured'],
-    queryFn: () => jobsApi.list({ page: 1, limit: 12 }),
-  });
+  const featuredQuery = useFeaturedJobs();
 
   const jobsQuery = useQuery({
     queryKey: ['jobs', { q, category, location, employmentType, workplaceType, page, limit }],
@@ -89,10 +87,7 @@ export const JobsListPage: React.FC = () => {
   const total = jobsData?.total ?? 0;
   const hasMore = listedJobs.length < total;
 
-  const featuredJobs = useMemo(
-    () => pickFeaturedJobs(featuredQuery.data?.data ?? [], 8),
-    [featuredQuery.data],
-  );
+
 
   const categoryOptions: DropdownOption[] = [
     { value: '', label: 'Field of study' },
@@ -157,9 +152,7 @@ export const JobsListPage: React.FC = () => {
     <div className="jobs-list-container jb-page">
       <section className="jb-hero">
         <div className="jb-hero-inner">
-          <p className="jb-breadcrumb">
-            Home <span>/</span> Jobs in Ethiopia
-          </p>
+          <BackButton fallback="/" />
           <h1 className="jb-hero-title">
             Jobs in <span>Ethiopia</span>
           </h1>
@@ -254,7 +247,10 @@ export const JobsListPage: React.FC = () => {
           <div className="alert-box-error">Failed to load vacancies: {(jobsQuery.error as Error).message}</div>
         )}
 
-        <FeaturedVacancies jobs={featuredJobs} loading={featuredQuery.isLoading} />
+        {featuredQuery.isError && <p role="alert">Could not load recommendations. <button type="button" onClick={() => void featuredQuery.refetch()}>Try again</button></p>}
+        <FeaturedVacancies jobs={featuredQuery.data?.data ?? []} loading={featuredQuery.isLoading}
+          title={featuredQuery.title} description={featuredQuery.description} />
+        {featuredQuery.showProfileLink && <p><Link to="/candidate/profile">Update your profile for better matches</Link></p>}
 
         <section className="jb-latest" aria-label="Latest job vacancies">
           <div className="jb-latest-head">

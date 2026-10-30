@@ -1,3 +1,4 @@
+import { BackButton } from '../components/BackButton';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -157,11 +158,12 @@ export const AdminJobsPage: React.FC = () => {
         const provisioned = await adminApi.provisionCompany({
           company: sanitizeCompanyPayload(newCompanyForm),
           employer: newEmployerForm,
-          verify: true,
+          verify: false,
           canSelfPublishJobs: newCompanyCanPost,
         });
         nextCompanyId = provisioned.company.id;
         setCredentials(provisioned.credentials);
+        return null; // Company must be reviewed before any job can be created.
       }
       if (!nextCompanyId) throw new Error('Select a company');
       const job = await adminApi.createJob(sanitizeJobPayload({ ...jobForm, companyId: nextCompanyId }));
@@ -243,6 +245,7 @@ export const AdminJobsPage: React.FC = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setActionError(null);
+    if (postMode === 'new' && !newCompanyForm.businessLicenceFileId) { setActionError('Upload a business licence.'); return; }
     if (postMode === 'new' && !newCompanyForm.logoFileId) {
       setActionError('Upload a company logo before posting jobs.');
       return;
@@ -345,9 +348,7 @@ export const AdminJobsPage: React.FC = () => {
         <div className="jb-hero-inner">
           <div className="jb-admin-hero-row">
             <div>
-              <p className="jb-breadcrumb">
-                Admin <span>/</span> Job postings
-              </p>
+              <BackButton fallback="/admin" />
               <h1 className="jb-hero-title">
                 Job <span>postings</span>
               </h1>
@@ -394,14 +395,14 @@ export const AdminJobsPage: React.FC = () => {
                 checked={postMode === 'new'}
                 onChange={() => setPostMode('new')}
               />
-              Register company and post
+              Register company for review
             </label>
           </div>
 
           <form onSubmit={handleCreate}>
             {postMode === 'new' && (
               <>
-                <h3 className="admin-jobs-subhead">New company</h3>
+                <h3 className="admin-jobs-subhead">New company</h3><p>The company will be pending licence review. Approve it in Companies before creating its first job.</p>
                 <CompanyFormFields value={newCompanyForm} onChange={setNewCompanyForm} idPrefix="new-co" />
                 <h3 className="admin-jobs-subhead">Company login</h3>
                 <EmployerCredentialsFields
@@ -412,18 +413,20 @@ export const AdminJobsPage: React.FC = () => {
                 <label className="admin-jobs-check">
                   <input
                     type="checkbox"
+                    disabled
                     checked={newCompanyCanPost}
                     onChange={(e) => setNewCompanyCanPost(e.target.checked)}
                   />
-                  Allow direct posting for this company
+                  Direct posting can be enabled after company approval
                 </label>
               </>
             )}
 
+            {postMode === 'existing' && <>
             <AdminJobFormFields
               value={jobForm}
               onChange={setJobForm}
-              hideCompanySelect={postMode === 'new'}
+              hideCompanySelect={false}
               companySelect={postMode === 'existing' ? companySelect : undefined}
             />
 
@@ -436,6 +439,7 @@ export const AdminJobsPage: React.FC = () => {
               Publish live immediately after saving
             </label>
 
+            </>}
             <div className="admin-jobs-form-actions">
               <button
                 type="submit"
@@ -443,7 +447,7 @@ export const AdminJobsPage: React.FC = () => {
                 disabled={createMutation.isPending}
                 style={{ width: 'auto', padding: '0.85rem 2rem' }}
               >
-                {createMutation.isPending ? 'Saving…' : 'Save job'}
+                {createMutation.isPending ? 'Saving…' : postMode === 'new' ? 'Register company for review' : 'Save job'}
               </button>
               <button type="button" className="btn-clear-filters" onClick={() => setShowCreate(false)}>
                 Cancel

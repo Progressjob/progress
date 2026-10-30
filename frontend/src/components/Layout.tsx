@@ -1,3 +1,4 @@
+import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -26,7 +27,7 @@ export const Layout: React.FC = () => {
 
   useEffect(() => {
     setMenuOpen(false);
-  }, [location.pathname]);
+  }, [location.key]);
 
   useEffect(() => {
     document.body.classList.toggle('nav-locked', menuOpen);
@@ -100,7 +101,7 @@ export const Layout: React.FC = () => {
         />
 
         <div id="site-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <nav className="nav-links">
+          <nav className="nav-links" aria-label="Main navigation">
             <NavLink
               to="/"
               end
@@ -135,79 +136,37 @@ export const Layout: React.FC = () => {
               Contact
             </NavLink>
 
-            {hasEmployerAccess && (
-              <NavLink
-                to={firstCompanyId ? `/company/${firstCompanyId}/jobs` : '/company'}
-                className={() => navActive(location.pathname.startsWith('/company'))}
-                title="Track your posted jobs and view post record"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  fontWeight: 600,
-                  color: '#0284c7',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" strokeWidth="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
-                </svg>
-                <span>Track Posted Jobs</span>
-              </NavLink>
-            )}
-
-            {hasRole('admin', 'moderator') && (
-              <>
-                <span className="nav-divider">|</span>
-                <NavLink
-                  to="/admin"
-                  end
-                  className={() => navActive(isExactPath(location.pathname, '/admin'))}
-                >
-                  Admin portal
-                </NavLink>
-              </>
-            )}
           </nav>
 
           <div className="nav-auth">
             {user ? (
               <>
-                <button
-                  type="button"
-                  className="nav-switch-mode"
-                  onClick={workspace === 'employer' ? handleFindWork : handlePostJob}
-                  disabled={switching}
-                >
-                  {switching
-                    ? 'Switching…'
-                    : workspace === 'employer'
-                      ? 'Switch to finding work'
-                      : hasEmployerAccess
-                        ? '+ Post Vacancy'
-                        : 'Post a job'}
-                </button>
-                <div className="user-pill">
-                  <div className="user-avatar-initial">
-                    {user.firstName?.charAt(0) || 'U'}
-                  </div>
-                  <span className="user-pill-name">
-                    <strong>
-                      {user.firstName} {user.lastName}
-                    </strong>
-                    <small>
-                      {workspace === 'employer' ? 'Hiring' : 'Looking for work'}
-                      {showProfileEdit && (
-                        <Link to={profileTo} className="user-pill-edit">
-                          Edit profile
-                        </Link>
+                {inCandidateWorkspace && hasRole('candidate') ? (
+                  <Link to="/candidate/applications" className="nav-switch-mode">My applications</Link>
+                ) : (
+                  <button type="button" className="nav-switch-mode" onClick={handlePostJob}>Post a job</button>
+                )}
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={workspace === 'employer' ? 'Employer account' : 'My account'}>
+                      <p className="nav-account-heading">{workspace === 'employer' ? 'Hiring workspace' : 'Your job search'}</p>
+                      {showProfileEdit && <NavLink to={profileTo}>{workspace === 'employer' ? 'Company profile' : 'My profile & CV'}</NavLink>}
+                      {inCandidateWorkspace && hasRole('candidate') && (
+                        <>
+                          <NavLink to="/candidate/applications">My applications</NavLink>
+                          <NavLink to="/candidate/saved-jobs">Saved jobs</NavLink>
+                        </>
                       )}
-                    </small>
-                  </span>
-                  <button type="button" className="btn-logout" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </div>
+                      {hasEmployerAccess && firstCompanyId && (
+                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Manage posted jobs</NavLink>
+                      )}
+                      {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
+                      <Link to="/contact">Contact support</Link>
+                      <div className="nav-account-separator" />
+                      <button type="button" disabled={switching}
+                        onClick={workspace === 'employer' ? handleFindWork : handlePostJob}>
+                        {switching ? 'Switching…' : workspace === 'employer' ? 'Switch to finding work' : 'Hire talent / Post a job'}
+                      </button>
+                      <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
+                </AccountDropdown>
               </>
             ) : (
               <div className="auth-buttons">

@@ -1,3 +1,5 @@
+import { BackButton } from '../components/BackButton';
+import { CompanyVerificationNotice } from '../components/CompanyVerificationNotice';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -129,12 +131,12 @@ export const CompanyPostJobPage: React.FC = () => {
   const logoId = company?.logo?.id ?? company?.logoFileId ?? null;
   const needsLogo = Boolean(company) && !logoId;
 
+  if (company && company.verificationStatus !== 'verified') return <div className="jobs-list-container"><BackButton fallback={`/company/${companyId}/jobs`} /><CompanyVerificationNotice company={company} /></div>;
+
   return (
     <div className="jobs-list-container">
       <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
-        <nav className="detail-breadcrumbs" style={{ marginBottom: '1rem' }}>
-          <Link to={`/company/${companyId}/jobs`}>Job postings</Link>
-        </nav>
+        <BackButton fallback={`/company/${companyId}/jobs`} />
         <span className="section-eyebrow">Employer</span>
         <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
           {isEdit ? 'Edit job posting' : 'Post job opportunity'}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { publicFileUrl } from '../api/files';
@@ -132,10 +132,18 @@ function formatYears(value?: number | string | null): string {
 
 export const CompanyCvSearchPage: React.FC = () => {
   const portal = useTalentPortal();
-              const [searchParams, setSearchParams] = useSearchParams();
-              const query = searchParams.get('q')?.trim() ?? '';
-              const page = Math.max(Number(searchParams.get('page') || 1), 1);
-              const [draft, setDraft] = useState(query);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q')?.trim() ?? '';
+  const page = Math.max(Number(searchParams.get('page') || 1), 1);
+  const [draft, setDraft] = useState(query);
+  const resultsHeaderRef = useRef<HTMLDivElement>(null);
+
+  const scrollToResults = () => {
+    if (resultsHeaderRef.current) {
+      const topOffset = resultsHeaderRef.current.getBoundingClientRect().top + window.pageYOffset - 85;
+      window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
                 setDraft(query);
@@ -301,7 +309,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                 </div>
 
                                   {/* Results Header */}
-                                  <div className="cv-results-header">
+                                  <div className="cv-results-header" ref={resultsHeaderRef}>
                                     <div>
                                       <h2 className="cv-results-title">
                                         {searching ? `Matching candidates for “${query}”` : 'All professional talent'}
@@ -376,7 +384,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                                     disabled={page <= 1}
                                                     onClick={() => {
                                                       applySearch(query, page - 1);
-                                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                      scrollToResults();
                                                     }}
                                                   >
                                                     ← Previous
@@ -389,7 +397,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                                       disabled={n === page}
                                                       onClick={() => {
                                                         applySearch(query, n);
-                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                        scrollToResults();
                                                       }}
                                                     >
                                                       Page {n}
@@ -401,7 +409,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                                       disabled={page >= totalPages}
                                                       onClick={() => {
                                                         applySearch(query, page + 1);
-                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                        scrollToResults();
                                                       }}
                                                     >
                                                       Next →

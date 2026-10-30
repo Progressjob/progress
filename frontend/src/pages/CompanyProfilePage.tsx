@@ -73,6 +73,7 @@ export const CompanyProfilePage: React.FC = () => {
         companySize: payload.companySize,
         foundedYear: payload.foundedYear,
         logoFileId: payload.logoFileId,
+        businessLicenceFileId: payload.businessLicenceFileId,
       });
     },
     onSuccess: async () => {
@@ -159,6 +160,7 @@ export const CompanyProfilePage: React.FC = () => {
           }}
         >
           <CompanyFormFields
+            licenceRequired={false}
             value={form}
             onChange={setForm}
             idPrefix="emp-profile"

@@ -1,3 +1,4 @@
+import { CompanyVerificationNotice } from '../components/CompanyVerificationNotice';
 import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ import { employerApi } from '../api/employer';
 
     return (
       <div className="jobs-list-container">
+        {companyQuery.data && <CompanyVerificationNotice company={companyQuery.data} />}
         {/* Header */}
         <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
             <div className="company-portal-header-row">
@@ -56,7 +58,7 @@ import { employerApi } from '../api/employer';
                   {companyQuery.data?.name ?? 'Company'} — Job Postings
                 </h1>
                 <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
-                  {companyQuery.data?.canSelfPublishJobs &&
+                  {companyQuery.data?.verificationStatus !== 'verified' ? 'Business licence approval is required before creating vacancies.' : companyQuery.data?.canSelfPublishJobs &&
                   companyQuery.data.verificationStatus === 'verified'
                     ? 'Your organization is verified to publish vacancies directly to the board.'
                     : 'New vacancies wait for an administrator to review and post them.'}
@@ -77,9 +79,9 @@ import { employerApi } from '../api/employer';
                       ))}
                     </select>
                   )}
-                  <Link to={`/company/${companyId}/jobs/new`} className="btn-nav-register">
+                  {companyQuery.data?.verificationStatus === 'verified' && <Link to={`/company/${companyId}/jobs/new`} className="btn-nav-register">
                     + Post New Opportunity
-                  </Link>
+                  </Link>}
                 </div>
               </div>
             </div>

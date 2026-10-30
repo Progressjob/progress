@@ -1,3 +1,4 @@
+import { profileTerms, recommendationScore } from './jobs.recommendations';
 import {
   BadRequestException,
   ForbiddenException,
@@ -44,8 +45,8 @@ export class JobPostingPolicy {
   async getCompanyPostingContext(companyId: string) {
     const company = await this.prisma.company.findUnique({ where: { id: companyId } });
     if (!company) throw new NotFoundException('Company not found');
-    if (company.verificationStatus === 'rejected') {
-      throw new ForbiddenException('This company cannot post jobs until verification is resolved');
+    if (company.verificationStatus !== 'verified') {
+      throw new ForbiddenException('Your business licence must be approved by an administrator before you can post jobs.');
     }
     if (company.portalStatus === 'suspended') {
       throw new ForbiddenException('This company cannot post jobs while access is suspended');
@@ -86,6 +87,43 @@ export class JobsService {
     private readonly prisma: PrismaService,
     private readonly policy: JobPostingPolicy,
   ) {}
+
+  async recommendations(userId: string) {
+    const profile = await this.prisma.candidateProfile.findUnique({
+      where: { userId },
+      include: { educations: true, experiences: true, skills: true },
+    });
+    const terms = profile ? profileTerms(profile) : new Set<string>();
+    const skillIds = new Set(profile?.skills.map((skill) => skill.skillId) ?? []);
+    const fallback = async (reason: 'incomplete_profile' | 'no_matches') => ({
+      data: (await this.listPublic({ limit: 8 })).data,
+      personalized: false,
+      reason,
+    });
+    if (!terms.size && !skillIds.size) return fallback('incomplete_profile');
+    const eligible = {
+      status: JobStatus.published,
+      postedAt: { not: null },
+      applicationDeadline: { gte: this.today() },
+    };
+    // Score the full eligible pool, not just the first page of featured jobs.
+    const jobs = await this.prisma.job.findMany({
+      where: eligible,
+      select: { id: true, title: true, educationRequirement: true,
+        category: { select: { name: true } }, skills: { select: { skillId: true } } },
+      orderBy: [{ isFeatured: 'desc' }, { postedAt: 'desc' }, { id: 'asc' }],
+    });
+    const ranked = jobs.map((job) => ({ id: job.id, score: recommendationScore(terms, skillIds, job) }))
+      .filter((job) => job.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+    if (!ranked.length) return fallback('no_matches');
+    const matches = await this.prisma.job.findMany({
+      where: { ...eligible, id: { in: ranked.map((job) => job.id) } },
+      include: { company: { include: { logo: true } }, category: true, location: true },
+    });
+    const byId = new Map(matches.map((job) => [job.id, job]));
+    return { data: ranked.flatMap(({ id }) => byId.has(id) ? [byId.get(id)!] : []),
+      personalized: true, reason: null };
+  }
 
   async listPublic(filters: {
     q?: string;
@@ -309,6 +347,7 @@ export class JobsService {
     const job = await this.prisma.job.findUnique({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
     assertJobTransition(job.status, next);
+    if (next === 'published') await this.policy.assertCanPost(job.companyId);
     if (next === 'published' && job.applicationDeadline < this.today()) {
       throw new BadRequestException('The application deadline has passed');
     }

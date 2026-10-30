@@ -374,3 +374,29 @@ Do not treat missing UI as a failed E2E case unless you are testing the API dire
 - [ ] `employer@example.com` / `Employer123!` can post jobs (review flow) with how-to-hire; no View candidates inbox
 - [ ] Wrong-role URLs are blocked
 - [ ] Logout clears the session
+
+## Business licence review before job posting
+
+New self-service and admin-created companies require a private PDF, PNG or JPEG
+business licence (5 MB maximum). Creation always sets verification to pending;
+registration flags cannot grant approval or direct publishing. Existing verified
+companies retain their status. No schema migration is required: documents use the
+existing CompanyVerificationDocument relation.
+
+1. Sign in as a candidate, choose hiring, and upload a logo and business licence.
+   Submitting without the licence must fail. Successful submission opens the company
+   jobs page with a pending-review notice instead of the job form.
+2. Try creating/submitting a job through the employer API, or creating/publishing
+   one through the admin API for that pending company: posting must be refused.
+3. In Admin → Companies → Edit, download the licence and select Approve company,
+   then Save changes. The document stores the reviewer and review timestamp.
+4. Return to the employer account. The job form is now available. Per-job review
+   remains required unless the admin separately enables direct publishing.
+5. Reject another company, upload a replacement licence from its pending/rejected
+   notice, and submit it. Status returns to pending until reviewed again.
+6. Test admin company registration and the new-company option on the admin jobs
+   screen. Both require the licence and create a pending company; the latter does
+   not create a job until the company has been reviewed.
+7. Access the document's public file URL without authentication: it must fail.
+   A different company's user must not be able to download it or attach its ID.
+   A fake PDF containing plain text must fail upload validation.

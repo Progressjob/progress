@@ -24,7 +24,14 @@ export function getAnonymousSessionId(): string {
   return id;
 }
 
+export interface FeaturedJobsResponse {
+  data: Job[];
+  personalized: boolean;
+  reason: 'incomplete_profile' | 'no_matches' | null;
+}
+
 export const jobsApi = {
+  recommendations: () => apiFetch<FeaturedJobsResponse>('/jobs/recommendations'),
   list: (params: JobListParams = {}) => {
     const search = new URLSearchParams();
     if (params.q?.trim()) search.set('q', params.q.trim());

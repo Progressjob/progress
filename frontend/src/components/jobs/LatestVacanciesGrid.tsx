@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Job } from '../../types/api';
 import { companyLabel, jobPostedLabel, locationLabel } from '../../utils/jobListing';
+import { CompanyLogoMark } from '../CompanyLogoMark';
 import { JobDetailLink } from '../JobDetailLink';
 
 export const LatestVacanciesGrid: React.FC<{
@@ -28,6 +29,15 @@ export const LatestVacanciesGrid: React.FC<{
         const posted = jobPostedLabel(job.postedAt || job.createdAt);
         return (
           <article key={job.id} className={`jb-latest-item${footer ? ' has-footer' : ''}`}>
+            <div className="jb-card-brand">
+                  <CompanyLogoMark
+                    name={companyLabel(job)}
+                    logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                    className="jb-company-logo jb-company-logo-fallback"
+                    imgClassName="jb-company-logo"
+                  />
+                  <span className="jb-employment-type">{job.employmentType.replaceAll('_', ' ')}</span>
+                </div>
             <div className="jb-latest-top">
               <h3 className="jb-latest-title">
                 {publicLinks ? (

@@ -13,6 +13,11 @@ export function publicFileUrl(fileId: string): string {
 }
 
 export const filesApi = {
+  uploadBusinessLicence: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiFetch<UploadedFile>('/files/upload/document', { method: 'POST', body: formData });
+  },
   uploadLogo: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

@@ -1,3 +1,4 @@
+import { BackButton } from '../components/BackButton';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -115,15 +116,7 @@ function yearFromDate(value?: string | null): string {
           return (
             <div className="cv-detail-page-container">
               {/* Breadcrumb Navigation */}
-              <nav className="detail-breadcrumbs" aria-label="Breadcrumb">
-                <Link to="/">Home</Link>
-                <span>/</span>
-                <Link to={portal.listPath}>Candidate Search</Link>
-                <span>/</span>
-                <span className="current-crumb">
-                  {profile.firstName} {profile.lastName}
-                </span>
-              </nav>
+              <BackButton fallback={portal.listPath} />
 
       {/* Executive Candidate Header Hero */}
                     <header className="cv-executive-header">

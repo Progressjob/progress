@@ -67,6 +67,11 @@ export class FilesService {
       return true;
     }
     if (!user.roles.includes('employer')) return false;
+    const companyDocument = await this.prisma.companyVerificationDocument.findFirst({
+      where: { fileId, company: { members: { some: { userId: user.id, status: 'active' } } } },
+      select: { id: true },
+    });
+    if (companyDocument) return true;
     const applied = await this.prisma.application.findFirst({
       where: {
         resume: { fileId },
@@ -122,6 +127,11 @@ export class FilesService {
     };
     const valid = category === 'cv' ? signatures.pdf || signatures.docx || signatures.doc : true;
     if (!valid) throw new BadRequestException('Unsupported or invalid file content');
+    if (category === 'document' && !(
+      (signatures.pdf && file.mimetype === 'application/pdf') ||
+      (file.buffer.subarray(0, 8).toString('hex') === '89504e470d0a1a0a' && file.mimetype === 'image/png') ||
+      (file.buffer.subarray(0, 3).toString('hex') === 'ffd8ff' && file.mimetype === 'image/jpeg')
+    )) throw new BadRequestException('Business documents must be PDF, PNG or JPEG files.');
     if (category === 'profile_image' && !signatures.image) {
       throw new BadRequestException('Only PNG and JPEG images are supported');
     }

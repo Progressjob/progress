@@ -95,6 +95,9 @@ export class CompanyDto {
 
   @IsUUID()
   logoFileId!: string;
+
+  @IsUUID()
+  businessLicenceFileId!: string;
 }
 
 export class UpdateCompanyDto extends PartialType(CompanyDto) {}
@@ -119,6 +122,15 @@ export class UpdateMemberDto {
 }
 
 export class VerifyCompanyDto {
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  reviewNote?: string;
+
+  @IsOptional()
+  @IsUUID()
+  documentId?: string;
+
   @IsEnum(VerificationStatus)
   status!: VerificationStatus;
 }

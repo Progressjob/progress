@@ -1,3 +1,6 @@
+import { AdminVerificationPage } from './pages/AdminVerificationPage';
+import { AdminSupportPage } from './pages/AdminSupportPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 import React, { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -73,6 +76,7 @@ export function App(): React.ReactElement {
               <Route path="/companies" element={<CompaniesListPage />} />
               <Route path="/companies/:slug" element={<CompanyDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/notifications" element={<RequireSignedIn><NotificationsPage /></RequireSignedIn>} />
               <Route
                 path="/cv-search"
                 element={
@@ -115,6 +119,9 @@ export function App(): React.ReactElement {
               }
             >
               <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/verification" element={<AdminVerificationPage />} />
+              <Route path="/admin/support" element={<AdminSupportPage />} />
+              <Route path="/admin/notifications" element={<NotificationsPage />} />
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
               <Route path="/admin/jobs" element={<AdminJobsPage />} />
               <Route path="/admin/jobs/:jobId" element={<AdminJobDetailPage />} />

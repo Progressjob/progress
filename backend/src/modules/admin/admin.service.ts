@@ -1,3 +1,4 @@
+import { notifyReviewers } from '../notifications/notification-events';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AccountStatus, ApplicationStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -29,11 +30,19 @@ export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   contact(dto: ContactMessageDto) {
-    return this.prisma.contactMessage.create({ data: dto });
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.contactMessage.create({ data: dto });
+      await notifyReviewers(tx, { title: 'New support message', message: dto.subject, type: 'support_message', referenceType: 'contact', referenceId: message.id });
+      return message;
+    });
   }
 
   report(dto: JobReportDto) {
-    return this.prisma.jobReport.create({ data: dto });
+    return this.prisma.$transaction(async (tx) => {
+      const report = await tx.jobReport.create({ data: dto });
+      await notifyReviewers(tx, { title: 'Job reported', message: dto.reason, type: 'job_report', referenceType: 'report', referenceId: report.id });
+      return report;
+    });
   }
 
   async dashboard() {

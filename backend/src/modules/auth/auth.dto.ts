@@ -83,6 +83,9 @@ export class EnableEmployerDto {
   @IsUUID()
   logoFileId!: string;
 
+  @IsUUID()
+  businessLicenceFileId!: string;
+
   @IsOptional()
   @IsString()
   @Length(0, 50)

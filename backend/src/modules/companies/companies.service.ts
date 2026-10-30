@@ -1,4 +1,7 @@
+import { notifyReviewers, notifyCompanyMembers } from '../notifications/notification-events';
+import { requireBusinessLicence } from './business-licence';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -89,7 +92,7 @@ export class CompaniesService {
     return this.prisma.company.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { industry: true, logo: true, _count: { select: { jobs: true, members: true } } },
+      include: { documents: { where: { documentType: 'business_licence' }, orderBy: { createdAt: 'desc' }, take: 1, include: { file: { select: { originalFilename: true, mimeType: true } } } }, industry: true, logo: true, _count: { select: { jobs: true, members: true } } },
     });
   }
 
@@ -114,46 +117,37 @@ export class CompaniesService {
     return this.uniqueSlug(name, id);
   }
 
-  async create(dto: CompanyDto) {
+  async create(dto: CompanyDto, actorId: string) {
+    const { businessLicenceFileId, ...company } = dto;
+    const documents = await requireBusinessLicence(this.prisma, businessLicenceFileId, actorId);
     const slug = await this.uniqueSlug(dto.name);
-    return this.prisma.company.create({
-      data: { ...dto, slug, canSelfPublishJobs: false },
-    });
-  }
-
-  async createAdminVerified(dto: CompanyDto, canSelfPublishJobs = false) {
-    const slug = await this.uniqueSlug(dto.name);
-    const now = new Date();
-    return this.prisma.company.create({
-      data: {
-        ...dto,
-        slug,
-        verificationStatus: 'verified',
-        verifiedAt: now,
-        canSelfPublishJobs,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.company.create({ data: { ...company, slug, documents, verificationStatus: 'pending', canSelfPublishJobs: false } });
+      await notifyReviewers(tx, { title: 'Company awaiting verification', message: result.name, type: 'company_review', referenceType: 'company', referenceId: result.id });
+      return result;
     });
   }
 
   async provision(actorId: string, dto: ProvisionCompanyDto) {
-    const verify = dto.verify !== false;
-    const canSelfPublishJobs = dto.canSelfPublishJobs ?? false;
+    const { businessLicenceFileId, ...companyData } = dto.company;
+    const documents = await requireBusinessLicence(this.prisma, businessLicenceFileId, actorId);
+
     const slug = await this.uniqueSlug(dto.company.name);
-    const now = new Date();
     const temporaryPassword = dto.employer.temporaryPassword;
 
     return this.prisma.$transaction(async (tx) => {
       const company = await tx.company.create({
         data: {
-          ...dto.company,
+          ...companyData,
+          documents,
           slug,
-          verificationStatus: verify ? 'verified' : 'pending',
-          verifiedAt: verify ? now : null,
-          canSelfPublishJobs,
+          verificationStatus: 'pending',
+          canSelfPublishJobs: false,
         },
         include: { industry: true },
       });
 
+      await notifyReviewers(tx, { title: 'Company awaiting verification', message: company.name, type: 'company_review', referenceType: 'company', referenceId: company.id });
       const member = await this.addMemberWithTx(tx, company.id, actorId, dto.employer);
 
       return {
@@ -167,11 +161,17 @@ export class CompaniesService {
     });
   }
 
-  async update(id: string, dto: UpdateCompanyDto) {
+  async update(id: string, dto: UpdateCompanyDto, actorId: string) {
+    const { businessLicenceFileId, ...companyData } = dto;
+    const documents = businessLicenceFileId ? await requireBusinessLicence(this.prisma, businessLicenceFileId, actorId) : undefined;
     const slug = await this.slugIfNameChanged(id, dto.name);
-    return this.prisma.company.update({
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.company.update({
       where: { id },
-      data: { ...dto, ...(slug ? { slug } : {}) },
+      data: { ...companyData, ...(documents ? { documents, verificationStatus: 'pending', verifiedAt: null, canSelfPublishJobs: false } : {}), ...(slug ? { slug } : {}) },
+      });
+      if (documents) await notifyReviewers(tx, { title: 'Business licence submitted', message: result.name, type: 'company_review', referenceType: 'company', referenceId: result.id });
+      return result;
     });
   }
 
@@ -235,21 +235,40 @@ export class CompaniesService {
     return this.prisma.companyMember.update({ where: { id }, data: dto });
   }
 
-  verify(id: string, dto: VerifyCompanyDto) {
-    return this.prisma.company.update({
-      where: { id },
-      data: {
-        verificationStatus: dto.status,
-        verifiedAt: dto.status === 'verified' ? new Date() : null,
-      },
-    });
+  async verify(id: string, dto: VerifyCompanyDto, actorId: string) {
+    if (dto.status === 'rejected' && !dto.reviewNote?.trim()) throw new BadRequestException('Explain why the licence was rejected.');
+    return this.prisma.$transaction(async (tx) => {
+      const document = await tx.companyVerificationDocument.findFirst({
+        where: { companyId: id, documentType: 'business_licence' },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (dto.documentId && document?.id !== dto.documentId) throw new ConflictException('The licence changed. Refresh the verification queue before reviewing.');
+      if (!document && dto.status === 'verified') {
+        throw new BadRequestException('A business licence must be uploaded and reviewed before approval.');
+      }
+      if (document) await tx.companyVerificationDocument.update({
+        where: { id: document.id },
+        data: { reviewStatus: dto.status, reviewedBy: actorId, reviewedAt: new Date(), reviewNote: dto.reviewNote?.trim() || null },
+      });
+      const result = await tx.company.update({
+        where: { id },
+        data: { verificationStatus: dto.status, verifiedAt: dto.status === 'verified' ? new Date() : null,
+          ...(dto.status !== 'verified' ? { canSelfPublishJobs: false } : {}) },
+      });
+      await notifyCompanyMembers(tx, id, { title: `Company verification: ${dto.status}`, message: dto.reviewNote?.trim() || (dto.status === 'verified' ? 'Your company is approved. You can now submit job postings.' : 'Your company verification status has changed.'), type: 'company_verification', referenceType: 'company', referenceId: id });
+      return result;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   feature(id: string, featured: boolean) {
     return this.prisma.company.update({ where: { id }, data: { isFeatured: featured } });
   }
 
-  setPostingAccess(id: string, canSelfPublishJobs: boolean) {
+  async setPostingAccess(id: string, canSelfPublishJobs: boolean) {
+    if (canSelfPublishJobs) {
+      const company = await this.prisma.company.findUnique({ where: { id } });
+      if (company?.verificationStatus !== 'verified') throw new BadRequestException('Approve the business licence before enabling direct publishing.');
+    }
     return this.prisma.company.update({
       where: { id },
       data: { canSelfPublishJobs },
@@ -333,6 +352,7 @@ export class CompaniesService {
     const company = await this.prisma.company.findFirst({
       where: { id: companyId, members: { some: { userId, status: 'active' } } },
       include: {
+        documents: { where: { documentType: 'business_licence' }, orderBy: { createdAt: 'desc' }, take: 1, include: { file: { select: { originalFilename: true, mimeType: true } } } },
         logo: true,
         industry: true,
         members: {
@@ -351,10 +371,14 @@ export class CompaniesService {
   }
 
   async employerUpdate(_userId: string, companyId: string, dto: UpdateCompanyDto) {
+    const documents = dto.businessLicenceFileId
+      ? await requireBusinessLicence(this.prisma, dto.businessLicenceFileId, _userId) : undefined;
     const slug = await this.slugIfNameChanged(companyId, dto.name);
-    return this.prisma.company.update({
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.company.update({
       where: { id: companyId },
       data: {
+        ...(documents ? { documents, verificationStatus: 'pending', verifiedAt: null, canSelfPublishJobs: false } : {}),
         name: dto.name,
         industryId: dto.industryId,
         description: dto.description,
@@ -372,6 +396,9 @@ export class CompaniesService {
         logoFileId: dto.logoFileId,
         ...(slug ? { slug } : {}),
       },
+      });
+      if (documents) await notifyReviewers(tx, { title: 'Business licence submitted', message: result.name, type: 'company_review', referenceType: 'company', referenceId: result.id });
+      return result;
     });
   }
 }

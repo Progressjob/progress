@@ -1,3 +1,4 @@
+import { BusinessLicenceUpload } from '../components/BusinessLicenceUpload';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +25,7 @@ export const EmployerSetupPage: React.FC = () => {
   const existingCompanyId =
     user?.companyMemberships?.[0]?.companyId || companiesQuery.data?.[0]?.id;
 
+  const [businessLicenceFileId, setBusinessLicenceFileId] = useState('');
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState(user?.phone ?? '');
@@ -81,12 +83,14 @@ export const EmployerSetupPage: React.FC = () => {
       return;
     }
 
+    if (!businessLicenceFileId) { setError('Upload your business licence before continuing.'); return; }
     setSubmitting(true);
     try {
       const result = await enableEmployer({
         name: name.trim(),
         phone: cleanPhone,
         logoFileId,
+        businessLicenceFileId,
         ...(city.trim() ? { city: city.trim() } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(contactPerson.trim() ? { contactPerson: contactPerson.trim() } : {}),
@@ -94,7 +98,7 @@ export const EmployerSetupPage: React.FC = () => {
         ...(companySize ? { companySize } : {}),
       });
       setWorkspace('employer');
-      navigate(destinationAfterHire(result.company.id, next), { replace: true });
+      navigate(`/company/${result.company.id}/jobs`, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -115,14 +119,13 @@ export const EmployerSetupPage: React.FC = () => {
 
         <h1 className="auth-title">Switch this account to hiring</h1>
         <p className="auth-subtitle">
-          {next?.startsWith('/cv-search/')
-            ? 'You keep the same login. After this short hiring setup, we’ll open the CV you selected.'
-            : 'You keep the same login. After this, use Switch to hiring in the nav to post jobs, and Switch to finding work to go back to searching.'}
+          {'Keep your existing login. Submit your business licence for admin review. Job posting becomes available after your company is approved.'}
         </p>
 
         {error && <div className="alert-box-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          <BusinessLicenceUpload value={businessLicenceFileId} onChange={setBusinessLicenceFileId} />
           <div className="form-input-group">
             <label htmlFor="employer-logo">Company logo *</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -263,7 +266,7 @@ export const EmployerSetupPage: React.FC = () => {
           </div>
 
           <button type="submit" className="btn-auth-submit" disabled={submitting}>
-            {submitting ? 'Saving…' : next?.startsWith('/cv-search/') ? 'Continue to CV →' : 'Continue to job post →'}
+            {submitting ? 'Saving…' : 'Submit company for review'}
           </button>
         </form>
       </div>

@@ -1,3 +1,4 @@
+import { BackButton } from '../components/BackButton';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -336,13 +337,7 @@ function postedLabel(iso?: string | null): string {
       <div className="job-detail-page">
         <div className="job-detail-container">
           {/* Ethiojobs/Geezjobs Breadcrumb */}
-          <nav className="detail-breadcrumbs" aria-label="Breadcrumb">
-            <Link to="/">Home</Link>
-            <span>/</span>
-            <Link to="/jobs">Vacancies</Link>
-            <span>/</span>
-            <span className="current-crumb">{title}</span>
-          </nav>
+          <BackButton fallback="/jobs" />
 
                   {/* Hero Header Banner */ }
                   < header className="jd-header-hero">

@@ -11,7 +11,7 @@ vi.mock('./google-token', () => ({
 function createPrismaMock() {
   const prisma: any = {
     role: { findUnique: vi.fn() },
-    user: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn(), update: vi.fn() },
+    user: { findMany: vi.fn().mockResolvedValue([]), findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn(), update: vi.fn() },
     refreshToken: { create: vi.fn(), update: vi.fn() },
     userRole: { upsert: vi.fn() },
     candidateProfile: { findUnique: vi.fn(), create: vi.fn() },
@@ -63,7 +63,7 @@ describe('AuthService role enablement', () => {
     prisma.role.findUnique.mockResolvedValue({ id: 3, name: 'employer' });
 
     const service = new AuthService(prisma, jwt, config);
-    const result = await service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344' });
+    const result = await service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'logo-1', businessLicenceFileId: 'licence-1' });
 
     expect(result).toEqual({ company, created: false });
     expect(prisma.company.create).not.toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe('AuthService role enablement', () => {
     });
     prisma.role.findUnique.mockResolvedValue({ id: 3, name: 'employer' });
     prisma.company.findUnique.mockResolvedValue(null);
-    prisma.file.findFirst.mockResolvedValue({ id: 'logo-1', fileCategory: 'logo' });
+    prisma.file.findFirst.mockResolvedValueOnce({ id: 'logo-1', fileCategory: 'logo' }).mockResolvedValue({ id: 'licence-1', fileCategory: 'document' });
     prisma.company.create.mockResolvedValue({
       id: 'co-new',
       name: 'Abebe Hiring',
@@ -93,6 +93,7 @@ describe('AuthService role enablement', () => {
       name: 'Abebe Hiring',
       phone: '+251911223344',
       logoFileId: 'logo-1',
+      businessLicenceFileId: 'licence-1',
     });
 
     expect(result.created).toBe(true);
@@ -123,11 +124,11 @@ describe('AuthService role enablement', () => {
       companyMemberships: [],
     });
     prisma.role.findUnique.mockResolvedValue(null);
-    prisma.file.findFirst.mockResolvedValue({ id: 'logo-1', fileCategory: 'logo' });
+    prisma.file.findFirst.mockResolvedValueOnce({ id: 'logo-1', fileCategory: 'logo' }).mockResolvedValue({ id: 'licence-1', fileCategory: 'document' });
 
     const service = new AuthService(prisma, jwt, config);
     await expect(
-      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'logo-1' }),
+      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'logo-1', businessLicenceFileId: 'licence-1' }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -144,7 +145,7 @@ describe('AuthService role enablement', () => {
 
     const service = new AuthService(prisma, jwt, config);
     await expect(
-      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'missing' }),
+      service.enableEmployer('user-1', { name: 'Acme', phone: '+251911223344', logoFileId: 'missing', businessLicenceFileId: 'licence-1' }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.company.create).not.toHaveBeenCalled();
   });

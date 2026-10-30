@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminApi } from '../api/admin';
-import { AdminCandidateApplicationsModal } from '../components/admin/AdminCandidateApplicationsModal';
-import type { AdminCandidateUser } from '../types/api';
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminApi } from "../api/admin";
+import { AdminCandidateApplicationsModal } from "../components/admin/AdminCandidateApplicationsModal";
+import type { AdminCandidateUser } from "../types/api";
 
 export const AdminCandidatesPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [applicationsFor, setApplicationsFor] = useState<AdminCandidateUser | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [applicationsFor, setApplicationsFor] =
+    useState<AdminCandidateUser | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -16,7 +18,7 @@ export const AdminCandidatesPage: React.FC = () => {
   }, [search]);
 
   const candidatesQuery = useQuery({
-    queryKey: ['admin', 'candidates', debouncedSearch],
+    queryKey: ["admin", "candidates", debouncedSearch],
     queryFn: () => adminApi.listCandidates({ q: debouncedSearch || undefined }),
   });
 
@@ -24,26 +26,34 @@ export const AdminCandidatesPage: React.FC = () => {
     mutationFn: ({ userId, blocked }: { userId: string; blocked: boolean }) =>
       adminApi.setCandidateApplicationAccess(userId, blocked),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'candidates'] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "candidates"] });
     },
   });
 
-  const candidates = candidatesQuery.data ?? [];
+  const allCandidates = candidatesQuery.data ?? [];
 
   const isBlocked = (c: AdminCandidateUser) =>
-    c.profile?.applicationsBlocked === true || c.accountStatus === 'suspended';
+    c.profile?.applicationsBlocked === true || c.accountStatus === "suspended";
+
+  const candidates = allCandidates.filter(
+    (c) =>
+      statusFilter === "all" ||
+      (statusFilter === "blocked" ? isBlocked(c) : !isBlocked(c)),
+  );
 
   return (
     <div className="stack">
       <div className="page-header">
-        <h1>Registered candidates</h1>
+        <span className="section-eyebrow">Talent management</span>
+        <h1>Candidates</h1>
         <p className="muted">
-          {candidates.length} candidate{candidates.length === 1 ? '' : 's'} listed. Use{' '}
-          <strong>Block</strong> to stop new job applications (they can still sign in and contact admins).
+          {candidates.length} candidate{candidates.length === 1 ? "" : "s"}{" "}
+          listed. Use <strong>Block</strong> to stop new job applications (they
+          can still sign in and contact admins).
         </p>
       </div>
 
-      <div className="form-input-group" style={{ maxWidth: '420px' }}>
+      <div className="form-input-group" style={{ maxWidth: "420px" }}>
         <label htmlFor="cand-search">Search by name, email, or phone</label>
         <input
           id="cand-search"
@@ -53,119 +63,108 @@ export const AdminCandidatesPage: React.FC = () => {
         />
       </div>
 
-      {candidatesQuery.isLoading && <div className="card">Loading candidates…</div>}
+      {candidatesQuery.isLoading && (
+        <div className="card">Loading candidates…</div>
+      )}
       {candidatesQuery.isError && (
-        <div className="alert-box-error">{(candidatesQuery.error as Error).message}</div>
+        <div className="alert-box-error">
+          {(candidatesQuery.error as Error).message}
+        </div>
       )}
       {blockMutation.isError && (
-        <div className="alert-box-error">{(blockMutation.error as Error).message}</div>
+        <div className="alert-box-error">
+          {(blockMutation.error as Error).message}
+        </div>
       )}
 
-      <div className="card" style={{ overflowX: 'auto' }}>
-        {!candidatesQuery.isLoading && candidates.length > 0 && (
-          <p className="muted" style={{ padding: '0.75rem 1rem 0', margin: 0, fontSize: '0.9rem' }}>
-            Showing <strong>{candidates.length}</strong> candidate{candidates.length === 1 ? '' : 's'} — numbered{' '}
-            <strong>1</strong> through <strong>{candidates.length}</strong>.
-          </p>
-        )}
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '720px' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-              <th style={{ padding: '0.75rem', width: '3rem', textAlign: 'center' }}>#</th>
-              <th style={{ padding: '0.75rem' }}>Name</th>
-              <th style={{ padding: '0.75rem' }}>Phone</th>
-              <th style={{ padding: '0.75rem' }}>Email</th>
-              <th style={{ padding: '0.75rem' }}>Applications</th>
-              <th style={{ padding: '0.75rem' }}>Status</th>
-              <th style={{ padding: '0.75rem' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {candidates.map((c, index) => {
-              const blocked = isBlocked(c);
-              return (
-                <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td
-                    style={{
-                      padding: '0.75rem',
-                      textAlign: 'center',
-                      fontWeight: 800,
-                      color: '#0a2540',
-                    }}
-                  >
-                    {index + 1}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <strong>
-                      {c.firstName} {c.lastName}
-                    </strong>
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>{c.phone ?? '—'}</td>
-                  <td style={{ padding: '0.75rem' }}>{c.email ?? '—'}</td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {c.stats.applicationsCount}
-                      <button
-                        type="button"
-                        className="btn-clear-filters"
-                        style={{ padding: '0.25rem 0.65rem', fontSize: '0.85rem' }}
-                        disabled={c.stats.applicationsCount === 0}
-                        title={
-                          c.stats.applicationsCount === 0
-                            ? 'No applications'
-                            : 'View jobs this candidate applied to'
-                        }
-                        onClick={() => setApplicationsFor(c)}
-                      >
-                        View
-                      </button>
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    {blocked ? (
-                      <span className="tag-pill" style={{ background: '#fee2e2', color: '#b91c1c' }}>
-                        Blocked
-                      </span>
-                    ) : (
-                      <span className="tag-pill" style={{ background: '#dcfce7', color: '#166534' }}>
-                        Active
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    {blocked ? (
-                      <button
-                        type="button"
-                        className="btn-clear-filters"
-                        disabled={blockMutation.isPending || c.accountStatus === 'suspended'}
-                        title={
-                          c.accountStatus === 'suspended'
-                            ? 'Account suspended — use user management to restore'
-                            : undefined
-                        }
-                        onClick={() => blockMutation.mutate({ userId: c.id, blocked: false })}
-                      >
-                        Unblock
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-auth-submit"
-                        style={{ width: 'auto', padding: '0.45rem 1rem', fontSize: '0.9rem' }}
-                        disabled={blockMutation.isPending}
-                        onClick={() => blockMutation.mutate({ userId: c.id, blocked: true })}
-                      >
-                        Block
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {!candidatesQuery.isLoading && candidates.length === 0 && (
-          <p className="muted" style={{ padding: '1rem' }}>No candidates match your search.</p>
+      <div className="admin-page-tabs">
+        {[
+          ["all", "All candidates"],
+          ["active", "Can apply"],
+          ["blocked", "Restricted"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            className={statusFilter === value ? "selected" : ""}
+            onClick={() => setStatusFilter(value)}
+          >
+            {label}
+            <span>
+              {
+                allCandidates.filter(
+                  (c) =>
+                    value === "all" ||
+                    (value === "blocked" ? isBlocked(c) : !isBlocked(c)),
+                ).length
+              }
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="admin-company-directory">
+        {candidates.map((c) => {
+          const blocked = isBlocked(c);
+          return (
+            <article className="admin-candidate-row" key={c.id}>
+              <div className="directory-company-identity">
+                <span className="directory-person-avatar" aria-hidden="true">
+                  {c.firstName?.charAt(0)}
+                  {c.lastName?.charAt(0)}
+                </span>
+                <div>
+                  <h2>
+                    {c.firstName} {c.lastName}
+                  </h2>
+                  <p>{c.email || "Email not provided"}</p>
+                  <small>{c.phone || "Phone not provided"}</small>
+                </div>
+              </div>
+              <div className="directory-company-state">
+                <span
+                  className={`verification-state ${blocked ? "rejected" : "verified"}`}
+                >
+                  {c.accountStatus === "suspended"
+                    ? "Account suspended"
+                    : blocked
+                      ? "Applications blocked"
+                      : "Can apply"}
+                </span>
+                <small>
+                  {blocked
+                    ? "New applications are restricted"
+                    : "Account ready for opportunities"}
+                </small>
+              </div>
+              <div className="directory-company-counts">
+                <div>
+                  <strong>{c.stats.applicationsCount}</strong>
+                  <small>Applications</small>
+                </div>
+              </div>
+              <div className="directory-company-actions">
+                <button
+                  disabled={!c.stats.applicationsCount}
+                  onClick={() => setApplicationsFor(c)}
+                >
+                  View applications
+                </button>
+                <button
+                  className={blocked ? "" : "is-danger"}
+                  disabled={
+                    blockMutation.isPending || c.accountStatus === "suspended"
+                  }
+                  onClick={() =>
+                    blockMutation.mutate({ userId: c.id, blocked: !blocked })
+                  }
+                >
+                  {blocked ? "Allow applications" : "Block applications"}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+        {!candidatesQuery.isLoading && !candidates.length && (
+          <div className="admin-empty">No candidates match your filters.</div>
         )}
       </div>
 

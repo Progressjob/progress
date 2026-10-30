@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
@@ -8,6 +8,14 @@ export const CompaniesListPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const limit = 12;
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const scrollToGrid = () => {
+    if (gridRef.current) {
+      const topOffset = gridRef.current.getBoundingClientRect().top + window.pageYOffset - 85;
+      window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+    }
+  };
 
   const companiesQuery = useQuery({
     queryKey: ['companies', page, limit],
@@ -92,7 +100,7 @@ export const CompaniesListPage: React.FC = () => {
       )}
 
         {/* Modern Companies Grid */}
-        <div className="companies-grid">
+        <div className="companies-grid" ref={gridRef}>
         {filtered.map((c) => {
                       return (
             <div key={c.id} className="company-directory-card">
@@ -163,7 +171,7 @@ export const CompaniesListPage: React.FC = () => {
                     disabled={page <= 1}
                     onClick={() => {
                       setPage((p) => Math.max(1, p - 1));
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollToGrid();
                     }}
                   >
                     ← Previous
@@ -177,7 +185,7 @@ export const CompaniesListPage: React.FC = () => {
                     disabled={companies.length < limit}
                     onClick={() => {
                       setPage((p) => p + 1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollToGrid();
                     }}
                   >
                     Next →

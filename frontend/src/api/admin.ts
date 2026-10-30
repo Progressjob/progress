@@ -31,6 +31,7 @@ export interface CompanyPayload {
   address?: string;
   contactPerson?: string;
   licenceNumber?: string;
+  businessLicenceFileId?: string;
   logoFileId?: string;
   companySize?: string;
   foundedYear?: number;
@@ -135,10 +136,10 @@ export const adminApi = {
       method: 'POST',
       body: payload,
     }),
-  verifyCompany: (companyId: string, status: Company['verificationStatus']) =>
+  verifyCompany: (companyId: string, status: Company['verificationStatus'], reviewNote?: string, documentId?: string) =>
     apiFetch<Company>(`/admin/companies/${companyId}/verification`, {
       method: 'PATCH',
-      body: { status },
+      body: { status, reviewNote, documentId },
     }),
   updateCompanyPostingAccess: (companyId: string, canSelfPublishJobs: boolean) =>
     apiFetch<Company>(`/admin/companies/${companyId}/posting-access`, {

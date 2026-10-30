@@ -65,6 +65,14 @@ export class PublicJobsController {
     });
   }
 
+  @Get('recommendations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('candidate')
+  @ApiBearerAuth()
+  recommendations(@CurrentUser() user: AuthUser) {
+    return this.jobs.recommendations(user.id);
+  }
+
   @Get(':slug')
   detail(
     @Param('slug') slug: string,

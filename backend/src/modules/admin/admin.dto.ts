@@ -1,5 +1,5 @@
 import { AccountStatus, ReportStatus } from '@prisma/client';
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsIn, IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class ContactMessageDto {
   @IsString() name!: string;
@@ -28,6 +28,6 @@ export class CandidateApplicationAccessDto {
 }
 
 export class UpdateContactDto {
-  @IsString() status!: string;
+  @IsIn(['new', 'in_progress', 'resolved']) status!: string;
   @IsOptional() @IsUUID() assignedTo?: string;
 }

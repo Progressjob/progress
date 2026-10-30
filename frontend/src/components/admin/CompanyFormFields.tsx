@@ -1,3 +1,4 @@
+import { BusinessLicenceUpload } from '../BusinessLicenceUpload';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CompanyPayload } from '../../api/admin';
@@ -15,6 +16,7 @@ const selectStyle: React.CSSProperties = {
 export interface CompanyFormFieldsProps {
   value: CompanyPayload;
   onChange: (next: CompanyPayload) => void;
+  licenceRequired?: boolean;
   idPrefix?: string;
   audience?: 'admin' | 'employer';
 }
@@ -24,6 +26,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
   onChange,
   idPrefix = 'co',
   audience = 'admin',
+  licenceRequired = true,
 }) => {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -53,6 +56,7 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
 
   return (
     <div className="contact-form-fields">
+      <BusinessLicenceUpload value={value.businessLicenceFileId} onChange={(id) => set({ businessLicenceFileId: id })} required={licenceRequired} />
       <div className="form-input-group">
         <label htmlFor={`${idPrefix}-logo`}>Company logo *</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>

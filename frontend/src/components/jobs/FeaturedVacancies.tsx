@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Job } from '../../types/api';
 import { companyLabel, jobDeadlineDays } from '../../utils/jobListing';
+import { CompanyLogoMark } from '../CompanyLogoMark';
 import { JobDetailLink } from '../JobDetailLink';
 
 function ArrowIcon() {
@@ -30,9 +31,11 @@ function TitleLink({
 export const FeaturedVacancies: React.FC<{
   jobs: Job[];
   loading?: boolean;
+  title?: string;
+  description?: string;
   publicLinks?: boolean;
   hrefFor?: (job: Job) => string;
-}> = ({ jobs, loading, publicLinks = true, hrefFor }) => {
+}> = ({ jobs, loading, publicLinks = true, hrefFor, title = 'Featured vacancies', description = 'Top opportunities for you' }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (direction: -1 | 1) => {
@@ -53,9 +56,9 @@ export const FeaturedVacancies: React.FC<{
             <span className="jb-kicker-star" aria-hidden>
               ★
             </span>
-            Featured vacancies
+            {title}
           </p>
-          <h2 className="jb-section-title">Top opportunities for you</h2>
+          <h2 className="jb-section-title">{description}</h2>
         </div>
         {jobs.length > 1 && (
           <div className="jb-featured-nav">
@@ -82,6 +85,15 @@ export const FeaturedVacancies: React.FC<{
             const href = hrefFor ? hrefFor(job) : `/jobs/${job.slug}`;
             return (
               <article key={job.id} className="jb-featured-card">
+                <div className="jb-card-brand">
+                  <CompanyLogoMark
+                    name={companyLabel(job)}
+                    logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                    className="jb-company-logo jb-company-logo-fallback"
+                    imgClassName="jb-company-logo"
+                  />
+                  <span className="jb-featured-label">{title === 'Recommended for you' ? 'For you' : 'Top pick'}</span>
+                </div>
                 <h3 className="jb-featured-title">
                   <TitleLink job={job} publicLinks={publicLinks} href={href} />
                 </h3>
@@ -93,6 +105,7 @@ export const FeaturedVacancies: React.FC<{
                   </div>
                   {publicLinks ? (
                     <JobDetailLink slug={job.slug} className="jb-featured-go">
+                      <span className="jb-sr-only">View {job.title}</span>
                       <ArrowIcon />
                     </JobDetailLink>
                   ) : (

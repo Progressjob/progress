@@ -58,6 +58,7 @@ export type CompanyPortalStatus = 'active' | 'suspended';
 export type CompanyMemberRole = 'owner' | 'recruiter' | 'hiring_manager';
 
 export interface Company {
+  documents?: Array<{ id: string; fileId: string; file?: { originalFilename: string; mimeType: string }; reviewStatus: 'pending' | 'verified' | 'rejected'; reviewNote?: string | null }>;
   id: string;
   name: string;
   slug: string;
@@ -81,7 +82,9 @@ export interface Company {
   suspendedAt?: string | null;
   suspendedReason?: string | null;
   isFeatured: boolean;
+  businessLicenceFileId?: string;
   logoFileId?: string | null;
+  industryId?: string | null;
   industry?: Industry | null;
   logo?: { id: string } | null;
   jobs?: Job[];
