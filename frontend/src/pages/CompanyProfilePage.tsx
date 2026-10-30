@@ -4,14 +4,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { employerApi } from '../api/employer';
 import type { CompanyPayload } from '../api/admin';
 import { CompanyFormFields } from '../components/admin/CompanyFormFields';
-import { CompanyLogoMark } from '../components/CompanyLogoMark';
+import { CompanyOverview } from '../components/CompanyOverview';
 import {
   companyFromRecord,
   emptyCompanyForm,
   sanitizeCompanyPayload,
 } from '../components/admin/adminFormUtils';
-import { formatCompanySize } from '../constants/companySize';
-import { employerJobsPath, employerProfileEditPath, employerProfilePath } from '../auth/workspace';
+import { employerProfileEditPath, employerProfilePath } from '../auth/workspace';
 
 const saveNoteStyle: React.CSSProperties = {
   margin: '0.85rem 0 0',
@@ -37,6 +36,12 @@ export const CompanyProfilePage: React.FC = () => {
     queryKey: ['company', 'detail', companyId],
     queryFn: () => employerApi.getCompany(companyId!),
     enabled: Boolean(companyId),
+  });
+
+  const jobsQuery = useQuery({
+    queryKey: ['company', 'jobs', companyId],
+    queryFn: () => employerApi.listJobs(companyId!),
+    enabled: Boolean(companyId) && !isEditing,
   });
 
   useEffect(() => {
@@ -105,99 +110,16 @@ export const CompanyProfilePage: React.FC = () => {
   }
 
   const company = companyQuery.data;
-  const logoId = company.logo?.id ?? company.logoFileId ?? null;
-  const companySizeLabel = formatCompanySize(company.companySize);
-  const locationLine = [company.city, company.region, company.country].filter(Boolean).join(', ');
+  const publishedJobs = (jobsQuery.data ?? []).filter((job) => job.status === 'published');
 
   if (!isEditing) {
     return (
       <div className="jobs-list-container">
-        <div className="board-header" style={{ textAlign: 'left', marginBottom: '2rem' }}>
-          <span className="section-eyebrow">Employer Portal</span>
-          <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
-            {company.name}
-          </h1>
-          <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
-            Public company profile candidates see on Progress.
-          </p>
-        </div>
-
-        <header className="jd-header-hero" style={{ marginBottom: '1.5rem' }}>
-          <div className="jd-header-top">
-            <div className="jd-company-avatar">
-              <CompanyLogoMark
-                name={company.name}
-                logoId={logoId}
-                className="jd-company-monogram"
-                imgClassName="jd-company-logo-img"
-              />
-            </div>
-            <div className="jd-header-info">
-              <h2 className="jd-title" style={{ marginBottom: '0.5rem' }}>
-                {company.name}
-              </h2>
-              <div className="jd-meta-line">
-                {company.industry?.name && (
-                  <span className="tag-pill tag-category">{company.industry.name}</span>
-                )}
-                {locationLine && <span className="tag-pill tag-location">{locationLine}</span>}
-                {companySizeLabel && <span className="tag-pill">{companySizeLabel}</span>}
-                {company.foundedYear && <span className="tag-pill">Founded {company.foundedYear}</span>}
-                {company.email && <span className="tag-pill">{company.email}</span>}
-                {company.phone && <span className="tag-pill">{company.phone}</span>}
-                {company.address && <span className="tag-pill">{company.address}</span>}
-              </div>
-            </div>
-          </div>
-          <div className="jd-header-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {companyId && (
-              <Link to={employerProfileEditPath(companyId)} className="btn-nav-register">
-                Edit profile
-              </Link>
-            )}
-            {company.websiteUrl && (
-              <a
-                href={company.websiteUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary"
-              >
-                Visit website
-              </a>
-            )}
-          </div>
-        </header>
-
-        {company.description && (
-          <section className="jd-card" style={{ marginBottom: '1.5rem' }}>
-            <h2 className="jd-heading">About</h2>
-            <p className="jd-plain-text" style={{ whiteSpace: 'pre-line' }}>
-              {company.description}
-            </p>
-          </section>
-        )}
-        {company.vision && (
-          <section className="jd-card" style={{ marginBottom: '1.5rem' }}>
-            <h2 className="jd-heading">Vision</h2>
-            <p className="jd-plain-text" style={{ whiteSpace: 'pre-line' }}>
-              {company.vision}
-            </p>
-          </section>
-        )}
-        {company.mission && (
-          <section className="jd-card" style={{ marginBottom: '1.5rem' }}>
-            <h2 className="jd-heading">Mission</h2>
-            <p className="jd-plain-text" style={{ whiteSpace: 'pre-line' }}>
-              {company.mission}
-            </p>
-          </section>
-        )}
-
-        {companyId && (
-          <Link to={employerJobsPath(companyId)} className="btn-clear-filters" style={{ textDecoration: 'none' }}>
-            Back to job postings
-          </Link>
-        )}
+        <CompanyOverview
+          company={company}
+          jobs={publishedJobs}
+          editHref={companyId ? employerProfileEditPath(companyId) : undefined}
+        />
       </div>
     );
   }

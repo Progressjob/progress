@@ -8038,3 +8038,260 @@ a.cv-contact-value {
     max-width: 140px;
   }
 }
+
+/* Public + employer company overview */
+.co-profile {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 0 3rem;
+}
+
+.co-profile .detail-breadcrumbs {
+  margin-bottom: 1.25rem;
+}
+
+.co-profile-hero {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+  margin-bottom: 1.25rem;
+}
+
+.co-profile-banner {
+  height: 168px;
+  background:
+    radial-gradient(circle at 18% 120%, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(135deg, var(--primary) 0%, #0842a0 58%, #1d4ed8 100%);
+}
+
+.co-profile-identity {
+  display: flex;
+  gap: 1.35rem;
+  align-items: flex-start;
+  padding: 0 1.75rem 1.5rem;
+  position: relative;
+}
+
+.co-profile-logo {
+  width: 112px;
+  height: 112px;
+  margin-top: -56px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 5px solid #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.co-profile-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.co-profile-logo-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.co-profile-id {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.9rem;
+}
+
+.co-profile-id-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.co-profile-name {
+  margin: 0 0 0.45rem;
+  font-size: 1.65rem;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.co-profile-industry {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+}
+
+.co-profile-edit.btn-nav-register {
+  flex-shrink: 0;
+  width: auto;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.co-profile-facts {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 1.75rem;
+}
+
+.co-profile-facts li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.co-profile-facts span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.co-profile-facts strong {
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.co-profile-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.co-profile-card-title {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.co-profile-subtitle {
+  margin: 1.15rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 750;
+  color: var(--primary);
+}
+
+.co-profile-copy {
+  margin: 0;
+  color: #334155;
+  white-space: pre-line;
+  line-height: 1.65;
+}
+
+.co-profile-contact {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.co-profile-contact > div {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.co-profile-contact dt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.co-profile-contact dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.co-profile-contact a {
+  color: var(--primary);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.co-profile-contact a:hover {
+  text-decoration: underline;
+}
+
+.co-profile-jobs {
+  margin-top: 0.5rem;
+}
+
+.co-profile-jobs-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.co-profile-jobs-title span {
+  display: inline-flex;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+@media (max-width: 720px) {
+  .co-profile-banner {
+    height: 120px;
+  }
+
+  .co-profile-identity {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 1.15rem 1.25rem;
+  }
+
+  .co-profile-logo {
+    width: 88px;
+    height: 88px;
+    margin-top: -44px;
+  }
+
+  .co-profile-name {
+    font-size: 1.35rem;
+  }
+
+  .co-profile-contact > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
