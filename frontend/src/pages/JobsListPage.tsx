@@ -4,13 +4,18 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsApi } from '../api/jobs';
 import { taxonomyApi } from '../api/taxonomy';
-import type { Category, EmploymentType, Job, WorkplaceType } from '../types/api';
+import type { Category, EmploymentType, Job } from '../types/api';
 import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
 import { useAuth } from '../auth/AuthContext';
 import { GuestJobAccessNote } from '../components/JobDetailLink';
 import { FeaturedVacancies } from '../components/jobs/FeaturedVacancies';
 import { LatestVacanciesGrid } from '../components/jobs/LatestVacanciesGrid';
 import { useFeaturedJobs } from '../hooks/useFeaturedJobs';
+import {
+  EDUCATION_FILTER_OPTIONS,
+  EXPERIENCE_FILTER_OPTIONS,
+  SALARY_FILTER_OPTIONS,
+} from '../constants/jobFilters';
 
 function flattenCategories(categories: Category[]): Category[] {
   const result: Category[] = [];
@@ -31,7 +36,10 @@ export const JobsListPage: React.FC = () => {
   const category = searchParams.get('category') || '';
   const location = searchParams.get('location') || '';
   const employmentType = (searchParams.get('employment_type') as EmploymentType) || '';
-  const workplaceType = (searchParams.get('workplace_type') as WorkplaceType) || '';
+  const experience = searchParams.get('experience') || '';
+  const education = searchParams.get('education') || '';
+  const industry = searchParams.get('industry') || '';
+  const salary = searchParams.get('salary') || '';
   const [search, setSearch] = useState(q);
   const [page, setPage] = useState(1);
   const [listedJobs, setListedJobs] = useState<Job[]>([]);
@@ -43,7 +51,7 @@ export const JobsListPage: React.FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [q, category, location, employmentType, workplaceType]);
+  }, [q, category, location, employmentType, experience, education, industry, salary]);
 
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -55,17 +63,25 @@ export const JobsListPage: React.FC = () => {
     queryFn: () => taxonomyApi.locations(),
   });
 
+  const industriesQuery = useQuery({
+    queryKey: ['taxonomy', 'industries'],
+    queryFn: () => taxonomyApi.industries(),
+  });
+
   const featuredQuery = useFeaturedJobs();
 
   const jobsQuery = useQuery({
-    queryKey: ['jobs', { q, category, location, employmentType, workplaceType, page, limit }],
+    queryKey: ['jobs', { q, category, location, employmentType, experience, education, industry, salary, page, limit }],
     queryFn: () =>
       jobsApi.list({
         q,
         category,
         location,
         employment_type: employmentType,
-        workplace_type: workplaceType,
+        experience,
+        education,
+        industry,
+        salary,
         page,
         limit,
       }),
@@ -83,6 +99,7 @@ export const JobsListPage: React.FC = () => {
 
   const categories = flattenCategories(categoriesQuery.data ?? []);
   const locations = locationsQuery.data ?? [];
+  const industries = industriesQuery.data ?? [];
   const jobsData = jobsQuery.data;
   const total = jobsData?.total ?? 0;
   const hasMore = listedJobs.length < total;
@@ -90,8 +107,28 @@ export const JobsListPage: React.FC = () => {
 
 
   const categoryOptions: DropdownOption[] = [
-    { value: '', label: 'Field of study' },
+    { value: '', label: 'Field of Study' },
     ...categories.map((c) => ({ value: c.slug, label: c.name })),
+  ];
+
+  const experienceOptions: DropdownOption[] = [
+    { value: '', label: 'Experience' },
+    ...EXPERIENCE_FILTER_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+  ];
+
+  const educationOptions: DropdownOption[] = [
+    { value: '', label: 'Education' },
+    ...EDUCATION_FILTER_OPTIONS,
+  ];
+
+  const industryOptions: DropdownOption[] = [
+    { value: '', label: 'Industry' },
+    ...industries.map((item) => ({ value: item.slug, label: item.name })),
+  ];
+
+  const salaryOptions: DropdownOption[] = [
+    { value: '', label: 'Monthly Salary' },
+    ...SALARY_FILTER_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
   ];
 
   const regionOptions: DropdownOption[] = [
@@ -117,13 +154,6 @@ export const JobsListPage: React.FC = () => {
     { value: 'temporary', label: 'Temporary' },
   ];
 
-  const workplaceTypeOptions: DropdownOption[] = [
-    { value: '', label: 'Workplace' },
-    { value: 'on_site', label: 'On-site' },
-    { value: 'hybrid', label: 'Hybrid' },
-    { value: 'remote', label: 'Remote' },
-  ];
-
   const patchParams = (updates: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
     if (search.trim()) next.set('q', search.trim());
@@ -146,7 +176,9 @@ export const JobsListPage: React.FC = () => {
     setSearchParams({});
   };
 
-  const hasActiveFilters = Boolean(q || category || location || employmentType || workplaceType);
+  const hasActiveFilters = Boolean(
+    q || category || location || employmentType || experience || education || industry || salary,
+  );
 
   return (
     <div className="jobs-list-container jb-page">
@@ -208,13 +240,19 @@ export const JobsListPage: React.FC = () => {
               value={category}
               onChange={(val) => patchParams({ category: val })}
               options={categoryOptions}
-              placeholder="Field of study"
+              placeholder="Field of Study"
             />
             <CustomDropdown
-              value={location}
-              onChange={(val) => patchParams({ location: val })}
-              options={regionOptions}
-              placeholder="Location"
+              value={experience}
+              onChange={(val) => patchParams({ experience: val })}
+              options={experienceOptions}
+              placeholder="Experience"
+            />
+            <CustomDropdown
+              value={education}
+              onChange={(val) => patchParams({ education: val })}
+              options={educationOptions}
+              placeholder="Education"
             />
             <CustomDropdown
               value={employmentType}
@@ -223,10 +261,22 @@ export const JobsListPage: React.FC = () => {
               placeholder="Employment"
             />
             <CustomDropdown
-              value={workplaceType}
-              onChange={(val) => patchParams({ workplace_type: val })}
-              options={workplaceTypeOptions}
-              placeholder="Workplace"
+              value={industry}
+              onChange={(val) => patchParams({ industry: val })}
+              options={industryOptions}
+              placeholder="Industry"
+            />
+            <CustomDropdown
+              value={salary}
+              onChange={(val) => patchParams({ salary: val })}
+              options={salaryOptions}
+              placeholder="Monthly Salary"
+            />
+            <CustomDropdown
+              value={location}
+              onChange={(val) => patchParams({ location: val })}
+              options={regionOptions}
+              placeholder="Location"
             />
             {hasActiveFilters && (
               <button type="button" className="btn-clear-filters" onClick={handleReset}>
@@ -256,7 +306,7 @@ export const JobsListPage: React.FC = () => {
           <div className="jb-latest-head">
             <div>
               <p className="jb-kicker">Latest job vacancies</p>
-              <h2 className="jb-section-title">Newly posted opportunities</h2>
+              <h2 className="jb-section-title">Freshly posted opportunities</h2>
             </div>
           </div>
 

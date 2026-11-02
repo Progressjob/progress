@@ -9,6 +9,10 @@ export interface JobListParams {
   employment_type?: EmploymentType | '';
   career_level?: string;
   workplace_type?: WorkplaceType | '';
+  education?: string;
+  experience?: string;
+  industry?: string;
+  salary?: string;
   page?: number;
   limit?: number;
 }
@@ -41,6 +45,10 @@ export const jobsApi = {
     if (params.employment_type) search.set('employment_type', params.employment_type);
     if (params.career_level?.trim()) search.set('career_level', params.career_level.trim());
     if (params.workplace_type) search.set('workplace_type', params.workplace_type);
+    if (params.education) search.set('education', params.education);
+    if (params.experience) search.set('experience', params.experience);
+    if (params.industry) search.set('industry', params.industry);
+    if (params.salary) search.set('salary', params.salary);
     search.set('page', String(params.page ?? 1));
     search.set('limit', String(params.limit ?? 20));
 

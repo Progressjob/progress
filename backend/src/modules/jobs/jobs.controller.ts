@@ -49,6 +49,10 @@ export class PublicJobsController {
     @Query('career_level') careerLevel?: string,
     @Query('workplace_type', new ParseEnumPipe(WorkplaceType, { optional: true }))
     workplaceType?: WorkplaceType,
+    @Query('education') education?: string,
+    @Query('experience') experience?: string,
+    @Query('industry') industry?: string,
+    @Query('salary') salary?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ) {
@@ -60,6 +64,10 @@ export class PublicJobsController {
       employmentType,
       careerLevel,
       workplaceType,
+      education,
+      experience,
+      industry,
+      salary,
       page,
       limit,
     });

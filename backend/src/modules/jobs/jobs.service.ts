@@ -133,6 +133,10 @@ export class JobsService {
     employmentType?: EmploymentType;
     careerLevel?: string;
     workplaceType?: WorkplaceType;
+    education?: string;
+    experience?: string;
+    industry?: string;
+    salary?: string;
     page?: number;
     limit?: number;
   }) {
@@ -149,6 +153,25 @@ export class JobsService {
       matchingIds = rows.map((row) => row.id);
       if (!matchingIds.length) return { data: [], page, limit, total: 0 };
     }
+    const extra: Prisma.JobWhereInput[] = [];
+    const education = filters.education?.trim();
+    if (education) {
+      extra.push({ educationRequirement: { equals: education, mode: 'insensitive' } });
+    }
+    const experience = this.experienceFilter(filters.experience);
+    if (experience) extra.push(experience);
+    const salary = this.salaryFilter(filters.salary);
+    if (salary) extra.push(salary);
+
+    const industry = filters.industry?.trim();
+    const companyFilter: Prisma.CompanyWhereInput | undefined =
+      filters.company || industry
+        ? {
+            slug: filters.company || undefined,
+            industry: industry ? { slug: industry } : undefined,
+          }
+        : undefined;
+
     const where: Prisma.JobWhereInput = {
       id: matchingIds ? { in: matchingIds } : undefined,
       status: 'published',
@@ -156,10 +179,11 @@ export class JobsService {
       applicationDeadline: { gte: this.today() },
       category: filters.category ? { slug: filters.category } : undefined,
       location: filters.location ? { slug: filters.location } : undefined,
-      company: filters.company ? { slug: filters.company } : undefined,
+      company: companyFilter,
       employmentType: filters.employmentType,
       careerLevel: filters.careerLevel,
       workplaceType: filters.workplaceType,
+      AND: extra.length ? extra : undefined,
     };
     const [data, total] = await this.prisma.$transaction([
       this.prisma.job.findMany({
@@ -564,6 +588,46 @@ export class JobsService {
     ) {
       throw new BadRequestException('experienceMinYears must not exceed experienceMaxYears');
     }
+  }
+
+  private experienceFilter(value?: string): Prisma.JobWhereInput | null {
+    const key = value?.trim();
+    if (!key) return null;
+    if (key === '0') {
+      return { OR: [{ experienceMinYears: null }, { experienceMinYears: { lte: 0 } }] };
+    }
+    if (key === '0-2') {
+      return { experienceMinYears: { gte: 0, lte: 2 } };
+    }
+    if (key === '3-5') {
+      return { experienceMinYears: { gte: 3, lte: 5 } };
+    }
+    if (key === '6-10') {
+      return { experienceMinYears: { gte: 6, lte: 10 } };
+    }
+    if (key === '10+') {
+      return { experienceMinYears: { gte: 10 } };
+    }
+    return null;
+  }
+
+  private salaryFilter(value?: string): Prisma.JobWhereInput | null {
+    const key = value?.trim();
+    if (!key) return null;
+    let min = 0;
+    let max: number | null = null;
+    if (key.endsWith('+')) {
+      min = Number(key.slice(0, -1));
+    } else {
+      const [low, high] = key.split('-');
+      min = Number(low);
+      max = Number(high);
+    }
+    if (!Number.isFinite(min) || (max != null && !Number.isFinite(max))) return null;
+    return {
+      salaryVisibility: true,
+      salaryMin: max == null ? { gte: min } : { gte: min, lte: max },
+    };
   }
 
   private today(): Date {
