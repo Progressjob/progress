@@ -4,17 +4,15 @@ import { Link } from 'react-router-dom';
 import type { Company, Job } from '../types/api';
 import { CompanyLogoMark } from './CompanyLogoMark';
 import { formatCompanySize } from '../constants/companySize';
-
-function labelType(value?: string | null): string {
-  return (value ?? '').replaceAll('_', ' ');
-}
+import { FeaturedVacancies } from './jobs/FeaturedVacancies';
 
 export const CompanyOverview: React.FC<{
   company: Company;
   jobs?: Job[];
   editHref?: string;
   showBreadcrumbs?: boolean;
-}> = ({ company, jobs, editHref, showBreadcrumbs = false }) => {
+  children?: React.ReactNode;
+}> = ({ company, jobs, editHref, showBreadcrumbs = false, children }) => {
   const logoId = company.logo?.id ?? company.logoFileId ?? null;
   const sizeLabel = formatCompanySize(company.companySize);
   const locationLine = [company.city, company.region]
@@ -22,7 +20,13 @@ export const CompanyOverview: React.FC<{
     .filter(Boolean)
     .join(', ');
   const vacancies = jobs ?? company.jobs ?? [];
-  const hasStory = Boolean(company.description?.trim() || company.vision?.trim() || company.mission?.trim());
+  const jobsWithCompany = vacancies.map((job) => ({
+    ...job,
+    company: job.company ?? company,
+  }));
+  const about = company.description?.trim();
+  const vision = company.vision?.trim();
+  const mission = company.mission?.trim();
   const hasContact = Boolean(
     company.websiteUrl?.trim() ||
       company.email?.trim() ||
@@ -32,9 +36,7 @@ export const CompanyOverview: React.FC<{
 
   return (
     <div className="co-profile">
-      {showBreadcrumbs && (
-        <BackButton fallback="/companies" />
-      )}
+      {showBreadcrumbs && <BackButton fallback="/companies" />}
 
       <header className="co-profile-hero">
         <div className="co-profile-banner" aria-hidden="true" />
@@ -66,14 +68,13 @@ export const CompanyOverview: React.FC<{
                 <li>
                   <span>Location</span>
                   <strong>
-                    {locationLine}
-                    {company.country?.trim() ? `, ${company.country.trim()}` : ''}
+                    {company.country?.trim() ? `${locationLine}, ${company.country.trim()}` : locationLine}
                   </strong>
                 </li>
               )}
               {sizeLabel && (
                 <li>
-                  <span>Company size</span>
+                  <span>Employees</span>
                   <strong>{sizeLabel}</strong>
                 </li>
               )}
@@ -88,25 +89,28 @@ export const CompanyOverview: React.FC<{
         </div>
       </header>
 
-      {hasStory && (
+      {about && (
         <section className="co-profile-card">
-          <h2 className="co-profile-card-title">Working at {company.name}</h2>
-          {company.description?.trim() && (
-            <p className="co-profile-copy">{company.description}</p>
-          )}
-          {company.vision?.trim() && (
-            <>
-              <h3 className="co-profile-subtitle">Vision</h3>
-              <p className="co-profile-copy">{company.vision}</p>
-            </>
-          )}
-          {company.mission?.trim() && (
-            <>
-              <h3 className="co-profile-subtitle">Mission</h3>
-              <p className="co-profile-copy">{company.mission}</p>
-            </>
-          )}
+          <h2 className="co-profile-card-title">About {company.name}</h2>
+          <p className="co-profile-copy">{about}</p>
         </section>
+      )}
+
+      {(vision || mission) && (
+        <div className="co-profile-statements">
+          {vision && (
+            <section className="co-profile-card">
+              <h2 className="co-profile-card-title">Vision</h2>
+              <p className="co-profile-copy">{vision}</p>
+            </section>
+          )}
+          {mission && (
+            <section className="co-profile-card">
+              <h2 className="co-profile-card-title">Mission</h2>
+              <p className="co-profile-copy">{mission}</p>
+            </section>
+          )}
+        </div>
       )}
 
       {hasContact && (
@@ -150,60 +154,31 @@ export const CompanyOverview: React.FC<{
       )}
 
       <section className="co-profile-jobs">
-        <h2 className="co-profile-jobs-title">
-          Open vacancies
-          <span>{vacancies.length}</span>
-        </h2>
         {vacancies.length === 0 ? (
-          <div className="empty-results-box">
-            <h3>No open vacancies</h3>
-            <p>This employer currently does not have published roles on the board.</p>
-            <Link to="/jobs" className="btn-nav-register" style={{ marginTop: '0.75rem' }}>
-              Explore other vacancies
-            </Link>
-          </div>
+          <>
+            <h2 className="co-profile-jobs-title">
+              Open vacancies
+              <span>0</span>
+            </h2>
+            <div className="empty-results-box">
+              <h3>No open vacancies</h3>
+              <p>This employer currently does not have published roles on the board.</p>
+              <Link to="/jobs" className="btn-nav-register" style={{ marginTop: '0.75rem' }}>
+                Explore other vacancies
+              </Link>
+            </div>
+          </>
         ) : (
-          <div className="jobs-board-grid">
-            {vacancies.map((job) => (
-              <article key={job.id} className="premium-job-card">
-                <div className="job-card-main-content">
-                  <div className="company-badge-wrap">
-                    <CompanyLogoMark
-                      name={company.name}
-                      logoId={logoId}
-                      className="company-badge"
-                      imgClassName="company-logo-img"
-                    />
-                  </div>
-                  <div className="job-card-meta">
-                    <span className="job-company-name">{company.name}</span>
-                    <h3 className="job-card-title">
-                      <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
-                    </h3>
-                    <div className="job-card-tags">
-                      <span className="tag-pill tag-type">{labelType(job.employmentType)}</span>
-                      {job.workplaceType && (
-                        <span className="tag-pill tag-workplace">{labelType(job.workplaceType)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="job-card-footer">
-                  <span className="job-deadline-tag">
-                    Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-                  </span>
-                  <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
-                    <span>View position</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+          <FeaturedVacancies
+            jobs={jobsWithCompany}
+            title="Open vacancies"
+            description={`${vacancies.length} current ${vacancies.length === 1 ? 'opening' : 'openings'}`}
+            badge="Open"
+          />
         )}
       </section>
+
+      {children}
     </div>
   );
 };

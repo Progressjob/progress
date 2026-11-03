@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { companiesApi } from '../api/companies';
+import { CompanyDirectoryCard } from '../components/CompanyDirectoryCard';
 import { CompanyOverview } from '../components/CompanyOverview';
 
 export const CompanyDetailPage: React.FC = () => {
@@ -13,6 +14,17 @@ export const CompanyDetailPage: React.FC = () => {
     enabled: Boolean(slug),
   });
 
+  const company = companyQuery.data;
+  const relatedQuery = useQuery({
+    queryKey: ['companies', 'related', company?.industryId, company?.id],
+    queryFn: () =>
+      companiesApi.list(1, 6, {
+        industryId: company!.industryId!,
+        excludeId: company!.id,
+      }),
+    enabled: Boolean(company?.industryId && company?.id),
+  });
+
   if (companyQuery.isLoading) {
     return (
       <div className="jobs-list-container">
@@ -21,7 +33,7 @@ export const CompanyDetailPage: React.FC = () => {
     );
   }
 
-  if (companyQuery.isError || !companyQuery.data) {
+  if (companyQuery.isError || !company) {
     return (
       <div className="jobs-list-container">
         <div className="alert-box-error">
@@ -35,9 +47,26 @@ export const CompanyDetailPage: React.FC = () => {
     );
   }
 
+  const related = relatedQuery.data ?? [];
+
   return (
     <div className="jobs-list-container">
-      <CompanyOverview company={companyQuery.data} showBreadcrumbs />
+      <CompanyOverview company={company} showBreadcrumbs>
+        {related.length > 0 && (
+          <section className="co-related" aria-label={`More employers in ${company.industry?.name ?? 'this industry'}`}>
+            <div className="co-related-head">
+              <p className="jb-kicker">Same industry</p>
+              <h2 className="co-related-title">More in {company.industry?.name ?? 'this industry'}</h2>
+              <p className="co-related-copy">Other verified employers hiring in this industry.</p>
+            </div>
+            <div className="companies-grid">
+              {related.map((peer) => (
+                <CompanyDirectoryCard key={peer.id} company={peer} />
+              ))}
+            </div>
+          </section>
+        )}
+      </CompanyOverview>
     </div>
   );
 };

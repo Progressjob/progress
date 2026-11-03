@@ -3455,11 +3455,15 @@ hr {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: nowrap;
 }
 
 .vacancies-pill {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .vacancies-pill strong {
@@ -3470,14 +3474,17 @@ hr {
 .btn-view-company-roles {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   background: var(--primary-light);
   color: var(--primary);
   font-weight: 600;
-  font-size: 0.85rem;
-  padding: 0.45rem 1.05rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.45rem 0.85rem;
   border-radius: 999px;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
@@ -3787,10 +3794,14 @@ hr {
     max-width: 55vw;
   }
 
-  .job-card-footer,
-  .company-card-bottom {
+  .job-card-footer {
     flex-wrap: wrap;
     gap: 0.75rem;
+  }
+
+  .company-card-bottom {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
   }
 
   .site-footer {
@@ -8470,8 +8481,43 @@ a.cv-contact-value {
   text-decoration: underline;
 }
 
+.co-profile-statements {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.co-profile-statements .co-profile-card {
+  margin-bottom: 0;
+}
+
 .co-profile-jobs {
   margin-top: 0.5rem;
+}
+
+.co-profile-jobs .jb-featured {
+  margin: 0;
+}
+
+.co-related {
+  margin-top: 2rem;
+}
+
+.co-related-head {
+  margin-bottom: 1.15rem;
+}
+
+.co-related-title {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.co-related-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .co-profile-jobs-title {

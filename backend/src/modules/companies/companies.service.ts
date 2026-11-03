@@ -50,9 +50,14 @@ export class CompaniesService {
     industry: true,
   } satisfies Prisma.CompanySelect;
 
-  listPublic(page = 1, limit = 20) {
+  listPublic(page = 1, limit = 20, industryId?: string, excludeId?: string) {
     return this.prisma.company.findMany({
-      where: { verificationStatus: 'verified', portalStatus: 'active' },
+      where: {
+        verificationStatus: 'verified',
+        portalStatus: 'active',
+        ...(industryId ? { industryId } : {}),
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
       orderBy: [{ isFeatured: 'desc' }, { name: 'asc' }],
       skip: (page - 1) * limit,
       take: Math.min(limit, 100),

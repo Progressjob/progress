@@ -5,6 +5,7 @@ import {
   Param,
   ParseBoolPipe,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -40,8 +41,10 @@ export class PublicCompaniesController {
   list(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @Query('industryId', new ParseUUIDPipe({ optional: true })) industryId?: string,
+    @Query('excludeId', new ParseUUIDPipe({ optional: true })) excludeId?: string,
   ) {
-    return this.companies.listPublic(page, limit);
+    return this.companies.listPublic(page, limit, industryId, excludeId);
   }
 
   @Get(':slug')

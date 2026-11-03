@@ -42,6 +42,7 @@ export const FeaturedVacancies: React.FC<{
   loading?: boolean;
   title?: string;
   description?: string;
+  badge?: string;
   publicLinks?: boolean;
   hrefFor?: (job: Job) => string;
 }> = ({
@@ -51,7 +52,9 @@ export const FeaturedVacancies: React.FC<{
   hrefFor,
   title = 'Featured vacancies',
   description = 'Top opportunities for you',
+  badge,
 }) => {
+  const cardBadge = badge ?? (title === 'Recommended for you' ? 'For you' : 'Featured');
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (direction: -1 | 1) => {
@@ -65,7 +68,7 @@ export const FeaturedVacancies: React.FC<{
   if (!loading && jobs.length === 0) return null;
 
   return (
-    <section className="jb-featured" aria-label="Featured vacancies">
+    <section className="jb-featured" aria-label={title}>
       <div className="jb-featured-head">
         <div>
           <p className="jb-kicker">
@@ -105,9 +108,7 @@ export const FeaturedVacancies: React.FC<{
                   <span className="jb-featured-icon">
                     <BriefcaseIcon />
                   </span>
-                  <span className="jb-featured-label">
-                    {title === 'Recommended for you' ? 'For you' : 'Featured'}
-                  </span>
+                  <span className="jb-featured-label">{cardBadge}</span>
                 </div>
                 <h3 className="jb-featured-title">
                   <TitleLink job={job} publicLinks={publicLinks} href={href} />
