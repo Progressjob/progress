@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Safaricom Ethiopia">
+  <rect width="256" height="256" rx="40" fill="#1A8F3C"/>
+  <path d="M78 168c0-44 28-78 70-90 8 18 12 38 12 58 0 22-4 42-12 60-28-8-50-14-70-28z" fill="#FFFFFF"/>
+  <path d="M148 78c18 10 34 28 44 52 6 14 10 30 10 46 0 12-2 24-4 34-20 4-40 4-58 0 8-18 12-38 12-60 0-26-4-48-4-72z" fill="#9BE15D"/>
+  <text x="128" y="228" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" fill="#FFFFFF">Safaricom</text>
+</svg>

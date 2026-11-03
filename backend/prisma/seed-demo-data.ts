@@ -69,56 +69,56 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
   const itIndustry = await client.industry.findFirst({ where: { slug: 'information-technology' } });
   const mfgIndustry = await client.industry.findFirst({ where: { slug: 'manufacturing' } });
   const bankIndustry = await client.industry.findFirst({ where: { slug: 'banking-and-financial-services' } });
-  const healthIndustry = await client.industry.findFirst({ where: { slug: 'healthcare' } });
 
+  // Demo partners use recognizable org names + local logo assets (seed-assets/logos).
   const partnerCompanies = [
     {
-      name: 'Ethio Cloud & Software Solutions',
-      slug: 'ethio-cloud-software-solutions',
+      name: 'Safaricom Ethiopia',
+      slug: 'safaricom-ethiopia',
       industryId: itIndustry?.id,
       city: 'Addis Ababa',
       region: 'Addis Ababa',
-      description: 'Leading Ethiopian enterprise cloud engineering, fintech integration, and software development provider.',
+      description: 'Ethiopia’s digital network operator delivering mobile, broadband, fintech, and enterprise technology services nationwide.',
     },
     {
-      name: 'Dukem Steel & Iron Manufacturing',
-      slug: 'dukem-steel-iron-manufacturing',
+      name: 'Coca-Cola Beverages Africa',
+      slug: 'coca-cola-beverages-africa',
       industryId: mfgIndustry?.id,
       city: 'Dukem',
       region: 'Oromia',
-      description: 'Heavy industrial manufacturing plant specializing in construction rebar, structural steel, and fabrication at Eastern Industry Zone Dukem.',
+      description: 'Leading beverage bottling and distribution company manufacturing soft drinks across Ethiopia’s industrial corridors.',
     },
     {
-      name: 'Mojo Logistics & Transport PLC',
-      slug: 'mojo-logistics-transport-plc',
+      name: 'Ethiopian Airlines',
+      slug: 'ethiopian-airlines',
       industryId: mfgIndustry?.id,
-      city: 'Adama',
-      region: 'Oromia',
-      description: 'Premier intermodal freight forwarding, dry-port container logistics, and industrial supply chain operations.',
+      city: 'Addis Ababa',
+      region: 'Addis Ababa',
+      description: 'Africa’s largest airline group spanning passenger aviation, cargo logistics, MRO, and aviation training from Addis Ababa Bole.',
     },
     {
-      name: 'Adama Garment & Textile Industries',
-      slug: 'adama-garment-textile-industries',
+      name: 'Habesha Breweries',
+      slug: 'habesha-breweries',
       industryId: mfgIndustry?.id,
-      city: 'Adama',
-      region: 'Oromia',
-      description: 'Export-oriented apparel manufacturer producing woven fabrics, institutional uniforms, and industrial workwear.',
+      city: 'Debre Berhan',
+      region: 'Amhara',
+      description: 'Premium Ethiopian brewery producing Habesha beer with modern brewing, quality control, and nationwide distribution.',
     },
     {
-      name: 'Awash Financial Consulting Group',
-      slug: 'awash-financial-consulting-group',
+      name: 'Commercial Bank of Ethiopia',
+      slug: 'commercial-bank-of-ethiopia',
       industryId: bankIndustry?.id,
       city: 'Addis Ababa',
       region: 'Addis Ababa',
-      description: 'Certified public accounting, corporate tax audit, IFRS compliance, and financial management consultancy in Ethiopia.',
+      description: 'Ethiopia’s largest commercial bank offering retail, corporate, trade finance, and digital banking services.',
     },
     {
-      name: 'Abyssinia Health & Pharmaceutical',
-      slug: 'abyssinia-health-pharmaceutical',
-      industryId: healthIndustry?.id,
-      city: 'Bishoftu',
-      region: 'Oromia',
-      description: 'Licensed pharmaceutical manufacturing, clinical diagnostics, and medical supply distributor headquartered in Bishoftu.',
+      name: 'ethio telecom',
+      slug: 'ethio-telecom',
+      industryId: itIndustry?.id,
+      city: 'Addis Ababa',
+      region: 'Addis Ababa',
+      description: 'National telecom operator providing mobile, fixed broadband, enterprise ICT, and digital infrastructure across Ethiopia.',
     },
   ];
 
@@ -176,7 +176,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
   const jobsData = [
     // --- Sector: Information Technology (Clustered) ---
     {
-      companySlug: 'ethio-cloud-software-solutions',
+      companySlug: 'safaricom-ethiopia',
       title: 'Senior Full Stack Engineer',
       slug: 'senior-full-stack-engineer-adama',
       category: itCatId,
@@ -194,7 +194,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 25,
     },
     {
-      companySlug: 'ethio-cloud-software-solutions',
+      companySlug: 'safaricom-ethiopia',
       title: 'Frontend React Developer',
       slug: 'frontend-react-developer-addis',
       category: itCatId,
@@ -212,7 +212,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 18,
     },
     {
-      companySlug: 'mojo-logistics-transport-plc',
+      companySlug: 'ethiopian-airlines',
       title: 'Network & Systems Administrator',
       slug: 'network-systems-administrator-bishoftu',
       category: itCatId,
@@ -230,7 +230,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 14,
     },
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Junior IT Support Specialist',
       slug: 'junior-it-support-specialist-dukem',
       category: itCatId,
@@ -250,7 +250,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Accounting & Finance (Clustered) ---
     {
-      companySlug: 'awash-financial-consulting-group',
+      companySlug: 'commercial-bank-of-ethiopia',
       title: 'Senior Financial Accountant',
       slug: 'senior-financial-accountant-addis',
       category: accCatId,
@@ -268,7 +268,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 20,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Cost & Management Accountant',
       slug: 'cost-management-accountant-adama',
       category: accCatId,
@@ -286,7 +286,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 12,
     },
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Junior Payroll & Accounts Clerk',
       slug: 'junior-payroll-accounts-clerk-dukem',
       category: accCatId,
@@ -304,7 +304,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 28,
     },
     {
-      companySlug: 'mojo-logistics-transport-plc',
+      companySlug: 'ethiopian-airlines',
       title: 'Internal Audit Officer',
       slug: 'internal-audit-officer-adama',
       category: accCatId,
@@ -324,7 +324,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Engineering & Manufacturing (Clustered) ---
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Senior Mechanical Maintenance Engineer',
       slug: 'senior-mechanical-maintenance-engineer-dukem',
       category: engCatId,
@@ -342,7 +342,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 16,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Industrial Electrical Engineer',
       slug: 'industrial-electrical-engineer-adama',
       category: engCatId,
@@ -360,7 +360,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 22,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Quality Assurance Supervisor',
       slug: 'quality-assurance-supervisor-adama',
       category: engCatId,
@@ -378,7 +378,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 19,
     },
     {
-      companySlug: 'abyssinia-health-pharmaceutical',
+      companySlug: 'ethio-telecom',
       title: 'Chemical & Process Engineer',
       slug: 'chemical-process-engineer-bishoftu',
       category: engCatId,
@@ -398,7 +398,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Logistics & Supply Chain (Clustered) ---
     {
-      companySlug: 'mojo-logistics-transport-plc',
+      companySlug: 'ethiopian-airlines',
       title: 'Supply Chain Operations Manager',
       slug: 'supply-chain-operations-manager-adama',
       category: logCatId,
@@ -416,7 +416,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 15,
     },
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Warehouse & Inventory Controller',
       slug: 'warehouse-inventory-controller-dukem',
       category: logCatId,
@@ -434,7 +434,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 23,
     },
     {
-      companySlug: 'mojo-logistics-transport-plc',
+      companySlug: 'ethiopian-airlines',
       title: 'Freight Clearing & Forwarding Officer',
       slug: 'freight-clearing-forwarding-officer-addis',
       category: logCatId,
@@ -454,7 +454,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Sales & Marketing ---
     {
-      companySlug: 'ethio-cloud-software-solutions',
+      companySlug: 'safaricom-ethiopia',
       title: 'Corporate B2B Sales Manager',
       slug: 'corporate-b2b-sales-manager-addis',
       category: salesCatId,
@@ -472,7 +472,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 26,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Sales & Customer Relations Officer',
       slug: 'sales-customer-relations-officer-adama',
       category: salesCatId,
@@ -492,7 +492,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Human Resources & Management ---
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Senior HR & Administration Manager',
       slug: 'senior-hr-administration-manager-dukem',
       category: hrCatId,
@@ -510,7 +510,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 14,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Talent Acquisition & Training Officer',
       slug: 'talent-acquisition-training-officer-adama',
       category: hrCatId,
@@ -530,7 +530,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
 
     // --- Sector: Health Care & Safety ---
     {
-      companySlug: 'dukem-steel-iron-manufacturing',
+      companySlug: 'coca-cola-beverages-africa',
       title: 'Occupational Health & Safety (OHS) Officer',
       slug: 'occupational-health-safety-officer-dukem',
       category: healthCatId,
@@ -548,7 +548,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 11,
     },
     {
-      companySlug: 'abyssinia-health-pharmaceutical',
+      companySlug: 'ethio-telecom',
       title: 'Quality Control Laboratory Analyst',
       slug: 'quality-control-laboratory-analyst-bishoftu',
       category: healthCatId,
@@ -566,7 +566,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       daysToDeadline: 21,
     },
     {
-      companySlug: 'adama-garment-textile-industries',
+      companySlug: 'habesha-breweries',
       title: 'Industrial Clinic Nurse',
       slug: 'industrial-clinic-nurse-adama',
       category: healthCatId,
@@ -628,6 +628,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
         approvedAt: new Date(),
       },
       update: {
+        companyId: compId,
         title: j.title,
         summary: j.summary,
         responsibilities: j.responsibilities,

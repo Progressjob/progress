@@ -11,7 +11,7 @@ function colorForSlug(slug: string): string {
   return LOGO_COLORS[hash % LOGO_COLORS.length];
 }
 
-function svgLogo(name: string, color: string): string {
+function svgMonogram(name: string, color: string): string {
   const initial = (name.trim().charAt(0) || 'C').toUpperCase();
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
@@ -20,26 +20,41 @@ function svgLogo(name: string, color: string): string {
 </svg>`;
 }
 
+function brandAssetPath(slug: string): string {
+  return path.resolve(__dirname, 'seed-assets', 'logos', `${slug}.svg`);
+}
+
+async function readBrandAsset(slug: string): Promise<Buffer | null> {
+  try {
+    return await fs.readFile(brandAssetPath(slug));
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureCompanyLogo(
   client: PrismaClient,
   company: { id: string; name: string; slug: string; logoFileId: string | null },
 ): Promise<void> {
-  if (company.logoFileId) return;
+  const brandSvg = await readBrandAsset(company.slug);
+  // Keep existing monogram logos unless a brand asset is available to upgrade them.
+  if (company.logoFileId && !brandSvg) return;
 
   const storageRoot = path.resolve(process.env.STORAGE_ROOT ?? './storage');
   const year = String(new Date().getUTCFullYear());
   const key = `logo/${year}/${randomUUID()}.svg`;
-  const svg = svgLogo(company.name, colorForSlug(company.slug));
   const absolute = path.resolve(storageRoot, key);
   await fs.mkdir(path.dirname(absolute), { recursive: true });
-  await fs.writeFile(absolute, svg, 'utf8');
+
+  const payload = brandSvg ?? Buffer.from(svgMonogram(company.name, colorForSlug(company.slug)), 'utf8');
+  await fs.writeFile(absolute, payload);
 
   const file = await client.file.create({
     data: {
       storageKey: key,
       originalFilename: `${company.slug}-logo.svg`,
       mimeType: 'image/svg+xml',
-      sizeBytes: BigInt(Buffer.byteLength(svg)),
+      sizeBytes: BigInt(payload.byteLength),
       fileCategory: 'logo',
       isPrivate: false,
     },
