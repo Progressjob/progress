@@ -54,50 +54,39 @@ export const CandidateApplicationsPage: React.FC = () => {
       {withdrawMutation.isError && (
         <div className="alert-error">{(withdrawMutation.error as Error).message}</div>
       )}
-      <div className="pb-card table-scroll">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Job Title</th>
-              <th>Company</th>
-              <th>Status</th>
-              <th>Applied Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {apps.map((app) => (
-              <tr key={app.id}>
-                <td>
+      <div className="apps-card-list">
+        {apps.map((app) => (
+          <article key={app.id} className="apps-card">
+            <div className="apps-card-top">
+              <div className="apps-card-copy">
+                <h3>
                   {app.job?.slug ? (
-                    <Link to={`/jobs/${app.job.slug}`}>
-                      <strong>{app.job.title}</strong>
-                    </Link>
+                    <Link to={`/jobs/${app.job.slug}`}>{app.job.title}</Link>
                   ) : (
-                    <strong>{app.job?.title ?? app.jobId}</strong>
+                    app.job?.title ?? app.jobId
                   )}
-                </td>
-                <td>{app.job?.company?.name ?? '—'}</td>
-                <td>
-                  <span className="badge badge-info">{app.status}</span>
-                </td>
-                <td>{new Date(app.appliedAt).toLocaleString()}</td>
-                <td>
-                  {!TERMINAL_STATES.has(app.status) && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      disabled={withdrawMutation.isPending}
-                      onClick={() => withdrawMutation.mutate(app.id)}
-                    >
-                      Withdraw
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </h3>
+                <p>{app.job?.company?.name ?? '—'}</p>
+              </div>
+              <span className="badge badge-info">{app.status.replace(/_/g, ' ')}</span>
+            </div>
+            <div className="apps-card-foot">
+              <time dateTime={app.appliedAt}>
+                Applied {new Date(app.appliedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </time>
+              {!TERMINAL_STATES.has(app.status) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger"
+                  disabled={withdrawMutation.isPending}
+                  onClick={() => withdrawMutation.mutate(app.id)}
+                >
+                  Withdraw
+                </button>
+              )}
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   );

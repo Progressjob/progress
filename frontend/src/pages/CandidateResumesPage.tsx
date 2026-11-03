@@ -114,63 +114,65 @@ export const CandidateResumesPage: React.FC = () => {
         )}
 
         {resumes.length > 0 && (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>File</th>
-                <th>Default</th>
-                <th>Uploaded</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resumes.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <strong>{r.title}</strong>
-                  </td>
-                  <td>{r.file?.originalName ?? r.fileId}</td>
-                  <td>
-                    {r.isDefault ? (
-                      <span className="badge badge-success">Default</span>
-                    ) : (
+          <div className="table-scroll">
+            <table className="table stacked-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>File</th>
+                  <th>Default</th>
+                  <th>Uploaded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resumes.map((r) => (
+                  <tr key={r.id}>
+                    <td data-label="Title">
+                      <strong>{r.title}</strong>
+                    </td>
+                    <td data-label="File">{r.file?.originalName ?? r.fileId}</td>
+                    <td data-label="Default">
+                      {r.isDefault ? (
+                        <span className="badge badge-success">Default</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          disabled={defaultMutation.isPending}
+                          onClick={() => defaultMutation.mutate(r.id)}
+                        >
+                          Set Default
+                        </button>
+                      )}
+                    </td>
+                    <td data-label="Uploaded">{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td className="row-actions" data-label="Actions">
                       <button
                         type="button"
                         className="btn btn-sm btn-secondary"
-                        disabled={defaultMutation.isPending}
-                        onClick={() => defaultMutation.mutate(r.id)}
+                        onClick={() =>
+                          apiDownloadFile(r.fileId, r.file?.originalName || `${r.title}.pdf`).catch(
+                            (e: Error) => setActionError(e.message),
+                          )
+                        }
                       >
-                        Set Default
+                        Download
                       </button>
-                    )}
-                  </td>
-                  <td>{new Date(r.createdAt).toLocaleDateString()}</td>
-                  <td className="row-actions">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={() =>
-                        apiDownloadFile(r.fileId, r.file?.originalName || `${r.title}.pdf`).catch(
-                          (e: Error) => setActionError(e.message),
-                        )
-                      }
-                    >
-                      Download
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      disabled={deleteMutation.isPending}
-                      onClick={() => deleteMutation.mutate(r.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate(r.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

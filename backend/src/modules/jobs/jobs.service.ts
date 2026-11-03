@@ -198,6 +198,174 @@ export class JobsService {
     return { data, page, limit, total };
   }
 
+  async popularSearches(limit = 8) {
+    const take = Math.min(Math.max(limit, 1), 12);
+    const openJobs = {
+      status: JobStatus.published,
+      postedAt: { not: null as Date | null },
+      applicationDeadline: { gte: this.today() },
+    };
+
+    const [categories, companies, freshGraduateCount, salaryCount] = await Promise.all([
+      this.prisma.jobCategory.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          _count: { select: { jobs: { where: openJobs } } },
+        },
+      }),
+      this.prisma.company.findMany({
+        where: {
+          industry: { isActive: true },
+          jobs: { some: openJobs },
+        },
+        select: {
+          industry: { select: { id: true, name: true, slug: true } },
+          _count: { select: { jobs: { where: openJobs } } },
+        },
+      }),
+      this.prisma.job.count({
+        where: {
+          ...openJobs,
+          OR: [{ experienceMinYears: null }, { experienceMinYears: { lte: 0 } }],
+        },
+      }),
+      this.prisma.job.count({
+        where: {
+          ...openJobs,
+          salaryVisibility: true,
+          OR: [{ salaryMin: { not: null } }, { salaryMax: { not: null } }],
+        },
+      }),
+    ]);
+
+    const industryTotals = new Map<string, { id: string; name: string; slug: string; count: number }>();
+    for (const company of companies) {
+      const industry = company.industry;
+      if (!industry || company._count.jobs < 1) continue;
+      const existing = industryTotals.get(industry.id);
+      if (existing) existing.count += company._count.jobs;
+      else industryTotals.set(industry.id, { ...industry, count: company._count.jobs });
+    }
+
+    const formatCategoryLabel = (name: string, slug: string): string => {
+      if (slug === 'accounting-and-finance') return 'Accounting/Finance Jobs';
+      if (slug === 'ngo-and-development') return 'NGO Jobs';
+      if (slug === 'health-care') return 'Health Care Jobs';
+      if (slug === 'information-technology') return 'Information Technology Jobs';
+      if (slug === 'logistics-and-supply-chain') return 'Logistics Jobs';
+      if (slug === 'sales-and-marketing') return 'Sales & Marketing Jobs';
+      if (name.toLowerCase().endsWith('jobs')) return name;
+      return `${name} Jobs`;
+    };
+
+    const items: Array<{
+      id: string;
+      label: string;
+      param: 'category' | 'industry' | 'experience' | 'salary';
+      value: string;
+      path: string;
+      count: number;
+    }> = [];
+
+    for (const cat of categories) {
+      items.push({
+        id: `cat-${cat.id}`,
+        label: formatCategoryLabel(cat.name, cat.slug),
+        param: 'category',
+        value: cat.slug,
+        path: `/jobs?category=${encodeURIComponent(cat.slug)}`,
+        count: cat._count.jobs,
+      });
+    }
+
+    items.push({
+      id: 'fresh-graduate',
+      label: 'Fresh Graduate Jobs',
+      param: 'experience',
+      value: '0',
+      path: '/jobs?experience=0',
+      count: freshGraduateCount,
+    });
+
+    items.push({
+      id: 'jobs-by-salary',
+      label: 'Jobs by Salary',
+      param: 'salary',
+      value: 'listed',
+      path: '/jobs?salary=listed',
+      count: salaryCount,
+    });
+
+    const seenSlugs = new Set(categories.map((c) => c.slug));
+    for (const ind of industryTotals.values()) {
+      if (!seenSlugs.has(ind.slug)) {
+        items.push({
+          id: `ind-${ind.id}`,
+          label: `${ind.name} Jobs`,
+          param: 'industry',
+          value: ind.slug,
+          path: `/jobs?industry=${encodeURIComponent(ind.slug)}`,
+          count: ind.count,
+        });
+      }
+    }
+
+    const prioritySlugs = [
+      'accounting-and-finance',
+      'ngo-and-development',
+      'health-care',
+      'jobs-by-salary',
+      'fresh-graduate',
+      'information-technology',
+    ];
+
+    items.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      const aPrio = prioritySlugs.indexOf(a.value);
+      const bPrio = prioritySlugs.indexOf(b.value);
+      if (aPrio !== -1 && bPrio !== -1) return aPrio - bPrio;
+      if (aPrio !== -1) return -1;
+      if (bPrio !== -1) return 1;
+      return a.label.localeCompare(b.label);
+    });
+
+    return { data: items.slice(0, take) };
+  }
+
+  async trendingIndustries(limit = 6) {
+    const take = Math.min(Math.max(limit, 1), 12);
+    const openJobs = {
+      status: JobStatus.published,
+      postedAt: { not: null as Date | null },
+      applicationDeadline: { gte: this.today() },
+    };
+    const companies = await this.prisma.company.findMany({
+      where: {
+        industry: { isActive: true },
+        jobs: { some: openJobs },
+      },
+      select: {
+        industry: { select: { id: true, name: true, slug: true } },
+        _count: { select: { jobs: { where: openJobs } } },
+      },
+    });
+    const totals = new Map<string, { id: string; name: string; slug: string; count: number }>();
+    for (const company of companies) {
+      const industry = company.industry;
+      if (!industry || company._count.jobs < 1) continue;
+      const existing = totals.get(industry.id);
+      if (existing) existing.count += company._count.jobs;
+      else totals.set(industry.id, { ...industry, count: company._count.jobs });
+    }
+    const data = [...totals.values()]
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .slice(0, take);
+    return { data };
+  }
+
   async publicDetail(slug: string, sessionId?: string, source?: string) {
     const job = await this.prisma.job.findFirst({
       where: { slug, status: 'published', applicationDeadline: { gte: this.today() } },
@@ -648,6 +816,12 @@ export class JobsService {
   private salaryFilter(value?: string): Prisma.JobWhereInput | null {
     const key = value?.trim();
     if (!key) return null;
+    if (key === 'listed') {
+      return {
+        salaryVisibility: true,
+        OR: [{ salaryMin: { not: null } }, { salaryMax: { not: null } }],
+      };
+    }
     let min = 0;
     let max: number | null = null;
     if (key.endsWith('+')) {

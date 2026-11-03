@@ -180,6 +180,25 @@ export const JobsListPage: React.FC = () => {
     q || category || location || employmentType || experience || education || industry || salary,
   );
 
+  const categoryLabel = categories.find((item) => item.slug === category)?.name;
+  const locationLabel = locations.find((item) => item.slug === location)?.name
+    ?? regionOptions.find((item) => item.value === location)?.label;
+  const experienceLabel = experienceOptions.find((item) => item.value === experience)?.label;
+  const educationLabel = educationOptions.find((item) => item.value === education)?.label;
+  const industryLabel = industries.find((item) => item.slug === industry)?.name;
+  const salaryLabel = salaryOptions.find((item) => item.value === salary)?.label;
+  const employmentLabel = employmentTypeOptions.find((item) => item.value === employmentType)?.label;
+  const searchSummary = [
+    q ? `“${q}”` : '',
+    categoryLabel,
+    locationLabel && locationLabel !== 'Location' ? locationLabel : '',
+    experienceLabel && experienceLabel !== 'Experience' ? experienceLabel : '',
+    educationLabel && educationLabel !== 'Education' ? educationLabel : '',
+    industryLabel,
+    salaryLabel && salaryLabel !== 'Monthly Salary' ? salaryLabel : '',
+    employmentLabel && employmentLabel !== 'Employment' ? employmentLabel : '',
+  ].filter(Boolean).join(' · ');
+
   return (
     <div className="jobs-list-container jb-page">
       <section className="jb-hero">
@@ -206,7 +225,7 @@ export const JobsListPage: React.FC = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search by job title, company, or keywords..."
+              placeholder="Job title, keywords, or company..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search jobs"
@@ -297,16 +316,21 @@ export const JobsListPage: React.FC = () => {
           <div className="alert-box-error">Failed to load vacancies: {(jobsQuery.error as Error).message}</div>
         )}
 
-        {featuredQuery.isError && <p role="alert">Could not load recommendations. <button type="button" onClick={() => void featuredQuery.refetch()}>Try again</button></p>}
-        <FeaturedVacancies jobs={featuredQuery.data?.data ?? []} loading={featuredQuery.isLoading}
-          title={featuredQuery.title} description={featuredQuery.description} />
-        {featuredQuery.showProfileLink && <p><Link to="/candidate/profile">Update your profile for better matches</Link></p>}
+        {!hasActiveFilters && (
+          <>
+            {featuredQuery.isError && <p role="alert">Could not load recommendations. <button type="button" onClick={() => void featuredQuery.refetch()}>Try again</button></p>}
+            <FeaturedVacancies jobs={featuredQuery.data?.data ?? []} loading={featuredQuery.isLoading}
+              title={featuredQuery.title} description={featuredQuery.description} />
+            {featuredQuery.showProfileLink && <p><Link to="/candidate/profile">Update your profile for better matches</Link></p>}
+          </>
+        )}
 
-        <section className="jb-latest" aria-label="Latest job vacancies">
+        <section className="jb-latest" id="job-results" aria-label={hasActiveFilters ? 'Search results' : 'Latest job vacancies'}>
           <div className="jb-latest-head">
             <div>
-              <p className="jb-kicker">Latest job vacancies</p>
-              <h2 className="jb-section-title">Freshly posted opportunities</h2>
+              <p className="jb-kicker">{hasActiveFilters ? 'Search results' : 'Latest job vacancies'}</p>
+              <h2 className="jb-section-title">{hasActiveFilters ? 'Matching vacancies' : 'Freshly posted opportunities'}</h2>
+              {hasActiveFilters && <p className="jb-filter-summary">{searchSummary}</p>}
             </div>
           </div>
 

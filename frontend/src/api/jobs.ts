@@ -28,6 +28,22 @@ export function getAnonymousSessionId(): string {
   return id;
 }
 
+export interface PopularJobFilter {
+  id: string;
+  label: string;
+  param: 'category' | 'industry' | 'experience' | 'salary';
+  value: string;
+  path: string;
+  count: number;
+}
+
+export interface TrendingIndustry {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+
 export interface FeaturedJobsResponse {
   data: Job[];
   personalized: boolean;
@@ -36,6 +52,10 @@ export interface FeaturedJobsResponse {
 
 export const jobsApi = {
   recommendations: () => apiFetch<FeaturedJobsResponse>('/jobs/recommendations'),
+  popularSearches: (limit = 8) =>
+    apiFetch<{ data: PopularJobFilter[] }>(`/jobs/popular-searches?limit=${limit}`, { skipAuth: true }),
+  trendingIndustries: (limit = 6) =>
+    apiFetch<{ data: TrendingIndustry[] }>(`/jobs/trending-industries?limit=${limit}`, { skipAuth: true }),
   list: (params: JobListParams = {}) => {
     const search = new URLSearchParams();
     if (params.q?.trim()) search.set('q', params.q.trim());

@@ -14,6 +14,7 @@ export const EDUCATION_FILTER_OPTIONS = EDUCATION_LEVELS.map((level) => ({
 }));
 
 export const SALARY_FILTER_OPTIONS = [
+  { value: 'listed', label: 'Jobs with salary' },
   { value: '0-10000', label: 'Under 10,000 ETB' },
   { value: '10000-20000', label: '10,000 – 20,000 ETB' },
   { value: '20000-35000', label: '20,000 – 35,000 ETB' },

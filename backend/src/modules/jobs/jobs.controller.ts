@@ -74,6 +74,16 @@ export class PublicJobsController {
     });
   }
 
+  @Get('popular-searches')
+  popularSearches(@Query('limit', new ParseIntPipe({ optional: true })) limit = 8) {
+    return this.jobs.popularSearches(limit);
+  }
+
+  @Get('trending-industries')
+  trendingIndustries(@Query('limit', new ParseIntPipe({ optional: true })) limit = 6) {
+    return this.jobs.trendingIndustries(limit);
+  }
+
   @Get('recommendations')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('candidate')

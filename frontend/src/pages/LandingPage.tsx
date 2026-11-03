@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedJobs } from '../hooks/useFeaturedJobs';
+import { jobsApi } from '../api/jobs';
 import { taxonomyApi } from '../api/taxonomy';
 import { HeroCanvas } from '../components/HeroCanvas';
-import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
 import { BlurText } from '../components/reactbits/BlurText';
 import { ShinyText } from '../components/reactbits/ShinyText';
 import { SpotlightCard } from '../components/reactbits/SpotlightCard';
@@ -17,9 +17,21 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
 
+  const popularQuery = useQuery({
+    queryKey: ['jobs', 'popular-searches'],
+    queryFn: () => jobsApi.popularSearches(8),
+  });
+  const popularJobs = popularQuery.data?.data ?? [];
+
+  const fallbackPopular = [
+    { id: 'cat-ngo', label: 'NGO Jobs', path: '/jobs?category=ngo-and-development' },
+    { id: 'cat-acc', label: 'Accounting/Finance Jobs', path: '/jobs?category=accounting-and-finance' },
+    { id: 'cat-health', label: 'Health Care Jobs', path: '/jobs?category=health-care' },
+    { id: 'cat-salary', label: 'Jobs by Salary', path: '/jobs?salary=listed' },
+    { id: 'cat-fg', label: 'Fresh Graduate Jobs', path: '/jobs?experience=0' },
+  ];
+  const displayPopular = popularJobs.length > 0 ? popularJobs : fallbackPopular;
   // Fetch featured vacancies
   const jobsQuery = useFeaturedJobs();
 
@@ -29,72 +41,19 @@ export const LandingPage: React.FC = () => {
     queryFn: () => taxonomyApi.categories(),
   });
 
-  const categoryOptions: DropdownOption[] = [
-    { value: '', label: 'All Categories' },
-    ...(categoriesQuery.data?.map((cat) => ({
-      value: cat.slug,
-      label: cat.name,
-    })) || []),
-  ];
-
-  // Specific Progress operational regions: Adama and Bishoftu
-  const regionOptions: DropdownOption[] = [
-    { value: '', label: 'All Regions' },
-    { value: 'adama-oromia', label: 'Adama' },
-    { value: 'bishoftu-oromia', label: 'Bishoftu' },
-  ];
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (searchTerm.trim()) params.set('q', searchTerm.trim());
-    if (selectedCategory) params.set('category', selectedCategory);
-    if (selectedLocation) params.set('location', selectedLocation);
-    navigate(`/jobs?${params.toString()}`);
+    const term = searchTerm.trim();
+    navigate(term ? `/jobs?q=${encodeURIComponent(term)}` : '/jobs');
   };
-
-  const quickTags = [
-    { label: 'Adama', type: 'location', value: 'adama-oromia' },
-    { label: 'Bishoftu', type: 'location', value: 'bishoftu-oromia' },
-    { label: 'Information Technology', type: 'category', value: 'information-technology' },
-    { label: 'Accounting & Finance', type: 'category', value: 'accounting-and-finance' },
-    { label: 'Engineering', type: 'category', value: 'engineering' },
-    { label: 'Manufacturing & Operations', type: 'category', value: 'manufacturing' },
-  ];
 
   return (
     <div className="landing-page">
-      {/* 1. HERO SECTION WITH 3D CANVAS & FLOATING CARDS */}
+      {/* 1. HERO SECTION */}
       <section className="hero-section">
         <HeroCanvas />
 
-        {/* Ambient Radial Gradient Aura */}
         <div className="hero-glow-aura" />
-
-        {/* Floating Glass Badges (Desktop) */}
-        <div className="hero-floating-card floating-card-left">
-          <div className="floating-card-icon">⚡</div>
-          <div className="floating-card-text">
-            <strong>Rapid Deployment</strong>
-            <span>Talent matched within 48h</span>
-          </div>
-        </div>
-
-        <div className="hero-floating-card floating-card-right">
-          <div className="floating-card-icon verified-shield">🛡️</div>
-          <div className="floating-card-text">
-            <strong>100% Certified Agency</strong>
-            <span>Labor & Social Affairs Bureau</span>
-          </div>
-        </div>
-
-        <div className="hero-floating-card floating-card-bottom">
-          <span className="live-pulse-dot" />
-          <div className="floating-card-text">
-            <strong>1,400+ Active Roles</strong>
-            <span>Direct employer postings</span>
-          </div>
-        </div>
 
         <div className="hero-content">
           <div className="hero-badge animate-fade-in">
@@ -119,84 +78,56 @@ export const LandingPage: React.FC = () => {
             Adama and Bishoftu.
           </p>
 
-          {/* Luxury Floating Smart Search Capsule */}
-          <form className="hero-search-card" onSubmit={handleSearch}>
-            <div className="search-field">
-              <div className="search-icon-circle">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="11" cy="11" r="8" strokeWidth="2.2" />
-                  <path d="M21 21l-4.35-4.35" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-              </div>
+          <form className="home-find" onSubmit={handleSearch}>
+            <div className="home-find-bar">
+              <svg
+                className="home-find-search-icon"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               <input
-                type="text"
-                placeholder="Job title, keywords, or company..."
+                type="search"
+                placeholder="Search job title, keywords…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Search jobs"
+                aria-label="Search job title, keywords"
               />
+              <button type="submit" className="home-find-btn">
+                <span>FIND JOBS</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M13 2 4 14h7l-1 8 10-14h-7l0-6z" />
+                </svg>
+              </button>
             </div>
 
-            <div className="search-divider" />
-
-            <div className="search-field-custom">
-              <CustomDropdown
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                options={categoryOptions}
-                placeholder="All Categories"
-                icon={
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
-                  </svg>
-                }
-              />
-            </div>
-
-            <div className="search-divider" />
-
-            <div className="search-field-custom">
-              <CustomDropdown
-                value={selectedLocation}
-                onChange={setSelectedLocation}
-                options={regionOptions}
-                placeholder="All Regions"
-                icon={
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
-                    <circle cx="12" cy="10" r="3" strokeWidth="2" />
-                  </svg>
-                }
-              />
-            </div>
-
-            <button type="submit" className="btn-search-hero">
-              <span>Find Opportunities</span>
-              <svg className="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            </button>
+            {displayPopular.length > 0 && (
+              <div className="home-find-popular">
+                <span className="home-find-popular-label">POPULAR JOBS:</span>
+                <div className="home-find-chips">
+                  {displayPopular.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className="home-find-chip"
+                      title={'count' in item && item.count !== undefined ? `${item.count} open vacancies` : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
-
-          {/* Quick Trending Tags */}
-          <div className="quick-tags-container">
-            <span className="quick-tags-label">Trending Searches:</span>
-            <div className="quick-tags-list">
-              {quickTags.map((tag) => (
-                <button
-                  key={tag.label}
-                  type="button"
-                  className="quick-tag-pill"
-                  onClick={() => {
-                    navigate(`/jobs?${tag.type}=${tag.value}`);
-                  }}
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -372,7 +303,7 @@ export const LandingPage: React.FC = () => {
               const hasSalary = Boolean(job.salaryVisibility && (job.salaryMin || job.salaryMax));
               const salary = hasSalary
                 ? `${job.salaryCurrency ?? 'ETB'} ${[job.salaryMin, job.salaryMax]
-                    .filter((value) => value != null && value !== '')
+                    .filter((value): value is number => value != null)
                     .map((value) => Number(value).toLocaleString())
                     .join(' – ')}`
                 : null;
@@ -453,46 +384,45 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. DUAL CALL TO ACTION */}
-      <section className="dual-cta-section">
-        <div className="cta-grid">
-          {/* Candidates CTA */}
-          <div className="cta-box cta-candidate">
-            <span className="cta-eyebrow">For Candidates</span>
-            <h3>Accelerate Your Career Trajectory</h3>
-            <p>
-              Create your candidate profile, upload your resume, and get matched with verified corporate
-              vacancies across Ethiopia.
-            </p>
-            <div className="cta-actions">
-              <Link to="/register" className="btn-cta-primary">
-                Create account
-              </Link>
-              <Link to="/jobs" className="btn-cta-secondary">
-                Browse Vacancies
-              </Link>
+      {!user && (
+        <section className="dual-cta-section">
+          <div className="cta-grid">
+            <div className="cta-box cta-candidate">
+              <span className="cta-eyebrow">For Candidates</span>
+              <h3>Accelerate Your Career Trajectory</h3>
+              <p>
+                Create your candidate profile, upload your resume, and get matched with verified corporate
+                vacancies across Ethiopia.
+              </p>
+              <div className="cta-actions">
+                <Link to="/register" className="btn-cta-primary">
+                  Create account
+                </Link>
+                <Link to="/jobs" className="btn-cta-secondary">
+                  Browse Vacancies
+                </Link>
+              </div>
             </div>
-          </div>
 
-          {/* Employers CTA */}
-          <div className="cta-box cta-employer">
-            <span className="cta-eyebrow">For Employers</span>
-            <h3>Post a job from the same account</h3>
-            <p>
-              Create one account to look for work. When you want to hire, add who is hiring and post
-              the vacancy on the site. New posts still go to admin review before they go live.
-            </p>
-            <div className="cta-actions">
-              <Link to="/register" className="btn-cta-primary">
-                Post a job
-              </Link>
-              <Link to="/login" className="btn-cta-secondary">
-                Sign in
-              </Link>
+            <div className="cta-box cta-employer">
+              <span className="cta-eyebrow">For Employers</span>
+              <h3>Post a job from the same account</h3>
+              <p>
+                Create one account to look for work. When you want to hire, add who is hiring and post
+                the vacancy on the site. New posts still go to admin review before they go live.
+              </p>
+              <div className="cta-actions">
+                <Link to="/register" className="btn-cta-primary">
+                  Post a job
+                </Link>
+                <Link to="/login" className="btn-cta-secondary">
+                  Sign in
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };
