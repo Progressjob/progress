@@ -53,6 +53,8 @@ export const employerApi = {
     }),
   submitJob: (companyId: string, jobId: string) =>
     apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/submit`, { method: 'POST' }),
+  closeJob: (companyId: string, jobId: string) =>
+    apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/close`, { method: 'POST' }),
   reopenJob: (companyId: string, jobId: string, applicationDeadline: string) =>
     apiFetch<Job>(`/employer/companies/${companyId}/jobs/${jobId}/reopen`, {
       method: 'POST',

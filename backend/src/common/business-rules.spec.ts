@@ -20,6 +20,7 @@ describe('business rules', () => {
   });
 
   it('lets a closed job return for review or go live again', () => {
+    expect(() => assertJobTransition('published', 'closed')).not.toThrow();
     expect(() => assertJobTransition('closed', 'published')).not.toThrow();
     expect(() => assertJobTransition('closed', 'pending_review')).not.toThrow();
   });

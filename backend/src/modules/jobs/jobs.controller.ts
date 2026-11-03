@@ -257,6 +257,15 @@ export class EmployerJobsController {
     return this.jobs.employerSubmit(user.id, companyId, jobId);
   }
 
+  @Post(':jobId/close')
+  close(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('jobId') jobId: string,
+  ) {
+    return this.jobs.employerClose(user.id, companyId, jobId);
+  }
+
   @Post(':jobId/reopen')
   reopen(
     @CurrentUser() user: AuthUser,

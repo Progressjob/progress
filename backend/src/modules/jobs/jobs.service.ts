@@ -40,7 +40,7 @@ const EMPLOYER_EDITABLE_STATUSES: JobStatus[] = [
 
 @Injectable()
 export class JobPostingPolicy {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getCompanyPostingContext(companyId: string) {
     const company = await this.prisma.company.findUnique({ where: { id: companyId } });
@@ -86,7 +86,7 @@ export class JobsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: JobPostingPolicy,
-  ) {}
+  ) { }
 
   async recommendations(userId: string) {
     const profile = await this.prisma.candidateProfile.findUnique({
@@ -109,8 +109,10 @@ export class JobsService {
     // Score the full eligible pool, not just the first page of featured jobs.
     const jobs = await this.prisma.job.findMany({
       where: eligible,
-      select: { id: true, title: true, educationRequirement: true,
-        category: { select: { name: true } }, skills: { select: { skillId: true } } },
+      select: {
+        id: true, title: true, educationRequirement: true,
+        category: { select: { name: true } }, skills: { select: { skillId: true } }
+      },
       orderBy: [{ isFeatured: 'desc' }, { postedAt: 'desc' }, { id: 'asc' }],
     });
     const ranked = jobs.map((job) => ({ id: job.id, score: recommendationScore(terms, skillIds, job) }))
@@ -121,8 +123,10 @@ export class JobsService {
       include: { company: { include: { logo: true } }, category: true, location: true },
     });
     const byId = new Map(matches.map((job) => [job.id, job]));
-    return { data: ranked.flatMap(({ id }) => byId.has(id) ? [byId.get(id)!] : []),
-      personalized: true, reason: null };
+    return {
+      data: ranked.flatMap(({ id }) => byId.has(id) ? [byId.get(id)!] : []),
+      personalized: true, reason: null
+    };
   }
 
   async listPublic(filters: {
@@ -167,9 +171,9 @@ export class JobsService {
     const companyFilter: Prisma.CompanyWhereInput | undefined =
       filters.company || industry
         ? {
-            slug: filters.company || undefined,
-            industry: industry ? { slug: industry } : undefined,
-          }
+          slug: filters.company || undefined,
+          industry: industry ? { slug: industry } : undefined,
+        }
         : undefined;
 
     const where: Prisma.JobWhereInput = {
@@ -415,13 +419,13 @@ export class JobsService {
           : {}),
       ...(term
         ? {
-            OR: [
-              { title: { contains: term, mode: 'insensitive' } },
-              { referenceCode: { contains: term, mode: 'insensitive' } },
-              { slug: { contains: term, mode: 'insensitive' } },
-              { company: { name: { contains: term, mode: 'insensitive' } } },
-            ],
-          }
+          OR: [
+            { title: { contains: term, mode: 'insensitive' } },
+            { referenceCode: { contains: term, mode: 'insensitive' } },
+            { slug: { contains: term, mode: 'insensitive' } },
+            { company: { name: { contains: term, mode: 'insensitive' } } },
+          ],
+        }
         : {}),
     };
     const [rows, total] = await this.prisma.$transaction([
@@ -585,14 +589,19 @@ export class JobsService {
     });
   }
 
-  employerJobs(userId: string, companyId: string) {
+  async employerJobs(userId: string, companyId: string) {
+    await this.closeExpiredJobs();
     return this.prisma.job.findMany({
       where: {
         companyId,
         company: { members: { some: { userId, status: 'active' } } },
       },
       orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { applications: true, views: true } } },
+      include: {
+        _count: { select: { applications: true, views: true } },
+        category: { select: { id: true, name: true, slug: true } },
+        location: { select: { id: true, name: true, city: true, region: true } },
+      },
     });
   }
 
@@ -633,6 +642,14 @@ export class JobsService {
     return updated;
   }
 
+  async employerClose(userId: string, companyId: string, jobId: string) {
+    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
+    if (job.status !== 'published') {
+      throw new BadRequestException('Only published jobs can be closed');
+    }
+    return this.transition(jobId, 'closed', userId);
+  }
+
   async employerReopen(
     userId: string,
     companyId: string,
@@ -640,8 +657,9 @@ export class JobsService {
     applicationDeadline: string,
   ) {
     const job = await this.getEmployerManagedJob(userId, companyId, jobId);
-    if (job.status !== 'closed') {
-      throw new BadRequestException('Only closed jobs can be posted again');
+    const isExpired = Boolean(job.applicationDeadline && new Date(job.applicationDeadline) < this.today());
+    if (job.status !== 'closed' && !isExpired) {
+      throw new BadRequestException('Only closed or expired jobs can be posted again');
     }
     const deadline = new Date(applicationDeadline);
     if (Number.isNaN(deadline.getTime())) {
@@ -652,6 +670,10 @@ export class JobsService {
     );
     if (deadlineDay < this.today()) {
       throw new BadRequestException('Choose a deadline of today or later');
+    }
+    if (job.status !== 'closed') {
+      await this.prisma.job.update({ where: { id: jobId }, data: { status: 'closed' } });
+      job.status = 'closed';
     }
     const { canSelfPublish } = await this.policy.getCompanyPostingContext(companyId);
     const next: JobStatus = canSelfPublish ? 'published' : 'pending_review';
