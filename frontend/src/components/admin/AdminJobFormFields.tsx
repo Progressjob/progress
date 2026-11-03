@@ -49,6 +49,8 @@ export interface AdminJobFormFieldsProps {
   onChange: (next: CreateAdminJobPayload) => void;
   hideCompanySelect?: boolean;
   companySelect?: React.ReactNode;
+  minDeadline?: string;
+  hideDeadline?: boolean;
 }
 
 export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
@@ -56,6 +58,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   onChange,
   hideCompanySelect,
   companySelect,
+  minDeadline,
+  hideDeadline,
 }) => {
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -391,16 +395,24 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
         )}
       </div>
 
-      <div className="form-input-group">
-        <label htmlFor="adm-deadline">Application deadline *</label>
-        <input
-          id="adm-deadline"
-          type="date"
-          required
-          value={value.applicationDeadline}
-          onChange={(e) => set({ applicationDeadline: e.target.value })}
-        />
-      </div>
+      {!hideDeadline && (
+        <div className="form-input-group">
+          <label htmlFor="adm-deadline">Application deadline *</label>
+          <input
+            id="adm-deadline"
+            type="date"
+            required
+            min={minDeadline}
+            value={value.applicationDeadline}
+            onChange={(e) => set({ applicationDeadline: e.target.value })}
+          />
+          {minDeadline ? (
+            <p className="muted" style={{ margin: '0.35rem 0 0', fontSize: '0.82rem' }}>
+              Deadline must be today or a future date.
+            </p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 };

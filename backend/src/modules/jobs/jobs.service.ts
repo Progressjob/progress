@@ -120,7 +120,7 @@ export class JobsService {
     if (!ranked.length) return fallback('no_matches');
     const matches = await this.prisma.job.findMany({
       where: { ...eligible, id: { in: ranked.map((job) => job.id) } },
-      include: { company: { include: { logo: true } }, category: true, location: true },
+      include: { company: { include: { logo: true, industry: true } }, category: true, location: true },
     });
     const byId = new Map(matches.map((job) => [job.id, job]));
     return {
@@ -195,7 +195,7 @@ export class JobsService {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: [{ isFeatured: 'desc' }, { postedAt: 'desc' }],
-        include: { company: { include: { logo: true } }, category: true, location: true },
+        include: { company: { include: { logo: true, industry: true } }, category: true, location: true },
       }),
       this.prisma.job.count({ where }),
     ]);
@@ -397,7 +397,9 @@ export class JobsService {
   async adminList(filters: {
     q?: string;
     status?: JobStatus;
+    scope?: 'active' | 'history';
     companyId?: string;
+    industry?: string;
     employmentType?: EmploymentType;
     workplaceType?: WorkplaceType;
     employerEdited?: boolean;
@@ -407,9 +409,30 @@ export class JobsService {
     const page = Math.max(filters.page ?? 1, 1);
     const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
     const term = filters.q?.trim();
+    const industrySlug = filters.industry?.trim();
+    const activeStatuses: JobStatus[] = [
+      JobStatus.draft,
+      JobStatus.pending_review,
+      JobStatus.published,
+    ];
+    const historyStatuses: JobStatus[] = [
+      JobStatus.closed,
+      JobStatus.rejected,
+      JobStatus.archived,
+    ];
+    const scope = filters.scope === 'history' ? 'history' : filters.scope === 'active' ? 'active' : undefined;
+    const scopedStatuses = scope === 'history' ? historyStatuses : scope === 'active' ? activeStatuses : undefined;
+    const statusFilter = filters.status
+      ? scopedStatuses && !scopedStatuses.includes(filters.status)
+        ? { status: { in: [] as JobStatus[] } }
+        : { status: filters.status }
+      : scopedStatuses
+        ? { status: { in: scopedStatuses } }
+        : {};
     const where: Prisma.JobWhereInput = {
-      ...(filters.status ? { status: filters.status } : {}),
+      ...statusFilter,
       ...(filters.companyId ? { companyId: filters.companyId } : {}),
+      ...(industrySlug ? { company: { industry: { slug: industrySlug } } } : {}),
       ...(filters.employmentType ? { employmentType: filters.employmentType } : {}),
       ...(filters.workplaceType ? { workplaceType: filters.workplaceType } : {}),
       ...(filters.employerEdited === true
@@ -435,7 +458,7 @@ export class JobsService {
         take: pageSize,
         orderBy: { createdAt: 'desc' },
         include: {
-          company: true,
+          company: { include: { logo: true, industry: true } },
           category: true,
           location: true,
           _count: { select: { revisions: { where: { source: 'employer' } } } },
@@ -458,7 +481,7 @@ export class JobsService {
     const job = await this.prisma.job.findUnique({
       where: { id },
       include: {
-        company: true,
+        company: { include: { logo: true, industry: true } },
         category: true,
         location: true,
         skills: { include: { skill: true } },

@@ -114,7 +114,9 @@ export class AdminJobsController {
   list(
     @Query('q') q?: string,
     @Query('status', new ParseEnumPipe(JobStatus, { optional: true })) status?: JobStatus,
+    @Query('scope') scope?: 'active' | 'history',
     @Query('companyId', new ParseUUIDPipe({ optional: true })) companyId?: string,
+    @Query('industry') industry?: string,
     @Query('employmentType', new ParseEnumPipe(EmploymentType, { optional: true }))
     employmentType?: EmploymentType,
     @Query('workplaceType', new ParseEnumPipe(WorkplaceType, { optional: true }))
@@ -126,7 +128,9 @@ export class AdminJobsController {
     return this.jobs.adminList({
       q,
       status,
+      scope: scope === 'history' || scope === 'active' ? scope : undefined,
       companyId,
+      industry,
       employmentType,
       workplaceType,
       employerEdited:

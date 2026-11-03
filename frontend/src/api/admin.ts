@@ -94,7 +94,9 @@ export interface ScreeningQuestionInput {
 export interface AdminJobListParams {
   q?: string;
   status?: JobStatus | '';
+  scope?: 'active' | 'history';
   companyId?: string;
+  industry?: string;
   employmentType?: EmploymentType | '';
   workplaceType?: WorkplaceType | '';
   employerEdited?: boolean;
@@ -111,7 +113,9 @@ function withJobListQuery(path: string, params?: AdminJobListParams) {
   const qs = new URLSearchParams();
   if (params?.q?.trim()) qs.set('q', params.q.trim());
   if (params?.status) qs.set('status', params.status);
+  if (params?.scope) qs.set('scope', params.scope);
   if (params?.companyId) qs.set('companyId', params.companyId);
+  if (params?.industry?.trim()) qs.set('industry', params.industry.trim());
   if (params?.employmentType) qs.set('employmentType', params.employmentType);
   if (params?.workplaceType) qs.set('workplaceType', params.workplaceType);
   if (params?.employerEdited === true) qs.set('employerEdited', 'true');

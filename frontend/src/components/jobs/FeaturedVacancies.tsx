@@ -2,22 +2,13 @@ import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Job } from '../../types/api';
 import { companyLabel, jobDeadlineDays } from '../../utils/jobListing';
+import { CompanyLogoMark } from '../CompanyLogoMark';
 import { JobDetailLink } from '../JobDetailLink';
 
 function ArrowIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
       <path d="M7 17L17 7M9 7h8v8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function BriefcaseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-      <rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="1.8" />
-      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeWidth="1.8" />
-      <path d="M3 12h18" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -42,9 +33,10 @@ export const FeaturedVacancies: React.FC<{
   loading?: boolean;
   title?: string;
   description?: string;
-  badge?: string;
+  badge?: string | ((job: Job) => string);
   publicLinks?: boolean;
   hrefFor?: (job: Job) => string;
+  footer?: (job: Job) => React.ReactNode;
 }> = ({
   jobs,
   loading,
@@ -53,8 +45,9 @@ export const FeaturedVacancies: React.FC<{
   title = 'Featured vacancies',
   description = 'Top opportunities for you',
   badge,
+  footer,
 }) => {
-  const cardBadge = badge ?? (title === 'Recommended for you' ? 'For you' : 'Featured');
+  const defaultBadge = title === 'Recommended for you' ? 'For you' : 'Featured';
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (direction: -1 | 1) => {
@@ -102,18 +95,27 @@ export const FeaturedVacancies: React.FC<{
           {jobs.map((job) => {
             const deadline = jobDeadlineDays(job.applicationDeadline);
             const href = hrefFor ? hrefFor(job) : `/jobs/${job.slug}`;
+            const cardBadge = typeof badge === 'function' ? badge(job) : (badge ?? defaultBadge);
             return (
-              <article key={job.id} className="jb-featured-card">
+              <article key={job.id} className={`jb-featured-card${footer ? ' has-footer' : ''}`}>
                 <div className="jb-featured-top">
-                  <span className="jb-featured-icon">
-                    <BriefcaseIcon />
-                  </span>
+                  <div className="jb-featured-logo">
+                    <CompanyLogoMark
+                      name={job.company?.name}
+                      logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                      className="jb-company-logo jb-company-logo-fallback"
+                      imgClassName="jb-company-logo"
+                    />
+                  </div>
                   <span className="jb-featured-label">{cardBadge}</span>
                 </div>
                 <h3 className="jb-featured-title">
                   <TitleLink job={job} publicLinks={publicLinks} href={href} />
                 </h3>
                 <p className="jb-featured-company">{companyLabel(job)}</p>
+                {job.company?.industry?.name ? (
+                  <p className="jb-featured-industry">{job.company.industry.name}</p>
+                ) : null}
                 <div className="jb-featured-foot">
                   <div className={`jb-deadline${deadline.urgent ? ' is-urgent' : ''}`}>
                     <span className="jb-deadline-label">Deadline</span>
@@ -130,6 +132,7 @@ export const FeaturedVacancies: React.FC<{
                     </Link>
                   )}
                 </div>
+                {footer ? <div className="jb-featured-extra">{footer(job)}</div> : null}
               </article>
             );
           })}

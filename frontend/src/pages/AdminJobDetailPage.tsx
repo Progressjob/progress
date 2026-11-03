@@ -1,28 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api/admin';
 import type { CreateAdminJobPayload } from '../api/admin';
+import { jobsApi } from '../api/jobs';
 import { AdminJobFormFields } from '../components/admin/AdminJobFormFields';
 import { AdminJobStatusActions } from '../components/admin/AdminJobStatusActions';
 import { jobFromRecord, sanitizeJobPayload } from '../components/admin/adminFormUtils';
-import {
-  actorName,
-  formatJobDeadline,
-  formatJobStatus,
-  formatSalaryForAdmin,
-  prettyJobEnum,
-} from '../components/admin/adminJobUi';
-import { JobProse } from '../components/JobProse';
+import { actorName, formatJobStatus } from '../components/admin/adminJobUi';
+import { JobDetailContent } from '../components/jobs/JobDetailContent';
+
+function utcTodayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDaysIso(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function isDeadlineValid(iso: string, minDay: string): boolean {
+  if (!iso) return false;
+  return iso >= minDay;
+}
 
 export const AdminJobDetailPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const editing = searchParams.get('edit') === '1';
+  const reopenMode = searchParams.get('reopen') === '1';
 
   const [jobForm, setJobForm] = useState<CreateAdminJobPayload | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [reopenStep, setReopenStep] = useState<1 | 2>(1);
+  const minDeadline = utcTodayIso();
 
   const jobQuery = useQuery({
     queryKey: ['admin', 'jobs', jobId],
@@ -30,13 +45,43 @@ export const AdminJobDetailPage: React.FC = () => {
     enabled: Boolean(jobId),
   });
 
+  const featuredQuery = useQuery({
+    queryKey: ['jobs', 'detail-featured'],
+    queryFn: () => jobsApi.list({ page: 1, limit: 6 }),
+  });
+
   const job = jobQuery.data;
+  const isReopening = Boolean(reopenMode && job?.status === 'closed');
 
   useEffect(() => {
     if (job) {
-      setJobForm(jobFromRecord(job, job.companyId));
+      const next = jobFromRecord(job, job.companyId);
+      if (reopenMode && job.status === 'closed') {
+        const current = next.applicationDeadline?.slice(0, 10) || '';
+        if (!isDeadlineValid(current, minDeadline)) {
+          next.applicationDeadline = addDaysIso(30);
+        }
+      }
+      setJobForm(next);
+      setReopenStep(1);
     }
-  }, [job]);
+  }, [job, reopenMode, minDeadline]);
+
+  useEffect(() => {
+    if (!reopenMode || !job) return;
+    if (job.status !== 'closed') {
+      const next = new URLSearchParams(searchParams);
+      next.delete('reopen');
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (!editing) {
+      const next = new URLSearchParams(searchParams);
+      next.set('edit', '1');
+      next.set('reopen', '1');
+      setSearchParams(next, { replace: true });
+    }
+  }, [reopenMode, editing, job, searchParams, setSearchParams]);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
@@ -44,18 +89,45 @@ export const AdminJobDetailPage: React.FC = () => {
     void queryClient.invalidateQueries({ queryKey: ['jobs'] });
   };
 
+  const clearEditParams = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('edit');
+    next.delete('reopen');
+    setSearchParams(next);
+  };
+
+  const reopenMutation = useMutation({
+    mutationFn: async () => {
+      if (!jobId || !jobForm) throw new Error('Job is not loaded');
+      if (!isDeadlineValid(jobForm.applicationDeadline, minDeadline)) {
+        throw new Error('Choose a deadline of today or a future date before reopening.');
+      }
+      const sanitized = sanitizeJobPayload(jobForm);
+      await adminApi.updateJob(jobId, { ...sanitized, companyId: undefined });
+      return adminApi.publishJob(jobId);
+    },
+    onSuccess: (updated) => {
+      setActionError(null);
+      setActionNotice(`“${updated.title}” is live again with the new deadline.`);
+      invalidate();
+      navigate('/admin/jobs?view=active');
+    },
+    onError: (err: Error) => setActionError(err.message),
+  });
+
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!jobId || !jobForm) throw new Error('Job is not loaded');
+      if (isReopening && !isDeadlineValid(jobForm.applicationDeadline, minDeadline)) {
+        throw new Error('Choose a deadline of today or a future date before saving.');
+      }
       const sanitized = sanitizeJobPayload(jobForm);
       return adminApi.updateJob(jobId, { ...sanitized, companyId: undefined });
     },
     onSuccess: () => {
       setActionError(null);
       invalidate();
-      const next = new URLSearchParams(searchParams);
-      next.delete('edit');
-      setSearchParams(next);
+      clearEditParams();
     },
     onError: (err: Error) => setActionError(err.message),
   });
@@ -97,12 +169,29 @@ export const AdminJobDetailPage: React.FC = () => {
     publishMutation.isPending ||
     closeMutation.isPending ||
     rejectMutation.isPending ||
-    archiveMutation.isPending;
+    archiveMutation.isPending ||
+    reopenMutation.isPending ||
+    updateMutation.isPending;
+
+  const deadlineOk = useMemo(
+    () => Boolean(jobForm && isDeadlineValid(jobForm.applicationDeadline, minDeadline)),
+    [jobForm, minDeadline],
+  );
+
+  const startReopen = (id: string) => {
+    setActionError(null);
+    setActionNotice(null);
+    setReopenStep(1);
+    setSearchParams({ edit: '1', reopen: '1' });
+    if (id !== jobId) navigate(`/admin/jobs/${id}?edit=1&reopen=1`);
+  };
 
   if (jobQuery.isLoading) {
     return (
-      <div className="admin-jobs-page">
-        <div className="card">Loading job…</div>
+      <div className="job-detail-page">
+        <div className="job-detail-container">
+          <div className="job-card-skeleton" style={{ minHeight: '340px' }} />
+        </div>
       </div>
     );
   }
@@ -122,160 +211,294 @@ export const AdminJobDetailPage: React.FC = () => {
 
   const revisions = job.revisions ?? [];
   const canEdit = job.status !== 'archived';
+  const previewNote =
+    job.status === 'published'
+      ? 'Admin preview — this is the same layout candidates see.'
+      : `Admin preview (${formatJobStatus(job.status)}) — candidates only see published live vacancies.`;
+
+  const goReopenStep2 = () => {
+    setActionError(null);
+    if (!jobForm || !deadlineOk) {
+      setActionError('Choose a deadline of today or a future date to continue.');
+      return;
+    }
+    setReopenStep(2);
+  };
 
   return (
-    <div className="stack admin-jobs-page">
-      <Link to="/admin/jobs" className="admin-jobs-back">
-        ← Jobs
-      </Link>
-
-      {actionError && <div className="alert-box-error">{actionError}</div>}
-
-      <div className="card admin-job-standing">
-        <div className="admin-job-standing-top">
-          <div>
-            <p className="muted" style={{ margin: 0 }}>
-              {job.company?.name ?? 'Employer'}
-              {job.category?.name ? ` · ${job.category.name}` : ''}
-            </p>
-            <h1 className="admin-job-title">{job.title}</h1>
-            <div className="admin-job-facts">
-              <span className={`admin-status-pill is-${job.status}`}>{formatJobStatus(job.status)}</span>
-              {job.employerEdited && <span className="admin-status-pill is-edited">Employer edited</span>}
-              {job.location?.name && <span>{job.location.name}</span>}
-              <span>{prettyJobEnum(job.employmentType)}</span>
-              <span>{prettyJobEnum(job.workplaceType)}</span>
-              <span>{formatSalaryForAdmin(job)}</span>
-              <span>Deadline {formatJobDeadline(job.applicationDeadline)}</span>
-              <span>
-                {job.vacanciesCount} {job.vacanciesCount === 1 ? 'vacancy' : 'vacancies'}
-              </span>
-            </div>
-          </div>
-          <div className="admin-jobs-actions">
-            {canEdit && !editing && (
-              <Link to={`/admin/jobs/${job.id}?edit=1`} className="admin-jobs-action is-primary">
-                Edit
-              </Link>
-            )}
-            {editing && (
-              <button
-                type="button"
-                className="admin-jobs-action"
-                onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete('edit');
-                  setSearchParams(next);
-                }}
-              >
-                Cancel edit
-              </button>
-            )}
+    <div className="admin-job-candidate-view">
+      <div className="admin-job-preview-bar">
+        <div className="admin-job-preview-bar-main">
+          <Link to={isReopening ? '/admin/jobs?view=history' : '/admin/jobs'} className="admin-jobs-back">
+            ← Jobs
+          </Link>
+          <span className={`admin-status-pill is-${job.status}`}>{formatJobStatus(job.status)}</span>
+          {job.employerEdited && <span className="admin-status-pill is-edited">Employer edited</span>}
+          {isReopening && <span className="admin-status-pill is-edited">Reopening</span>}
+        </div>
+        <div className="admin-jobs-actions">
+          {canEdit && !editing && (
+            <Link to={`/admin/jobs/${job.id}?edit=1`} className="admin-jobs-action is-primary">
+              Edit
+            </Link>
+          )}
+          {editing && (
+            <button
+              type="button"
+              className="admin-jobs-action"
+              onClick={() => {
+                clearEditParams();
+                setReopenStep(1);
+                setActionError(null);
+              }}
+            >
+              Cancel
+            </button>
+          )}
+          {!isReopening && (
             <AdminJobStatusActions
               job={job}
               busy={busy}
               onPublish={(id) => publishMutation.mutate(id)}
+              onReopen={startReopen}
               onReject={(id) => rejectMutation.mutate(id)}
               onClose={(id) => closeMutation.mutate(id)}
               onArchive={(id) => archiveMutation.mutate(id)}
             />
-            {job.status === 'published' && (
-              <Link to={`/jobs/${job.slug}`} className="admin-jobs-action">
-                Public preview
-              </Link>
+          )}
+          {job.status === 'published' && (
+            <Link to={`/jobs/${job.slug}`} className="admin-jobs-action">
+              Public URL
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {actionError && <div className="alert-box-error admin-job-preview-error">{actionError}</div>}
+      {actionNotice && <div className="employer-jobs-banner admin-job-preview-error">{actionNotice}</div>}
+
+      {editing && canEdit && jobForm && isReopening && (
+        <div className="admin-reopen-shell">
+          <div className="card admin-reopen-panel">
+            <ol className="admin-reopen-progress" aria-label="Reopen steps">
+              <li className={reopenStep === 1 ? 'is-active' : 'is-done'}>
+                <span className="admin-reopen-progress-num">1</span>
+                <span className="admin-reopen-progress-copy">
+                  <strong>Deadline</strong>
+                  <small>Set a future closing date</small>
+                </span>
+              </li>
+              <li className={reopenStep === 2 ? 'is-active' : ''}>
+                <span className="admin-reopen-progress-num">2</span>
+                <span className="admin-reopen-progress-copy">
+                  <strong>Review</strong>
+                  <small>Check details, then reopen</small>
+                </span>
+              </li>
+            </ol>
+
+            {reopenStep === 1 ? (
+              <section className="admin-reopen-step-panel" aria-labelledby="reopen-step1-title">
+                <div className="admin-reopen-step-head">
+                  <p className="admin-reopen-kicker">Step 1 of 2</p>
+                  <h2 id="reopen-step1-title">Choose a new deadline</h2>
+                  <p>
+                    “{job.title}” is closed. Pick today or a later date before it can go live again.
+                  </p>
+                </div>
+
+                <div className="admin-reopen-deadline-box">
+                  <div className="admin-reopen-deadline-presets">
+                    <span>Quick pick</span>
+                    <div className="emp-preset-pills-row">
+                      {[14, 30, 60].map((days) => {
+                        const value = addDaysIso(days);
+                        return (
+                          <button
+                            key={days}
+                            type="button"
+                            className={`emp-preset-pill-btn${jobForm.applicationDeadline === value ? ' is-selected' : ''}`}
+                            onClick={() => setJobForm({ ...jobForm, applicationDeadline: value })}
+                          >
+                            +{days} days
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="form-input-group admin-reopen-date-field">
+                    <label htmlFor="admin-reopen-deadline">Application deadline</label>
+                    <input
+                      id="admin-reopen-deadline"
+                      type="date"
+                      required
+                      min={minDeadline}
+                      value={jobForm.applicationDeadline}
+                      onChange={(e) => setJobForm({ ...jobForm, applicationDeadline: e.target.value })}
+                    />
+                    <p className="muted">Past dates are blocked.</p>
+                  </div>
+                </div>
+
+                <div className="admin-reopen-footer">
+                  <button
+                    type="button"
+                    className="btn-auth-submit"
+                    onClick={goReopenStep2}
+                    disabled={!deadlineOk}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </section>
+            ) : (
+              <section className="admin-reopen-step-panel" aria-labelledby="reopen-step2-title">
+                <div className="admin-reopen-step-head">
+                  <p className="admin-reopen-kicker">Step 2 of 2</p>
+                  <h2 id="reopen-step2-title">Review posting details</h2>
+                  <p>Confirm the vacancy looks right, then reopen it for candidates.</p>
+                </div>
+
+                <div className="admin-reopen-deadline-chip">
+                  <div>
+                    <span>New deadline</span>
+                    <strong>
+                      {new Date(`${jobForm.applicationDeadline}T00:00:00`).toLocaleDateString(
+                        undefined,
+                        { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' },
+                      )}
+                    </strong>
+                  </div>
+                  <button type="button" className="admin-jobs-action" onClick={() => setReopenStep(1)}>
+                    Change
+                  </button>
+                </div>
+
+                <div className="admin-reopen-form">
+                  <AdminJobFormFields
+                    value={jobForm}
+                    onChange={setJobForm}
+                    hideCompanySelect
+                    hideDeadline
+                  />
+                </div>
+
+                <div className="admin-reopen-footer is-split">
+                  <button
+                    type="button"
+                    className="btn-clear-filters"
+                    onClick={() => setReopenStep(1)}
+                    disabled={busy}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-auth-submit"
+                    disabled={busy || !deadlineOk}
+                    onClick={() => {
+                      setActionError(null);
+                      reopenMutation.mutate();
+                    }}
+                  >
+                    {reopenMutation.isPending ? 'Reopening…' : 'Save & reopen'}
+                  </button>
+                </div>
+              </section>
             )}
           </div>
         </div>
+      )}
 
-        {job.summary && (
-          <section className="admin-job-section">
-            <h2>Summary</h2>
-            <JobProse text={job.summary} />
-          </section>
-        )}
-        {(job.responsibilities || job.description) && (
-          <section className="admin-job-section">
-            <h2>Responsibilities</h2>
-            <JobProse text={job.responsibilities || job.description} preferList />
-          </section>
-        )}
-        {job.requirements && (
-          <section className="admin-job-section">
-            <h2>Requirements</h2>
-            <JobProse text={job.requirements} preferList />
-          </section>
-        )}
-        {job.educationRequirement && (
-          <section className="admin-job-section">
-            <h2>Education</h2>
-            <p>{job.educationRequirement}</p>
-          </section>
-        )}
-      </div>
-
-      <div className="card">
-        <h2 className="admin-jobs-card-title">Changes</h2>
-        {revisions.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No edits recorded yet. Field changes from this point on appear here.
-          </p>
-        ) : (
-          <div className="admin-change-list">
-            {revisions.map((revision) => (
-              <article key={revision.id} className="admin-change-entry">
-                <header className="admin-change-meta">
-                  <strong>{actorName(revision.actor)}</strong>
-                  <span className={`admin-status-pill is-${revision.source}`}>
-                    {revision.source === 'employer' ? 'Employer' : 'Admin'}
-                  </span>
-                  <time className="muted" dateTime={revision.createdAt}>
-                    {new Date(revision.createdAt).toLocaleString()}
-                  </time>
-                </header>
-                <ul className="admin-change-fields">
-                  {revision.changes.map((change) => (
-                    <li key={`${revision.id}-${change.field}`}>
-                      <span className="admin-change-label">{change.label}</span>
-                      <div className="admin-change-pair">
-                        <div className="admin-change-from">{change.from || '—'}</div>
-                        <div className="admin-change-to">{change.to || '—'}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {editing && canEdit && jobForm && (
-        <div className="card">
-          <h2 className="admin-jobs-card-title">Edit posting</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setActionError(null);
-              updateMutation.mutate();
-            }}
-          >
-            <AdminJobFormFields
-              value={jobForm}
-              onChange={setJobForm}
-              hideCompanySelect
-            />
-            <div className="admin-jobs-form-actions">
-              <button
-                type="submit"
-                className="btn-auth-submit"
-                disabled={updateMutation.isPending}
-                style={{ width: 'auto', padding: '0.85rem 2rem' }}
-              >
-                {updateMutation.isPending ? 'Saving…' : 'Save changes'}
-              </button>
+      {editing && canEdit && jobForm && !isReopening && (
+        <div className="admin-reopen-shell">
+          <div className="card admin-reopen-panel">
+            <div className="admin-reopen-step-head">
+              <p className="admin-reopen-kicker">Edit mode</p>
+              <h2>Edit posting</h2>
+              <p>Update vacancy details, then save your changes.</p>
             </div>
-          </form>
+            <form
+              className="admin-reopen-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setActionError(null);
+                updateMutation.mutate();
+              }}
+            >
+              <AdminJobFormFields value={jobForm} onChange={setJobForm} hideCompanySelect />
+              <div className="admin-reopen-footer">
+                <button
+                  type="submit"
+                  className="btn-auth-submit"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+      )}
+
+      {!editing && (
+        <JobDetailContent
+          job={job}
+          featuredJobs={featuredQuery.data?.data ?? []}
+          backFallback="/admin/jobs"
+          previewNote={previewNote}
+        />
+      )}
+
+      {!editing && (
+        <aside className="card admin-job-changes-card">
+          <div className="admin-job-changes-head">
+            <h2 className="admin-jobs-card-title">Edit history</h2>
+            <p className="admin-job-changes-copy">
+              Field-by-field updates for this posting. Before is the old value; After is what it
+              became.
+            </p>
+          </div>
+          {revisions.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>
+              No edits recorded yet.
+            </p>
+          ) : (
+            <div className="admin-change-list">
+              {revisions.map((revision) => (
+                <article key={revision.id} className="admin-change-entry">
+                  <header className="admin-change-meta">
+                    <strong>{actorName(revision.actor)}</strong>
+                    <span className={`admin-status-pill is-${revision.source}`}>
+                      {revision.source === 'employer' ? 'Employer' : 'Admin'}
+                    </span>
+                    <time className="muted" dateTime={revision.createdAt}>
+                      {new Date(revision.createdAt).toLocaleString()}
+                    </time>
+                  </header>
+                  <ul className="admin-change-fields">
+                    {revision.changes.map((change) => (
+                      <li key={`${revision.id}-${change.field}`}>
+                        <span className="admin-change-label">Changed: {change.label}</span>
+                        <div className="admin-change-pair">
+                          <div className="admin-change-from">
+                            <span className="admin-change-side-label">Before</span>
+                            <p>{change.from || '—'}</p>
+                          </div>
+                          <div className="admin-change-to">
+                            <span className="admin-change-side-label">After</span>
+                            <p>{change.to || '—'}</p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          )}
+        </aside>
       )}
     </div>
   );

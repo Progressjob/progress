@@ -665,18 +665,18 @@ export const CompanyJobsPage: React.FC = () => {
 
                 return (
                   <article key={job.id} className="employer-job-row-card">
-                    <div className="emp-job-card-main">
-                      <div className="emp-job-title-row">
-                        <Link
-                          to={job.status === 'published' ? `/jobs/${job.slug}` : `/company/${companyId}/jobs/${job.id}/edit`}
-                          className="emp-job-title"
-                        >
-                          {job.title}
-                        </Link>
-                        {renderStatusBadge(job, urgency)}
-                      </div>
+                    <div className="emp-job-card-body">
+                      <div className="emp-job-card-main">
+                        <div className="emp-job-title-row">
+                          <Link
+                            to={job.status === 'published' ? `/jobs/${job.slug}` : `/company/${companyId}/jobs/${job.id}/edit`}
+                            className="emp-job-title"
+                          >
+                            {job.title}
+                          </Link>
+                          {renderStatusBadge(job, urgency)}
+                        </div>
 
-                      {detailParts.length > 0 && (
                         <p className="emp-job-details">
                           {detailParts.map((part, index) => (
                             <React.Fragment key={`${job.id}-detail-${index}`}>
@@ -684,33 +684,26 @@ export const CompanyJobsPage: React.FC = () => {
                               <span>{part}</span>
                             </React.Fragment>
                           ))}
+                          {detailParts.length > 0 && <span className="emp-job-details-sep" aria-hidden="true">·</span>}
+                          <span className="emp-job-posted">Posted {jobPostedLabel(job.postedAt || job.createdAt)}</span>
                         </p>
-                      )}
 
-                      <div className="emp-job-metrics">
-                        <div className="emp-job-metric">
-                          <span className="emp-job-metric-value">{job._count?.applications ?? 0}</span>
-                          <span className="emp-job-metric-label">Applications</span>
-                        </div>
-                        {typeof job._count?.views === 'number' && (
+                        <div className="emp-job-metrics">
                           <div className="emp-job-metric">
-                            <span className="emp-job-metric-value">{job._count.views}</span>
-                            <span className="emp-job-metric-label">Views</span>
+                            <span className="emp-job-metric-value">{job._count?.applications ?? 0}</span>
+                            <span className="emp-job-metric-label">Apps</span>
                           </div>
-                        )}
-                        <div
-                          className={`emp-job-metric emp-job-deadline emp-job-deadline--${urgency.badgeType}`}
-                        >
-                          <span className="emp-job-metric-label">Timeline</span>
-                          <span className="emp-job-metric-value emp-job-deadline-text">{urgency.label}</span>
+                          {typeof job._count?.views === 'number' && (
+                            <div className="emp-job-metric">
+                              <span className="emp-job-metric-value">{job._count.views}</span>
+                              <span className="emp-job-metric-label">Views</span>
+                            </div>
+                          )}
+                          <div className={`emp-job-metric emp-job-deadline emp-job-deadline--${urgency.badgeType}`}>
+                            <span className="emp-job-deadline-text">{urgency.label}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="emp-job-card-footer">
-                      <span className="emp-job-posted">
-                        Posted {jobPostedLabel(job.postedAt || job.createdAt)}
-                      </span>
 
                       <div className="emp-job-actions">
                         {job.status === 'published' && !urgency.isExpired && (
@@ -735,7 +728,7 @@ export const CompanyJobsPage: React.FC = () => {
                               onClick={() => setCloseTarget(job)}
                               title="Close this job and move to history"
                             >
-                              Close Job
+                              Close
                             </button>
                           </>
                         )}
@@ -747,13 +740,13 @@ export const CompanyJobsPage: React.FC = () => {
                               className="btn btn-sm btn-primary emp-job-reopen-btn"
                               onClick={() => handleOpenReopenModal(job)}
                             >
-                              Update Timeline & Republish
+                              Republish
                             </button>
                             <Link
                               to={`/company/${companyId}/jobs/${job.id}/edit`}
                               className="btn btn-sm btn-secondary"
                             >
-                              Edit Full Post
+                              Edit
                             </Link>
                           </>
                         )}
@@ -763,7 +756,7 @@ export const CompanyJobsPage: React.FC = () => {
                             to={`/company/${companyId}/jobs/${job.id}/edit`}
                             className="btn btn-sm btn-primary"
                           >
-                            Continue Editing Draft
+                            Continue Draft
                           </Link>
                         )}
 
@@ -772,7 +765,7 @@ export const CompanyJobsPage: React.FC = () => {
                             to={`/company/${companyId}/jobs/${job.id}/edit`}
                             className="btn btn-sm btn-secondary"
                           >
-                            Review & Edit
+                            Review
                           </Link>
                         )}
                       </div>
