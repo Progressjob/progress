@@ -12,7 +12,59 @@ import {
   Length,
   IsInt,
   Min,
+  Max,
+  IsDateString,
+  IsBooleanString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+/** Inbox categories mapped from notification type / reference. */
+export const NOTIFICATION_CATEGORIES = [
+  'all',
+  'support',
+  'reports',
+  'companies',
+  'jobs',
+  'applications',
+  'messages',
+] as const;
+
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+export class ListNotificationsQueryDto {
+  @IsOptional()
+  @IsString()
+  @Length(0, 200)
+  q?: string;
+
+  @IsOptional()
+  @IsIn(NOTIFICATION_CATEGORIES)
+  category?: NotificationCategory;
+
+  @IsOptional()
+  @IsBooleanString()
+  unread?: string;
+
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+
+  /** ISO timestamp cursor — return items older than this createdAt. */
+  @IsOptional()
+  @IsDateString()
+  before?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
 
 export class NotificationPreferenceDto {
   @IsString()

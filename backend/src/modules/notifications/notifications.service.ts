@@ -1,7 +1,9 @@
 import { createHash } from 'crypto';
 import { Prisma } from '@prisma/client';
 import {
+  ListNotificationsQueryDto,
   NotificationAudienceDto,
+  NotificationCategory,
   SendNotificationDto,
 } from './notifications.dto';
 import {
@@ -207,12 +209,77 @@ export class NotificationsService {
     });
   }
 
-  list(userId: string) {
-    return this.prisma.notification.findMany({
-      where: { userId },
+  private categoryWhere(
+    category?: NotificationCategory,
+  ): Prisma.NotificationWhereInput {
+    switch (category) {
+      case 'support':
+        return { type: 'support_message' };
+      case 'reports':
+        return { type: 'job_report' };
+      case 'companies':
+        return { type: { in: ['company_review', 'company_verification'] } };
+      case 'jobs':
+        return { type: 'job_pending_review' };
+      case 'applications':
+        return { type: 'application_update' };
+      case 'messages':
+        return { type: 'admin_message' };
+      default:
+        return {};
+    }
+  }
+
+  async list(userId: string, query: ListNotificationsQueryDto = {}) {
+    const limit = Math.min(Math.max(query.limit ?? 40, 1), 100);
+    const term = query.q?.trim();
+    const unreadOnly = query.unread === 'true' || query.unread === '1';
+    const from = query.from ? new Date(query.from) : undefined;
+    const to = query.to ? new Date(query.to) : undefined;
+    const before = query.before ? new Date(query.before) : undefined;
+
+    const where: Prisma.NotificationWhereInput = {
+      userId,
+      ...this.categoryWhere(
+        query.category && query.category !== 'all' ? query.category : undefined,
+      ),
+      ...(unreadOnly ? { readAt: null } : {}),
+      ...(term
+        ? {
+            OR: [
+              { title: { contains: term, mode: 'insensitive' as const } },
+              { message: { contains: term, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+      ...((from && !Number.isNaN(from.getTime())) ||
+      (to && !Number.isNaN(to.getTime())) ||
+      (before && !Number.isNaN(before.getTime()))
+        ? {
+            createdAt: {
+              ...(from && !Number.isNaN(from.getTime())
+                ? { gte: from }
+                : {}),
+              ...(to && !Number.isNaN(to.getTime()) ? { lte: to } : {}),
+              ...(before && !Number.isNaN(before.getTime())
+                ? { lt: before }
+                : {}),
+            },
+          }
+        : {}),
+    };
+
+    const rows = await this.prisma.notification.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: limit + 1,
     });
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore
+      ? items[items.length - 1]?.createdAt.toISOString() ?? null
+      : null;
+    return { items, nextCursor, hasMore };
   }
 
   async markRead(userId: string, id: string) {

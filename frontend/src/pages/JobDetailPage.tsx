@@ -8,6 +8,7 @@ import { supportApi } from '../api/support';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import { useAuth } from '../auth/AuthContext';
 import { JobProse, textHasHeadings } from '../components/JobProse';
+import { CandidateApplicationsBlockedNotice } from '../components/CandidateApplicationsBlockedNotice';
 import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
 import { applyViaParts, extractEmail } from '../utils/hireContact';
 import { profileStrength } from '../utils/candidateProfile';
@@ -144,16 +145,18 @@ function postedLabel(iso?: string | null): string {
     const [reportStatus, setReportStatus] = useState<'idle' | 'sent' | 'error'>('idle');
     const [applyTipOpen, setApplyTipOpen] = useState(false);
 
+    const applicationsBlocked = Boolean(user?.applicationsBlocked);
+
     const candidateProfileQuery = useQuery({
       queryKey: ['candidate', 'profile'],
       queryFn: () => candidateApi.getProfile(),
-      enabled: Boolean(user && hasRole('candidate')),
+      enabled: Boolean(user && hasRole('candidate') && !applicationsBlocked),
     });
 
     const jobQuery = useQuery({
       queryKey: ['job', slug],
       queryFn: () => jobsApi.detail(slug!, 'job_detail_page'),
-      enabled: Boolean(slug),
+      enabled: Boolean(slug) && !authLoading && !applicationsBlocked,
     });
 
     const featuredQuery = useQuery({
@@ -238,7 +241,27 @@ function postedLabel(iso?: string | null): string {
       }
     };
 
-    if (authLoading || jobQuery.isLoading) {
+    if (authLoading) {
+      return (
+        <div className="job-detail-page">
+          <div className="job-detail-container">
+            <div className="job-card-skeleton" style={{ minHeight: '340px' }} />
+          </div>
+        </div>
+      );
+    }
+
+    if (applicationsBlocked) {
+      return (
+        <div className="job-detail-page">
+          <div className="job-detail-container">
+            <CandidateApplicationsBlockedNotice />
+          </div>
+        </div>
+      );
+    }
+
+    if (jobQuery.isLoading) {
       return (
         <div className="job-detail-page">
           <div className="job-detail-container">

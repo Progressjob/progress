@@ -18,6 +18,7 @@ import {
   RolesGuard,
 } from '../../common/auth';
 import {
+  ListNotificationsQueryDto,
   NotificationAudienceDto,
   SendNotificationDto,
   NotificationPreferenceDto,
@@ -60,8 +61,11 @@ export class NotificationsController {
   }
 
   @Get()
-  list(@CurrentUser() user: AuthUser) {
-    return this.notifications.list(user.id);
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListNotificationsQueryDto,
+  ) {
+    return this.notifications.list(user.id, query);
   }
 
   @Get('unread-count')
