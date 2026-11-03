@@ -47,6 +47,10 @@ export const CompanyPortalLayout: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
+    setWorkspace('employer');
+  }, [setWorkspace]);
+
+  useEffect(() => {
     document.body.classList.toggle('nav-locked', menuOpen);
     return () => document.body.classList.remove('nav-locked');
   }, [menuOpen]);
@@ -179,6 +183,12 @@ export const CompanyPortalLayout: React.FC = () => {
                   <p className="nav-account-heading">Hiring workspace</p>
                   <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
                   <NavLink to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
+                  {hasRole('candidate') && (
+                    <>
+                      <NavLink to="/candidate/applications" onClick={() => setWorkspace('candidate')}>My applications</NavLink>
+                      <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
+                    </>
+                  )}
                   <Link to="/">Homepage</Link>
                   <Link to="/contact">Contact support</Link>
                   <div className="nav-account-separator" />
