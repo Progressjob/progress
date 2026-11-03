@@ -351,7 +351,7 @@ export const LandingPage: React.FC = () => {
             {!user && <GuestJobAccessNote />}
           </div>
           <Link to="/jobs" className="btn-view-all-jobs">
-            <span>Explore All Vacancies</span>
+            <span>View more</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
@@ -361,73 +361,61 @@ export const LandingPage: React.FC = () => {
         {jobsQuery.isError ? (
           <p role="alert">Could not load opportunities. <button type="button" onClick={() => void jobsQuery.refetch()}>Try again</button></p>
         ) : jobsQuery.isLoading ? (
-          <div className="jobs-loading-grid">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="featured-jobs-grid">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="job-card-skeleton" />
             ))}
           </div>
         ) : jobsQuery.data?.data && jobsQuery.data.data.length > 0 ? (
           <div className="featured-jobs-grid">
-            {jobsQuery.data.data.map((job) => (
-              <SpotlightCard key={job.id} className="premium-job-card">
-                <div className="job-card-header">
-                  <div className="home-job-logo">
-                    <CompanyLogoMark
-                      name={job.company?.name}
-                      logoId={job.company?.logo?.id ?? job.company?.logoFileId}
-                      imgClassName="company-logo-img"
-                    />
+            {jobsQuery.data.data.slice(0, 6).map((job) => {
+              const hasSalary = Boolean(job.salaryVisibility && (job.salaryMin || job.salaryMax));
+              const salary = hasSalary
+                ? `${job.salaryCurrency ?? 'ETB'} ${[job.salaryMin, job.salaryMax]
+                    .filter((value) => value != null && value !== '')
+                    .map((value) => Number(value).toLocaleString())
+                    .join(' – ')}`
+                : null;
+              const meta = [job.location?.name, job.employmentType.replace(/_/g, ' ')].filter(Boolean).join(' · ');
+              return (
+                <article key={job.id} className="home-feature-card">
+                  <div className="home-feature-top">
+                    <div className="home-job-logo">
+                      <CompanyLogoMark
+                        name={job.company?.name}
+                        logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                        imgClassName="company-logo-img"
+                      />
+                    </div>
+                    <div className="home-feature-copy">
+                      <span className="home-feature-company">{job.company?.name ?? 'Progress Partner'}</span>
+                      <h3>
+                        <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
+                      </h3>
+                    </div>
                   </div>
-                  <div className="job-card-meta">
-                    <span className="job-company-name">{job.company?.name ?? 'Progress Partner'}</span>
-                    <h3 className="job-card-title">
-                      <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="job-card-tags">
-                  {job.location && (
-                    <span className="tag-pill tag-location">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
+                  {meta ? <p className="home-feature-meta">{meta}</p> : null}
+                  <div className="home-feature-foot">
+                    <span className={salary ? 'home-feature-pay' : 'home-feature-pay is-quiet'}>
+                      {salary ? (
+                        <>
+                          {salary}
+                          <small> / month</small>
+                        </>
+                      ) : (
+                        `Closes ${new Date(job.applicationDeadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+                      )}
+                    </span>
+                    <JobDetailLink slug={job.slug} className="home-feature-view">
+                      <span>View</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.2" strokeLinecap="round" />
                       </svg>
-                      {job.location.name}
-                    </span>
-                  )}
-                  <span className="tag-pill tag-type">
-                    {job.employmentType.replace('_', ' ').toUpperCase()}
-                  </span>
-                  {job.workplaceType && (
-                    <span className="tag-pill tag-workplace">{job.workplaceType}</span>
-                  )}
-                </div>
-
-                {job.salaryVisibility && (job.salaryMin || job.salaryMax) && (
-                  <div className="job-salary">
-                    <span className="salary-amount">
-                      {job.salaryCurrency ?? 'ETB'}{' '}
-                      {job.salaryMin ? Number(job.salaryMin).toLocaleString() : ''}
-                      {job.salaryMin && job.salaryMax ? ' - ' : ''}
-                      {job.salaryMax ? Number(job.salaryMax).toLocaleString() : ''}
-                    </span>
-                    <span className="salary-period">/ month</span>
+                    </JobDetailLink>
                   </div>
-                )}
-
-                <div className="job-card-footer">
-                  <span className="job-deadline">
-                    Closing: {new Date(job.applicationDeadline).toLocaleDateString()}
-                  </span>
-                  <JobDetailLink slug={job.slug} className="btn-card-apply">
-                    <span>{user ? 'View Role' : 'Sign in to view'}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </JobDetailLink>
-                </div>
-              </SpotlightCard>
-            ))}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-jobs-banner">
