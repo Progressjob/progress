@@ -10,7 +10,9 @@ export class SavedJobsService {
     return this.prisma.savedJob.findMany({
       where: { candidateId },
       orderBy: { createdAt: 'desc' },
-      include: { job: { include: { company: true, category: true, location: true } } },
+      include: {
+        job: { include: { company: { include: { logo: true } }, category: true, location: true } },
+      },
     });
   }
 

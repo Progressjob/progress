@@ -1,5 +1,6 @@
 import { AdminVerificationPage } from './pages/AdminVerificationPage';
 import { AdminSupportPage } from './pages/AdminSupportPage';
+import { AdminReportDetailPage } from './pages/AdminReportDetailPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import React, { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
@@ -121,6 +122,7 @@ export function App(): React.ReactElement {
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/verification" element={<AdminVerificationPage />} />
               <Route path="/admin/support" element={<AdminSupportPage />} />
+              <Route path="/admin/support/reports/:reportId" element={<AdminReportDetailPage />} />
               <Route path="/admin/notifications" element={<NotificationsPage />} />
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
               <Route path="/admin/jobs" element={<AdminJobsPage />} />

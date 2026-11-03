@@ -25,6 +25,7 @@ export interface AuthRequest {
   params: Record<string, string>;
   body?: Record<string, unknown>;
   ip?: string;
+  headers?: Record<string, unknown>;
 }
 
 export const CurrentUser = createParamDecorator(
@@ -35,8 +36,34 @@ export const CurrentUser = createParamDecorator(
   },
 );
 
+export const OptionalUser = createParamDecorator(
+  (_data: unknown, context: ExecutionContext): AuthUser | undefined =>
+    context.switchToHttp().getRequest<AuthRequest>().user,
+);
+
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
+
+@Injectable()
+export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
+  handleRequest<TUser>(
+    err: unknown,
+    user: TUser,
+    _info: unknown,
+    context: ExecutionContext,
+  ): TUser | undefined {
+    const request = context.switchToHttp().getRequest<AuthRequest>();
+    const header = request.headers?.authorization ?? request.headers?.Authorization;
+    const hasToken = typeof header === 'string' && header.trim().length > 0;
+    if (hasToken) {
+      if (err || !user) {
+        throw err instanceof Error ? err : new UnauthorizedException();
+      }
+      return user;
+    }
+    return user ? user : undefined;
+  }
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {

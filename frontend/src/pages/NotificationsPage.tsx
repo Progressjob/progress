@@ -29,7 +29,7 @@ export function NotificationsPage() {
     if (admin && n.referenceType === "contact")
       return `/admin/support?message=${n.referenceId}`;
     if (admin && n.referenceType === "report")
-      return "/admin/support?tab=reports";
+      return `/admin/support/reports/${n.referenceId}`;
     if (!admin && n.referenceType === "application" && hasRole("candidate"))
       return "/candidate/applications";
     if (admin && n.referenceType === "job")

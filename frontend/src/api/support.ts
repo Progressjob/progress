@@ -18,5 +18,5 @@ export const supportApi = {
   contact: (payload: ContactPayload) =>
     apiFetch('/contact', { method: 'POST', body: payload, skipAuth: true }),
   reportJob: (payload: JobReportPayload) =>
-    apiFetch('/job-reports', { method: 'POST', body: payload, skipAuth: true }),
+    apiFetch('/job-reports', { method: 'POST', body: payload }),
 };

@@ -3,6 +3,15 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
+import { companyLabel, isJobClosed, jobDeadlineDays } from '../utils/jobListing';
+
+function ArrowIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+      <path d="M7 17L17 7M9 7h8v8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export const CandidateSavedJobsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -53,56 +62,77 @@ export const CandidateSavedJobsPage: React.FC = () => {
       {unsaveMutation.isError && (
         <div className="alert-error">{(unsaveMutation.error as Error).message}</div>
       )}
-      <div className="jobs-board-grid">
+      <div className="saved-jobs-grid">
         {saved.map((item) => {
           const job = item.job;
           if (!job) {
             return (
-              <article key={item.jobId} className="premium-job-card">
-                <p>This saved job is no longer available.</p>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-secondary"
-                  onClick={() => unsaveMutation.mutate(item.jobId)}
-                >
-                  Remove
-                </button>
+              <article key={item.jobId} className="jb-featured-card saved-job-card is-closed">
+                <p className="saved-job-unavailable">This saved job is no longer available.</p>
+                <div className="jb-featured-foot">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    disabled={unsaveMutation.isPending}
+                    onClick={() => unsaveMutation.mutate(item.jobId)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </article>
             );
           }
+
+          const closed = isJobClosed(job);
+          const deadline = jobDeadlineDays(job.applicationDeadline);
+          const href = `/jobs/${job.slug}`;
+
           return (
-            <article key={item.jobId} className="premium-job-card">
-              <div className="job-card-header">
-                <div className="company-badge">
+            <article
+              key={item.jobId}
+              className={`jb-featured-card saved-job-card${closed ? ' is-closed' : ''}`}
+            >
+              <div className="saved-job-top">
+                <div className="saved-job-logo">
                   <CompanyLogoMark
                     name={job.company?.name}
                     logoId={job.company?.logo?.id ?? job.company?.logoFileId}
-                    imgClassName="company-logo-img"
+                    className="saved-job-logo-fallback"
+                    imgClassName="saved-job-logo-img"
                   />
                 </div>
-                <div className="job-card-meta">
-                  <span className="job-company-name">{job.company?.name ?? 'Progress Partner'}</span>
-                  <h2 className="job-card-title">
-                    <Link to={`/jobs/${job.slug}`}>{job.title}</Link>
-                  </h2>
+                {closed && <span className="saved-job-closed-badge">Closed</span>}
+              </div>
+              <h3 className="jb-featured-title">
+                {closed ? job.title : <Link to={href}>{job.title}</Link>}
+              </h3>
+              <p className="jb-featured-company">{companyLabel(job)}</p>
+              <p className="saved-job-meta">
+                {job.location?.name || 'Ethiopia'}
+                <span aria-hidden="true"> · </span>
+                {job.employmentType.replaceAll('_', ' ')}
+              </p>
+              <div className="jb-featured-foot">
+                <div className={`jb-deadline${deadline.urgent || closed ? ' is-urgent' : ''}`}>
+                  <span className="jb-deadline-label">Deadline</span>
+                  <strong>{closed ? 'Closed' : deadline.label}</strong>
                 </div>
-              </div>
-              <div className="job-card-tags">
-                {job.location && <span className="tag-pill tag-location">{job.location.name}</span>}
-                <span className="tag-pill tag-type">{job.employmentType.replaceAll('_', ' ')}</span>
-              </div>
-              <div className="job-card-footer">
-                <Link to={`/jobs/${job.slug}`} className="btn-card-apply">
-                  View position
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-secondary"
-                  disabled={unsaveMutation.isPending}
-                  onClick={() => unsaveMutation.mutate(job.id)}
-                >
-                  Remove
-                </button>
+                <div className="saved-job-actions">
+                  {!closed && (
+                    <Link to={href} className="jb-featured-go">
+                      <span className="jb-sr-only">View {job.title}</span>
+                      <ArrowIcon />
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    disabled={unsaveMutation.isPending}
+                    onClick={() => unsaveMutation.mutate(job.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             </article>
           );

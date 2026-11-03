@@ -25,6 +25,45 @@ import {
   UpdateUserStatusDto,
 } from './admin.dto';
 
+const REPORT_PERSON_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
+} as const;
+
+const REPORT_SELECT = {
+  id: true,
+  reason: true,
+  description: true,
+  status: true,
+  createdAt: true,
+  job: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      status: true,
+      employmentType: true,
+      applicationDeadline: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          contactPerson: true,
+          email: true,
+          phone: true,
+        },
+      },
+      creator: { select: REPORT_PERSON_SELECT },
+    },
+  },
+  reporter: { select: REPORT_PERSON_SELECT },
+  reviewer: { select: REPORT_PERSON_SELECT },
+} as const;
+
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
@@ -37,9 +76,9 @@ export class AdminService {
     });
   }
 
-  report(dto: JobReportDto) {
+  report(dto: JobReportDto, reportedBy?: string) {
     return this.prisma.$transaction(async (tx) => {
-      const report = await tx.jobReport.create({ data: dto });
+      const report = await tx.jobReport.create({ data: { ...dto, reportedBy } });
       await notifyReviewers(tx, { title: 'Job reported', message: dto.reason, type: 'job_report', referenceType: 'report', referenceId: report.id });
       return report;
     });
@@ -336,8 +375,17 @@ export class AdminService {
   reports() {
     return this.prisma.jobReport.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { job: { include: { company: true } }, reporter: true, reviewer: true },
+      select: REPORT_SELECT,
     });
+  }
+
+  async getReport(id: string) {
+    const report = await this.prisma.jobReport.findUnique({
+      where: { id },
+      select: REPORT_SELECT,
+    });
+    if (!report) throw new NotFoundException('Report not found');
+    return report;
   }
 
   updateReport(id: string, reviewerId: string, dto: UpdateReportDto) {

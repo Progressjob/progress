@@ -5,6 +5,8 @@ import {
   AuthUser,
   CurrentUser,
   JwtAuthGuard,
+  OptionalJwtAuthGuard,
+  OptionalUser,
   Roles,
   RolesGuard,
 } from '../../common/auth';
@@ -31,8 +33,9 @@ export class PublicSupportController {
 
   @Post('job-reports')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  report(@Body() dto: JobReportDto) {
-    return this.admin.report(dto);
+  @UseGuards(OptionalJwtAuthGuard)
+  report(@Body() dto: JobReportDto, @OptionalUser() user?: AuthUser) {
+    return this.admin.report(dto, user?.id);
   }
 }
 
@@ -80,6 +83,11 @@ export class AdminController {
   @Get('reports')
   reports() {
     return this.admin.reports();
+  }
+
+  @Get('reports/:id')
+  getReport(@Param('id') id: string) {
+    return this.admin.getReport(id);
   }
 
   @Patch('reports/:id')

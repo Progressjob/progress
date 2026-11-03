@@ -36,6 +36,13 @@ export function jobDeadlineDays(iso: string): {
   return { days, label: `${days} days left`, urgent: days <= 7, closed: false };
 }
 
+const CLOSED_JOB_STATUSES = new Set(['closed', 'archived', 'rejected']);
+
+export function isJobClosed(job: Pick<Job, 'applicationDeadline' | 'status'>): boolean {
+  if (CLOSED_JOB_STATUSES.has(job.status)) return true;
+  return jobDeadlineDays(job.applicationDeadline).closed;
+}
+
 export function pickFeaturedJobs(jobs: Job[], count = 8): Job[] {
   const marked = jobs.filter((job) => job.isFeatured);
   return (marked.length ? marked : jobs).slice(0, count);

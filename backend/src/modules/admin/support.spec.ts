@@ -43,4 +43,31 @@ describe('support inbox', () => {
       ],
     });
   });
+
+  it('stores the signed-in reporter on a job report', async () => {
+    const tx = {
+      jobReport: { create: vi.fn().mockResolvedValue({ id: 'report' }) },
+      user: { findMany: vi.fn().mockResolvedValue([{ id: 'admin' }]) },
+      notification: { createMany: vi.fn() },
+    };
+    const db = { $transaction: (fn: (db: typeof tx) => unknown) => fn(tx) };
+    const service = new AdminService(db as unknown as PrismaService);
+    const input = { jobId: 'job-1', reason: 'spam', description: 'Looks fake' };
+    await service.report(input, 'user-1');
+    expect(tx.jobReport.create).toHaveBeenCalledWith({
+      data: { ...input, reportedBy: 'user-1' },
+    });
+    expect(tx.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          userId: 'admin',
+          title: 'Job reported',
+          message: 'spam',
+          type: 'job_report',
+          referenceType: 'report',
+          referenceId: 'report',
+        },
+      ],
+    });
+  });
 });

@@ -454,3 +454,37 @@ export interface TalentSpotlightResponse {
   searchableCount: number;
   items: TalentCard[];
 }
+
+export interface SupportPerson {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface JobReport {
+  id: string;
+  reason: string;
+  description?: string | null;
+  status: string;
+  createdAt: string;
+  job: {
+    id: string;
+    title: string;
+    slug: string;
+    status: JobStatus;
+    employmentType: EmploymentType;
+    applicationDeadline: string;
+    company: {
+      id: string;
+      name: string;
+      slug: string;
+      contactPerson?: string | null;
+      email?: string | null;
+      phone?: string | null;
+    };
+    creator: SupportPerson | null;
+  };
+  reporter: SupportPerson | null;
+}
