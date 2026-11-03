@@ -11037,6 +11037,96 @@ a.admin-metric:hover {
   background: #e5edf8;
 }
 
+.admin-taxonomy-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-taxonomy-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.admin-taxonomy-identity {
+  min-width: 0;
+}
+
+.admin-taxonomy-identity h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #172b46;
+  line-height: 1.4;
+}
+
+.admin-taxonomy-identity p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: #718198;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-taxonomy-identity code {
+  font-size: 0.74rem;
+  color: #526782;
+  background: #f1f5f9;
+  padding: 0.1rem 0.4rem;
+  border-radius: 5px;
+}
+
+.admin-taxonomy-dot {
+  color: #cbd5e1;
+}
+
+.admin-taxonomy-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.75rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-taxonomy-status.is-active {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.admin-taxonomy-status.is-inactive {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-taxonomy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .admin-taxonomy-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .admin-taxonomy-actions {
+    justify-content: flex-start;
+  }
+}
+
 .admin-company-directory {
   display: grid;
   gap: 0.85rem;

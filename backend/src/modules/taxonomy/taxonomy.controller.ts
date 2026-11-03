@@ -48,6 +48,16 @@ export class TaxonomyController {
 export class AdminTaxonomyController {
   constructor(private readonly taxonomy: TaxonomyService) {}
 
+  @Get('categories')
+  listCategories() {
+    return this.taxonomy.listAllCategories();
+  }
+
+  @Get('industries')
+  listIndustries() {
+    return this.taxonomy.listAllIndustries();
+  }
+
   @Post('categories')
   createCategory(@Body() dto: TaxonomyNameDto) {
     return this.taxonomy.createCategory(dto);
@@ -61,6 +71,11 @@ export class AdminTaxonomyController {
   @Post('industries')
   createIndustry(@Body() dto: TaxonomyNameDto) {
     return this.taxonomy.createIndustry(dto);
+  }
+
+  @Put('industries/:id')
+  updateIndustry(@Param('id') id: string, @Body() dto: TaxonomyNameDto) {
+    return this.taxonomy.updateIndustry(id, dto);
   }
 
   @Post('locations')

@@ -30,13 +30,18 @@ export interface Category {
   slug: string;
   description?: string | null;
   parentId?: string | null;
+  isActive?: boolean;
   children?: Category[];
+  _count?: { jobs?: number; children?: number };
 }
 
 export interface Industry {
   id: string;
   name: string;
   slug: string;
+  isActive?: boolean;
+  parentId?: string | null;
+  _count?: { companies?: number; children?: number };
 }
 
 export interface Location {

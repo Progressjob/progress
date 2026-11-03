@@ -34,6 +34,7 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
 import { AdminJobDetailPage } from './pages/AdminJobDetailPage';
 import { AdminCompaniesPage } from './pages/AdminCompaniesPage';
+import { AdminTaxonomyPage } from './pages/AdminTaxonomyPage';
 import { AdminCandidatesPage } from './pages/AdminCandidatesPage';
 
 const queryClient = new QueryClient({
@@ -128,6 +129,7 @@ export function App(): React.ReactElement {
               <Route path="/admin/jobs" element={<AdminJobsPage />} />
               <Route path="/admin/jobs/:jobId" element={<AdminJobDetailPage />} />
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
+              <Route path="/admin/taxonomy" element={<AdminTaxonomyPage />} />
               <Route path="/admin/cv-search" element={<CompanyCvSearchPage />} />
               <Route path="/admin/cv-search/:candidateId" element={<CompanyCvDetailPage />} />
             </Route>

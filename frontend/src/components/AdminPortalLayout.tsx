@@ -9,6 +9,7 @@ const primaryLinks = [
   ['Companies', '/admin/companies'],
   ['Jobs', '/admin/jobs'],
   ['Candidates', '/admin/candidates'],
+  ['Taxonomy', '/admin/taxonomy'],
 ];
 
 export const AdminPortalLayout = () => {
