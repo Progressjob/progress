@@ -142,6 +142,44 @@ hr {
   gap: 0.65rem;
 }
 
+.workspace-switch {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.3rem 0.55rem 0.3rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workspace-switch:hover {
+  background: #f8faff;
+  border-color: #aec9ee;
+}
+
+.workspace-switch:focus-visible {
+  outline: 2px solid #0b57d0;
+  outline-offset: 2px;
+}
+
+.workspace-switch-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.workspace-switch-icon {
+  display: grid;
+  place-items: center;
+  color: #0b57d0;
+}
+
 .main-container {
   max-width: 1120px;
   width: 100%;
@@ -6847,6 +6885,74 @@ a.cv-contact-value {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
 }
 
+.employer-jobs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.employer-jobs-tab {
+  appearance: none;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+}
+
+.employer-jobs-tab.is-active {
+  background: #0b57d0;
+  border-color: #0b57d0;
+  color: #fff;
+}
+
+.employer-jobs-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #ecfdf3;
+  color: #166534;
+  font-weight: 600;
+}
+
+.emp-job-error {
+  margin: 0.45rem 0 0;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.emp-job-reopen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.emp-job-reopen label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.emp-job-reopen input[type="date"] {
+  min-height: 38px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: inherit;
+  color: #0f172a;
+  background: #fff;
+}
+
 .employer-jobs-list {
   display: flex;
   flex-direction: column;
@@ -8437,6 +8543,7 @@ a.nav-switch-mode { display: inline-flex; align-items: center; justify-content: 
   .nav-account-trigger { width: 100%; }
   .nav-account-chevron { margin-left: auto; }
   .nav-account-panel { position: static; width: 100%; margin-top: 0.5rem; box-shadow: none; }
+  .workspace-switch { width: 100%; justify-content: space-between; min-height: 44px; padding-right: 0.7rem; }
 }
 
 .page-back-button {

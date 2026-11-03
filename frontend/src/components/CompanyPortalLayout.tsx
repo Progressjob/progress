@@ -11,13 +11,14 @@ import {
   isExactPath,
   navActive,
 } from '../auth/nav';
-import { employerProfileEditPath } from '../auth/workspace';
+import { employerHomeDestination, employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
 import { ProgressLogo } from './ProgressLogo';
 import { AdminContactCard } from './AdminContactCard';
+import { WorkspaceSwitch } from './WorkspaceSwitch';
 
 export const CompanyPortalLayout: React.FC = () => {
-  const { user, logout, setWorkspace, enableCandidate } = useAuth();
+  const { user, logout, setWorkspace, enableCandidate, hasRole, workspace } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { companyId } = useParams<{ companyId?: string }>();
@@ -66,6 +67,9 @@ export const CompanyPortalLayout: React.FC = () => {
     navigate('/login', { replace: true, state: {} });
   };
 
+  const hasBothAccounts = Boolean(user && hasRole('candidate') && hasRole('employer'));
+  const employerCompanyId = companyId ?? companies[0]?.id ?? user?.companyMemberships[0]?.companyId;
+
   const handleFindWork = async () => {
     setSwitching(true);
     try {
@@ -77,6 +81,18 @@ export const CompanyPortalLayout: React.FC = () => {
     } finally {
       setSwitching(false);
     }
+  };
+
+  const switchToCandidate = () => {
+    setWorkspace('candidate');
+    setMenuOpen(false);
+    navigate('/jobs');
+  };
+
+  const switchToEmployer = () => {
+    setWorkspace('employer');
+    setMenuOpen(false);
+    navigate(employerHomeDestination(employerCompanyId));
   };
 
   return (
@@ -153,6 +169,12 @@ export const CompanyPortalLayout: React.FC = () => {
           <div className="nav-auth">
             {user && (
               <>
+                {hasBothAccounts && (
+                  <WorkspaceSwitch
+                    workspace={workspace}
+                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
+                  />
+                )}
                 <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account">
                   <p className="nav-account-heading">Hiring workspace</p>
                   <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>

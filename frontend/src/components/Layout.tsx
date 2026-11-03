@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isExactPath, isPublicCvSearch, isSectionPath, navActive } from '../auth/nav';
-import { employerProfileEditPath, hiringDestination } from '../auth/workspace';
+import { employerHomeDestination, employerProfileEditPath, hiringDestination } from '../auth/workspace';
 import { ProgressLogo } from './ProgressLogo';
+import { WorkspaceSwitch } from './WorkspaceSwitch';
 
 export const Layout: React.FC = () => {
   const { user, logout, hasRole, workspace, setWorkspace, enableCandidate } = useAuth();
@@ -14,6 +15,7 @@ export const Layout: React.FC = () => {
   const [switching, setSwitching] = useState(false);
   const firstCompanyId = user?.companyMemberships[0]?.companyId;
   const hasEmployerAccess = Boolean(user && (firstCompanyId || hasRole('employer')));
+  const hasBothAccounts = Boolean(user && hasRole('candidate') && hasRole('employer'));
   const inCandidateWorkspace = !user || workspace === 'candidate';
   const profileTo =
     workspace === 'employer'
@@ -70,6 +72,18 @@ export const Layout: React.FC = () => {
     } else {
       navigate(hiringDestination(firstCompanyId));
     }
+  };
+
+  const switchToCandidate = () => {
+    setWorkspace('candidate');
+    setMenuOpen(false);
+    navigate('/jobs');
+  };
+
+  const switchToEmployer = () => {
+    setWorkspace('employer');
+    setMenuOpen(false);
+    navigate(employerHomeDestination(firstCompanyId));
   };
 
   return (
@@ -145,6 +159,12 @@ export const Layout: React.FC = () => {
                   <Link to="/candidate/applications" className="nav-switch-mode">My applications</Link>
                 ) : (
                   <button type="button" className="nav-switch-mode" onClick={handlePostJob}>Post a job</button>
+                )}
+                {hasBothAccounts && (
+                  <WorkspaceSwitch
+                    workspace={workspace}
+                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
+                  />
                 )}
                 <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={workspace === 'employer' ? 'Employer account' : 'My account'}>
                       <p className="nav-account-heading">{workspace === 'employer' ? 'Hiring workspace' : 'Your job search'}</p>

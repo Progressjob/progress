@@ -19,6 +19,11 @@ describe('business rules', () => {
     expect(() => assertJobTransition('archived', 'published')).toThrow(BadRequestException);
   });
 
+  it('lets a closed job return for review or go live again', () => {
+    expect(() => assertJobTransition('closed', 'published')).not.toThrow();
+    expect(() => assertJobTransition('closed', 'pending_review')).not.toThrow();
+  });
+
   it('supports the normal applicant pipeline', () => {
     expect(() => assertApplicationTransition('submitted', 'reviewing')).not.toThrow();
     expect(() => assertApplicationTransition('shortlisted', 'interview')).not.toThrow();

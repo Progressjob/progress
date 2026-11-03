@@ -26,6 +26,7 @@ import {
 import {
   CreateJobDto,
   EmployerCreateJobDto,
+  EmployerReopenJobDto,
   EmployerUpdateJobDto,
   ReplaceJobSkillsDto,
   ReplaceScreeningDto,
@@ -244,5 +245,15 @@ export class EmployerJobsController {
     @Param('jobId') jobId: string,
   ) {
     return this.jobs.employerSubmit(user.id, companyId, jobId);
+  }
+
+  @Post(':jobId/reopen')
+  reopen(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('jobId') jobId: string,
+    @Body() dto: EmployerReopenJobDto,
+  ) {
+    return this.jobs.employerReopen(user.id, companyId, jobId, dto.applicationDeadline);
   }
 }

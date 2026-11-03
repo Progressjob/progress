@@ -135,6 +135,11 @@ export class EmployerCreateJobDto extends OmitType(CreateJobDto, ['companyId'] a
 
 export class EmployerUpdateJobDto extends OmitType(UpdateJobDto, ['companyId'] as const) {}
 
+export class EmployerReopenJobDto {
+  @IsDateString()
+  applicationDeadline!: string;
+}
+
 export class ScreeningQuestionDto {
   @IsString()
   questionText!: string;

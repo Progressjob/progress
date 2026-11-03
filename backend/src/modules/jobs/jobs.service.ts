@@ -71,7 +71,7 @@ const JOB_TRANSITIONS: Record<JobStatus, JobStatus[]> = {
   pending_review: ['published', 'rejected'],
   published: ['closed'],
   rejected: ['draft', 'archived'],
-  closed: ['archived', 'published'],
+  closed: ['archived', 'published', 'pending_review'],
   archived: [],
 };
 
@@ -458,6 +458,40 @@ export class JobsService {
     if (!['draft', 'rejected'].includes(job.status)) {
       throw new BadRequestException('Only draft or rejected jobs can be submitted');
     }
+    const updated = await this.transition(jobId, next, userId);
+    if (next === 'pending_review') {
+      await this.notifyReviewers(updated);
+    }
+    return updated;
+  }
+
+  async employerReopen(
+    userId: string,
+    companyId: string,
+    jobId: string,
+    applicationDeadline: string,
+  ) {
+    const job = await this.getEmployerManagedJob(userId, companyId, jobId);
+    if (job.status !== 'closed') {
+      throw new BadRequestException('Only closed jobs can be posted again');
+    }
+    const deadline = new Date(applicationDeadline);
+    if (Number.isNaN(deadline.getTime())) {
+      throw new BadRequestException('Choose a valid application deadline');
+    }
+    const deadlineDay = new Date(
+      Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate()),
+    );
+    if (deadlineDay < this.today()) {
+      throw new BadRequestException('Choose a deadline of today or later');
+    }
+    const { canSelfPublish } = await this.policy.getCompanyPostingContext(companyId);
+    const next: JobStatus = canSelfPublish ? 'published' : 'pending_review';
+    await this.update(
+      jobId,
+      { applicationDeadline },
+      { actorId: userId, source: 'employer' },
+    );
     const updated = await this.transition(jobId, next, userId);
     if (next === 'pending_review') {
       await this.notifyReviewers(updated);
