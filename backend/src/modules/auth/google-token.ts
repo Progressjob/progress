@@ -61,3 +61,8 @@ export async function verifyGoogleIdToken(idToken: string, clientId: string): Pr
     lastName: names.lastName,
   };
 }
+
+/** Object wrapper so unit tests can `vi.spyOn` without brittle ESM module mocks. */
+export const googleIdTokenVerifier = {
+  verify: verifyGoogleIdToken,
+};

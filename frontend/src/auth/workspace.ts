@@ -22,6 +22,7 @@ export function resolveWorkspace(
   if (isEmployer && !isCandidate) return 'employer';
   if (isCandidate && !isEmployer) return 'candidate';
   if (stored) return stored;
+  if (isEmployer) return 'employer';
   return 'candidate';
 }
 

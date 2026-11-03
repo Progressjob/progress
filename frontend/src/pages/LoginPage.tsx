@@ -1,13 +1,37 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getStoredWorkspace, resolveWorkspace } from '../auth/workspace';
+import { setStoredWorkspace } from '../auth/workspace';
 import { ApiError } from '../api/client';
 import { GoogleContinueButton } from '../components/GoogleContinueButton';
 import { ProgressLogo } from '../components/ProgressLogo';
 
 export function getValidRedirect(from: string | null | undefined, roles: string[]): string {
+  // 1. Admin/moderator portal
+  if (roles.includes('admin') || roles.includes('moderator')) {
+    if (from && from.startsWith('/admin')) {
+      return from;
+    }
+    return '/admin';
+  }
+
+  // 2. Employer portal: Whenever an employer logs in, they should land first on employer page
+  if (roles.includes('employer')) {
+    if (from && (from.startsWith('/company') || from.startsWith('/employer'))) {
+      return from;
+    }
+    return '/company';
+  }
+
+  // 3. Candidate routes (applications, apply flow, or saved public location)
   if (from) {
+    if (
+      (from.startsWith('/candidate') || from.endsWith('/apply')) &&
+      roles.includes('candidate')
+    ) {
+      return from;
+    }
+
     const isPublic =
       from === '/' ||
       from === '/jobs' ||
@@ -19,39 +43,13 @@ export function getValidRedirect(from: string | null | undefined, roles: string[
     if (isPublic) {
       return from;
     }
-
-    if (from.startsWith('/admin') && (roles.includes('admin') || roles.includes('moderator'))) {
-      return from;
-    }
-
-    if (
-      (from.startsWith('/company') || from.startsWith('/employer')) &&
-      roles.includes('employer')
-    ) {
-      return from;
-    }
-
-    if (
-      (from.startsWith('/candidate') || from.endsWith('/apply')) &&
-      roles.includes('candidate')
-    ) {
-      return from;
-    }
   }
 
-  // Fallback to role-specific default portal
-  if (roles.includes('admin') || roles.includes('moderator')) {
-    return '/admin';
-  }
-  const workspace = resolveWorkspace(roles, getStoredWorkspace());
-  if (workspace === 'employer' && roles.includes('employer')) {
-    return '/company';
-  }
   return '/jobs';
 }
 
 export const LoginPage: React.FC = () => {
-  const { user: currentUser, login, loginWithGoogle, logout } = useAuth();
+  const { user: currentUser, login, loginWithGoogle, logout, setWorkspace } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -69,6 +67,14 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       const user = await login(identifier, password);
+      const isEmployer =
+        user.roles.includes('employer') &&
+        !user.roles.includes('admin') &&
+        !user.roles.includes('moderator');
+      if (isEmployer) {
+        setStoredWorkspace('employer');
+        setWorkspace('employer');
+      }
       const target = getValidRedirect(from, user.roles);
       navigate(target, { replace: true });
     } catch (err) {
@@ -87,6 +93,14 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       const { user, isNew } = await loginWithGoogle(idToken);
+      const isEmployer =
+        user.roles.includes('employer') &&
+        !user.roles.includes('admin') &&
+        !user.roles.includes('moderator');
+      if (isEmployer) {
+        setStoredWorkspace('employer');
+        setWorkspace('employer');
+      }
       const target = isNew
         ? '/candidate/profile?edit=1&welcome=1'
         : getValidRedirect(from, user.roles);
@@ -110,6 +124,14 @@ export const LoginPage: React.FC = () => {
     setActiveDemo(label);
     try {
       const user = await login(demoEmail, demoPass);
+      const isEmployer =
+        user.roles.includes('employer') &&
+        !user.roles.includes('admin') &&
+        !user.roles.includes('moderator');
+      if (isEmployer) {
+        setStoredWorkspace('employer');
+        setWorkspace('employer');
+      }
       // When explicitly clicking a demo profile, clear mismatched 'from' and go to that role's home
       const target = getValidRedirect(null, user.roles);
       navigate(target, { replace: true });

@@ -7,13 +7,6 @@ import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
 import { hireBoxDisplay, parseHireBox } from '../../utils/hireContact';
 import type { Category, EmploymentType, WorkplaceType } from '../../types/api';
 
-const selectStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.75rem',
-  borderRadius: '12px',
-  border: '1px solid #cbd5e1',
-};
-
 function flattenCategories(categories: Category[]): Category[] {
   const out: Category[] = [];
   for (const c of categories) {
@@ -23,6 +16,12 @@ function flattenCategories(categories: Category[]): Category[] {
     }
   }
   return out;
+}
+
+function addDaysIso(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 function FieldViewToggle({
@@ -38,8 +37,18 @@ function FieldViewToggle({
       className="btn-field-view"
       onClick={onToggle}
       aria-pressed={expanded}
+      style={{
+        border: '1px solid #cbd5e1',
+        background: '#f8fafc',
+        color: '#475569',
+        borderRadius: '9999px',
+        padding: '0.2rem 0.65rem',
+        fontSize: '0.78rem',
+        fontWeight: 600,
+        cursor: 'pointer',
+      }}
     >
-      {expanded ? 'Short view' : 'Full view'}
+      {expanded ? 'Short view ▲' : 'Full view ▼'}
     </button>
   );
 }
@@ -51,6 +60,7 @@ export interface AdminJobFormFieldsProps {
   companySelect?: React.ReactNode;
   minDeadline?: string;
   hideDeadline?: boolean;
+  idPrefix?: string;
 }
 
 export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
@@ -60,6 +70,7 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   companySelect,
   minDeadline,
   hideDeadline,
+  idPrefix = 'adm',
 }) => {
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -105,314 +116,476 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   };
 
   return (
-    <div className="contact-form-fields">
-      {!hideCompanySelect && companySelect}
-
-      <div className="form-input-group">
-        <label htmlFor="adm-title">Job title *</label>
-        <input
-          id="adm-title"
-          required
-          value={value.title}
-          onChange={(e) => set({ title: e.target.value })}
-        />
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-cat">Responsibilities *</label>
-          <select
-            id="adm-cat"
-            required
-            value={value.categoryId}
-            onChange={(e) => set({ categoryId: e.target.value })}
-            style={selectStyle}
-          >
-            <option value="">— Select responsibility area —</option>
-            {categoryOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-loc">Location</label>
-          <select
-            id="adm-loc"
-            value={value.locationId ?? ''}
-            onChange={(e) => set({ locationId: e.target.value || undefined })}
-            style={selectStyle}
-          >
-            <option value="">— Optional —</option>
-            {(locationsQuery.data ?? []).map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name} ({l.region ?? 'Ethiopia'})
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {value.categoryId && (
-        <div className="form-input-group">
-          <div className="form-field-heading">
-            <label htmlFor="adm-resp-desc">
-              Responsibility description *
-              {selectedCategory ? ` (${selectedCategory.name})` : ''}
-            </label>
-            <FieldViewToggle
-              expanded={respFullView}
-              onToggle={() => setRespFullView((open) => !open)}
-            />
+    <div className="profile-form-sections">
+      {/* 1. Role Overview & Placement */}
+      <section className="profile-form-section">
+        <div className="profile-section-header">
+          <div className="profile-section-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
           </div>
-          {selectedCategory?.description && (
-            <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>
-              {selectedCategory.description}
+          <div className="profile-section-title-wrap">
+            <h2 className="profile-section-title">Role Overview</h2>
+            <p className="profile-section-desc">
+              Specify the position title, professional category, location, and workplace arrangement.
             </p>
+          </div>
+        </div>
+
+        <div className="profile-form-grid">
+          {!hideCompanySelect && companySelect && (
+            <div className="profile-field-wrap">{companySelect}</div>
           )}
-          <textarea
-            id="adm-resp-desc"
-            className={respFullView ? 'textarea-full-view' : 'textarea-short-view'}
-            rows={respFullView ? 16 : 3}
-            required
-            value={value.responsibilities ?? ''}
-            onChange={(e) => set({ responsibilities: e.target.value })}
-            placeholder="Describe what the hire will do in this role (shown to candidates)."
-          />
-        </div>
-      )}
 
-      <div className="form-input-group">
-        <div className="form-field-heading">
-          <label htmlFor="adm-req">Required Qualifications and Skills</label>
-          <FieldViewToggle
-            expanded={reqFullView}
-            onToggle={() => setReqFullView((open) => !open)}
-          />
-        </div>
-        <textarea
-          id="adm-req"
-          className={reqFullView ? 'textarea-full-view' : 'textarea-short-view'}
-          rows={reqFullView ? 16 : 3}
-          value={value.requirements ?? ''}
-          onChange={(e) => set({ requirements: e.target.value || undefined })}
-        />
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-edu">Education requirement</label>
-          <select
-            id="adm-edu"
-            value={value.educationRequirement ?? ''}
-            onChange={(e) => set({ educationRequirement: e.target.value || undefined })}
-            style={selectStyle}
-          >
-            <option value="">— Optional —</option>
-            {educationRequirementOptions(value.educationRequirement).map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-exp">Required Work Experience (years)</label>
-          <input
-            id="adm-exp"
-            type="number"
-            min={0}
-            step={0.5}
-            value={value.experienceMinYears ?? ''}
-            onChange={(e) =>
-              set({
-                experienceMinYears: e.target.value ? Number(e.target.value) : undefined,
-              })
-            }
-          />
-        </div>
-      </div>
-
-      <div className="form-input-group">
-        <label htmlFor="adm-vac">Open positions *</label>
-        <input
-          id="adm-vac"
-          type="number"
-          min={1}
-          required
-          value={value.vacanciesCount}
-          onChange={(e) => set({ vacanciesCount: Number(e.target.value) || 1 })}
-          style={{ maxWidth: '120px' }}
-        />
-      </div>
-
-      <div className="form-row-two">
-        <div className="form-input-group">
-          <label htmlFor="adm-emp">Employment type</label>
-          <select
-            id="adm-emp"
-            value={value.employmentType}
-            onChange={(e) => set({ employmentType: e.target.value as EmploymentType })}
-            style={selectStyle}
-          >
-            <option value="full_time">Full time</option>
-            <option value="part_time">Part time</option>
-            <option value="contract">Contract</option>
-            <option value="internship">Internship</option>
-            <option value="temporary">Temporary</option>
-            <option value="volunteer">Volunteer</option>
-          </select>
-        </div>
-        <div className="form-input-group">
-          <label htmlFor="adm-work">Workplace</label>
-          <select
-            id="adm-work"
-            value={value.workplaceType}
-            onChange={(e) => set({ workplaceType: e.target.value as WorkplaceType })}
-            style={selectStyle}
-          >
-            <option value="on_site">On-site</option>
-            <option value="hybrid">Hybrid</option>
-            <option value="remote">Remote</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="form-input-group">
-        <span style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Salary</span>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div className="profile-field-wrap">
+            <label htmlFor={`${idPrefix}-title`}>
+              Job Title <span className="profile-field-req">*</span>
+            </label>
             <input
-              type="radio"
-              name="adm-salary-mode"
-              checked={salaryMode === 'negotiable'}
-              onChange={() => setSalaryMode('negotiable')}
+              id={`${idPrefix}-title`}
+              type="text"
+              required
+              placeholder="e.g. Senior Software Engineer, Operations Manager, Accountant"
+              value={value.title}
+              onChange={(e) => set({ title: e.target.value })}
             />
-            Negotiable
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <input
-              type="radio"
-              name="adm-salary-mode"
-              checked={salaryMode === 'range'}
-              onChange={() => setSalaryMode('range')}
-            />
-            Specify range
-          </label>
-        </div>
-        {salaryMode === 'range' && (
-          <div className="form-row-two">
-            <div className="form-input-group">
-              <label htmlFor="adm-sal-min">Minimum</label>
-              <input
-                id="adm-sal-min"
-                type="number"
-                min={0}
-                value={value.salaryMin ?? ''}
-                onChange={(e) =>
-                  set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
+          </div>
+
+          <div className="job-form-grid-2">
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-cat`}>
+                Career Category <span className="profile-field-req">*</span>
+              </label>
+              <select
+                id={`${idPrefix}-cat`}
+                required
+                value={value.categoryId}
+                onChange={(e) => set({ categoryId: e.target.value })}
+              >
+                <option value="">— Select Career Category —</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="form-input-group">
-              <label htmlFor="adm-sal-max">Maximum</label>
-              <input
-                id="adm-sal-max"
-                type="number"
-                min={0}
-                value={value.salaryMax ?? ''}
-                onChange={(e) =>
-                  set({ salaryMax: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
-            </div>
-            <div className="form-input-group">
-              <label htmlFor="adm-currency">Currency</label>
-              <input
-                id="adm-currency"
-                value={value.salaryCurrency ?? 'ETB'}
-                onChange={(e) => set({ salaryCurrency: e.target.value || undefined })}
-              />
+
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-loc`}>
+                Job Location <span className="profile-field-opt">(Optional)</span>
+              </label>
+              <select
+                id={`${idPrefix}-loc`}
+                value={value.locationId ?? ''}
+                onChange={(e) => set({ locationId: e.target.value || undefined })}
+              >
+                <option value="">— All Ethiopia / Select City or Region —</option>
+                {(locationsQuery.data ?? []).map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} ({l.region ?? 'Ethiopia'})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="form-input-group">
-        <span style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-          How to hire *
-        </span>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <input
-              type="radio"
-              name="adm-hire-method"
-              required
-              checked={value.applicationMethod === 'email'}
-              onChange={() => set({ applicationMethod: 'email' })}
-            />
-            Contact the company
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <input
-              type="radio"
-              name="adm-hire-method"
-              required
-              checked={value.applicationMethod === 'admin'}
-              onChange={() =>
-                set({
-                  applicationMethod: 'admin',
-                  applicationEmail: undefined,
-                  applicationInstructions: undefined,
-                })
-              }
-            />
-            Hire through Progress (admin)
-          </label>
+          <div className="job-form-grid-2">
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-work`}>
+                Workplace Arrangement <span className="profile-field-req">*</span>
+              </label>
+              <select
+                id={`${idPrefix}-work`}
+                value={value.workplaceType}
+                onChange={(e) => set({ workplaceType: e.target.value as WorkplaceType })}
+              >
+                <option value="on_site">On-site (Work at office/facility)</option>
+                <option value="hybrid">Hybrid (Split between office & home)</option>
+                <option value="remote">Fully Remote (Work from anywhere)</option>
+              </select>
+            </div>
+
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-emp`}>
+                Employment Type <span className="profile-field-req">*</span>
+              </label>
+              <select
+                id={`${idPrefix}-emp`}
+                value={value.employmentType}
+                onChange={(e) => set({ employmentType: e.target.value as EmploymentType })}
+              >
+                <option value="full_time">Full time</option>
+                <option value="part_time">Part time</option>
+                <option value="contract">Contract</option>
+                <option value="internship">Internship</option>
+                <option value="temporary">Temporary</option>
+                <option value="volunteer">Volunteer</option>
+              </select>
+            </div>
+          </div>
         </div>
-        {value.applicationMethod === 'email' && (
-          <div className="form-input-group">
-            <label htmlFor="adm-hire-contact">How should candidates contact you? *</label>
+      </section>
+
+      {/* 2. Responsibilities & Requirements */}
+      <section className="profile-form-section">
+        <div className="profile-section-header">
+          <div className="profile-section-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <div className="profile-section-title-wrap">
+            <h2 className="profile-section-title">Duties & Qualifications</h2>
+            <p className="profile-section-desc">
+              Detail day-to-day deliverables, credentials, required experience, and vacancy headcount.
+            </p>
+          </div>
+        </div>
+
+        <div className="profile-form-grid">
+          <div className="profile-field-wrap">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <label htmlFor={`${idPrefix}-resp-desc`}>
+                Role Responsibilities & Key Duties <span className="profile-field-req">*</span>
+                {selectedCategory ? ` (${selectedCategory.name})` : ''}
+              </label>
+              <FieldViewToggle
+                expanded={respFullView}
+                onToggle={() => setRespFullView((open) => !open)}
+              />
+            </div>
+            {selectedCategory?.description && (
+              <p style={{ margin: '0 0 0.4rem', fontSize: '0.82rem', color: '#64748b' }}>
+                Tip: {selectedCategory.description}
+              </p>
+            )}
             <textarea
-              id="adm-hire-contact"
-              rows={4}
-              style={{ whiteSpace: 'pre-wrap' }}
+              id={`${idPrefix}-resp-desc`}
+              rows={respFullView ? 14 : 5}
               required
-              value={hireBoxDisplay(value.applicationEmail, value.applicationInstructions)}
-              onChange={(e) => set(parseHireBox(e.target.value))}
-              placeholder="Phone, Telegram, WhatsApp, email, office visit — any way to reach you"
+              value={value.responsibilities ?? ''}
+              onChange={(e) => set({ responsibilities: e.target.value })}
+              placeholder="Outline the main responsibilities, day-to-day tasks, deliverables, and team expectations for this position..."
             />
-            <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
-              Email is optional. Write whatever candidates should use to get in touch.
+          </div>
+
+          <div className="profile-field-wrap">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <label htmlFor={`${idPrefix}-req`}>
+                Required Qualifications & Skills <span className="profile-field-opt">(Optional)</span>
+              </label>
+              <FieldViewToggle
+                expanded={reqFullView}
+                onToggle={() => setReqFullView((open) => !open)}
+              />
+            </div>
+            <textarea
+              id={`${idPrefix}-req`}
+              rows={reqFullView ? 14 : 5}
+              value={value.requirements ?? ''}
+              onChange={(e) => set({ requirements: e.target.value || undefined })}
+              placeholder="List required degrees, technical proficiencies, tools, certifications, languages, and core skills..."
+            />
+          </div>
+
+          <div className="job-form-grid-3">
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-edu`}>
+                Minimum Education <span className="profile-field-opt">(Optional)</span>
+              </label>
+              <select
+                id={`${idPrefix}-edu`}
+                value={value.educationRequirement ?? ''}
+                onChange={(e) => set({ educationRequirement: e.target.value || undefined })}
+              >
+                <option value="">— Any Education Level —</option>
+                {educationRequirementOptions(value.educationRequirement).map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-exp`}>
+                Work Experience (Years) <span className="profile-field-opt">(Optional)</span>
+              </label>
+              <input
+                id={`${idPrefix}-exp`}
+                type="number"
+                min={0}
+                step={0.5}
+                placeholder="e.g. 2 (or 0 for entry)"
+                value={value.experienceMinYears ?? ''}
+                onChange={(e) =>
+                  set({
+                    experienceMinYears: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-vac`}>
+                Open Positions <span className="profile-field-req">*</span>
+              </label>
+              <input
+                id={`${idPrefix}-vac`}
+                type="number"
+                min={1}
+                required
+                value={value.vacanciesCount}
+                onChange={(e) => set({ vacanciesCount: Math.max(1, Number(e.target.value) || 1) })}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Compensation */}
+      <section className="profile-form-section">
+        <div className="profile-section-header">
+          <div className="profile-section-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div className="profile-section-title-wrap">
+            <h2 className="profile-section-title">Compensation</h2>
+            <p className="profile-section-desc">
+              Indicate whether salary is negotiable or provide a transparent compensation range.
             </p>
           </div>
-        )}
-        {value.applicationMethod === 'admin' && (
-          <p className="muted" style={{ margin: 0, fontSize: '0.9rem' }}>
-            Candidates will be told to contact Progress at <strong>{PROGRESS_HIRE_EMAIL}</strong>.
-          </p>
-        )}
-      </div>
-
-      {!hideDeadline && (
-        <div className="form-input-group">
-          <label htmlFor="adm-deadline">Application deadline *</label>
-          <input
-            id="adm-deadline"
-            type="date"
-            required
-            min={minDeadline}
-            value={value.applicationDeadline}
-            onChange={(e) => set({ applicationDeadline: e.target.value })}
-          />
-          {minDeadline ? (
-            <p className="muted" style={{ margin: '0.35rem 0 0', fontSize: '0.82rem' }}>
-              Deadline must be today or a future date.
-            </p>
-          ) : null}
         </div>
-      )}
+
+        <div className="profile-form-grid">
+          <div className="job-form-radio-grid">
+            <label
+              className={`job-form-radio-card ${salaryMode === 'negotiable' ? 'is-active' : ''}`}
+            >
+              <input
+                type="radio"
+                name={`${idPrefix}-salary-mode`}
+                checked={salaryMode === 'negotiable'}
+                onChange={() => setSalaryMode('negotiable')}
+              />
+              <div className="job-form-radio-content">
+                <span className="job-form-radio-title">Negotiable / Competitive</span>
+                <span className="job-form-radio-desc">
+                  Salary will be discussed during interview based on qualifications.
+                </span>
+              </div>
+            </label>
+
+            <label className={`job-form-radio-card ${salaryMode === 'range' ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={`${idPrefix}-salary-mode`}
+                checked={salaryMode === 'range'}
+                onChange={() => setSalaryMode('range')}
+              />
+              <div className="job-form-radio-content">
+                <span className="job-form-radio-title">Specify Salary Range</span>
+                <span className="job-form-radio-desc">
+                  Display minimum and maximum monthly pay range publicly.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {salaryMode === 'range' && (
+            <div className="job-form-grid-3">
+              <div className="profile-field-wrap">
+                <label htmlFor={`${idPrefix}-sal-min`}>Minimum Pay</label>
+                <input
+                  id={`${idPrefix}-sal-min`}
+                  type="number"
+                  min={0}
+                  placeholder="e.g. 15000"
+                  value={value.salaryMin ?? ''}
+                  onChange={(e) =>
+                    set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })
+                  }
+                />
+              </div>
+
+              <div className="profile-field-wrap">
+                <label htmlFor={`${idPrefix}-sal-max`}>Maximum Pay</label>
+                <input
+                  id={`${idPrefix}-sal-max`}
+                  type="number"
+                  min={0}
+                  placeholder="e.g. 25000"
+                  value={value.salaryMax ?? ''}
+                  onChange={(e) =>
+                    set({ salaryMax: e.target.value ? Number(e.target.value) : undefined })
+                  }
+                />
+              </div>
+
+              <div className="profile-field-wrap">
+                <label htmlFor={`${idPrefix}-currency`}>Currency</label>
+                <input
+                  id={`${idPrefix}-currency`}
+                  placeholder="ETB"
+                  value={value.salaryCurrency ?? 'ETB'}
+                  onChange={(e) => set({ salaryCurrency: e.target.value || undefined })}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 4. Application Channel & Deadline */}
+      <section className="profile-form-section">
+        <div className="profile-section-header">
+          <div className="profile-section-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <div className="profile-section-title-wrap">
+            <h2 className="profile-section-title">Application Channel & Deadline</h2>
+            <p className="profile-section-desc">
+              Configure how candidates should reach out and set the final closing date.
+            </p>
+          </div>
+        </div>
+
+        <div className="profile-form-grid">
+          <div className="profile-field-wrap">
+            <label style={{ marginBottom: '0.25rem' }}>
+              How candidates apply <span className="profile-field-req">*</span>
+            </label>
+            <div className="job-form-radio-grid">
+              <label
+                className={`job-form-radio-card ${value.applicationMethod === 'email' ? 'is-active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name={`${idPrefix}-hire-method`}
+                  required
+                  checked={value.applicationMethod === 'email'}
+                  onChange={() => set({ applicationMethod: 'email' })}
+                />
+                <div className="job-form-radio-content">
+                  <span className="job-form-radio-title">Direct Company Contact</span>
+                  <span className="job-form-radio-desc">
+                    Candidates contact you directly via phone, Telegram, email, or walk-in.
+                  </span>
+                </div>
+              </label>
+
+              <label
+                className={`job-form-radio-card ${value.applicationMethod === 'admin' ? 'is-active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name={`${idPrefix}-hire-method`}
+                  required
+                  checked={value.applicationMethod === 'admin'}
+                  onChange={() =>
+                    set({
+                      applicationMethod: 'admin',
+                      applicationEmail: undefined,
+                      applicationInstructions: undefined,
+                    })
+                  }
+                />
+                <div className="job-form-radio-content">
+                  <span className="job-form-radio-title">Progress Manpower Assisted</span>
+                  <span className="job-form-radio-desc">
+                    Applications are coordinated and screened through Progress Manpower staff.
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {value.applicationMethod === 'email' && (
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-hire-contact`}>
+                Contact Channels & Application Instructions <span className="profile-field-req">*</span>
+              </label>
+              <textarea
+                id={`${idPrefix}-hire-contact`}
+                rows={4}
+                style={{ whiteSpace: 'pre-wrap' }}
+                required
+                value={hireBoxDisplay(value.applicationEmail, value.applicationInstructions)}
+                onChange={(e) => set(parseHireBox(e.target.value))}
+                placeholder="Phone number, Telegram (@username), email, WhatsApp, or office walk-in address for applications..."
+              />
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                Write whatever candidates should use to submit their CV or get in touch.
+              </p>
+            </div>
+          )}
+
+          {value.applicationMethod === 'admin' && (
+            <div className="job-form-info-callout">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px', color: '#0b57d0' }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <div>
+                Candidates will be directed to submit applications through Progress Manpower staff at{' '}
+                <strong>{PROGRESS_HIRE_EMAIL}</strong>. Progress will assist in reviewing and shortlisting candidates for you.
+              </div>
+            </div>
+          )}
+
+          {!hideDeadline && (
+            <div className="profile-field-wrap">
+              <label htmlFor={`${idPrefix}-deadline`}>
+                Application Deadline <span className="profile-field-req">*</span>
+              </label>
+              <input
+                id={`${idPrefix}-deadline`}
+                type="date"
+                required
+                min={minDeadline}
+                value={value.applicationDeadline}
+                onChange={(e) => set({ applicationDeadline: e.target.value })}
+              />
+              <div className="job-deadline-quick-row">
+                <span className="job-deadline-quick-label">Quick pick:</span>
+                {[14, 30, 60].map((days) => {
+                  const targetIso = addDaysIso(days);
+                  const isCurrent = value.applicationDeadline === targetIso;
+                  return (
+                    <button
+                      key={days}
+                      type="button"
+                      className={`job-deadline-preset-pill ${isCurrent ? 'is-active' : ''}`}
+                      onClick={() => set({ applicationDeadline: targetIso })}
+                    >
+                      +{days} days
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                Candidates can submit applications until 11:59 PM on this date.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

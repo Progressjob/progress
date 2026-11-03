@@ -19,7 +19,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
 } from './auth.dto';
-import { verifyGoogleIdToken } from './google-token';
+import { googleIdTokenVerifier } from './google-token';
 
 @Injectable()
 export class AuthService {
@@ -88,9 +88,9 @@ export class AuthService {
       throw new BadRequestException('Google sign-in is not configured');
     }
 
-    let identity: Awaited<ReturnType<typeof verifyGoogleIdToken>>;
+    let identity: Awaited<ReturnType<typeof googleIdTokenVerifier.verify>>;
     try {
-      identity = await verifyGoogleIdToken(idToken, clientId);
+      identity = await googleIdTokenVerifier.verify(idToken, clientId);
     } catch {
       throw new UnauthorizedException('Google sign-in failed');
     }

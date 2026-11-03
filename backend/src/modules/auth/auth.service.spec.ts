@@ -2,11 +2,7 @@ import { BadRequestException, ConflictException, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { verifyGoogleIdToken } from './google-token';
-
-vi.mock('./google-token', () => ({
-  verifyGoogleIdToken: vi.fn(),
-}));
+import { googleIdTokenVerifier, type GoogleIdentity } from './google-token';
 
 function createPrismaMock() {
   const prisma: any = {
@@ -168,27 +164,33 @@ describe('AuthService Google sign-in', () => {
     } as unknown as ConfigService;
   }
 
-  function googleIdentity() {
+  function googleIdentity(overrides: Partial<GoogleIdentity> = {}): GoogleIdentity {
     return {
       sub: 'google-sub-1',
       email: 'new.user@gmail.com',
       emailVerified: true,
       firstName: 'New',
       lastName: 'User',
+      ...overrides,
     };
   }
 
   beforeEach(() => {
-    vi.mocked(verifyGoogleIdToken).mockReset();
+    vi.spyOn(googleIdTokenVerifier, 'verify').mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('rejects Google sign-in when the client id is not configured', async () => {
     const service = new AuthService(createPrismaMock(), jwt, googleConfig(''));
     await expect(service.loginWithGoogle('token')).rejects.toBeInstanceOf(BadRequestException);
+    expect(googleIdTokenVerifier.verify).not.toHaveBeenCalled();
   });
 
   it('rejects unverified Google emails', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue({ ...googleIdentity(), emailVerified: false });
+    vi.mocked(googleIdTokenVerifier.verify).mockResolvedValue(googleIdentity({ emailVerified: false }));
     const prisma = createPrismaMock();
     const service = new AuthService(prisma, jwt, googleConfig('client-id'));
     await expect(service.loginWithGoogle('token')).rejects.toBeInstanceOf(UnauthorizedException);
@@ -196,7 +198,7 @@ describe('AuthService Google sign-in', () => {
   });
 
   it('creates a candidate account for a first-time Google user', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(googleIdentity());
+    vi.mocked(googleIdTokenVerifier.verify).mockResolvedValue(googleIdentity());
     const prisma = createPrismaMock();
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.role.findUnique.mockResolvedValue({ id: 4, name: 'candidate' });
@@ -225,7 +227,7 @@ describe('AuthService Google sign-in', () => {
   });
 
   it('signs in an existing Google user without creating another account', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(googleIdentity());
+    vi.mocked(googleIdTokenVerifier.verify).mockResolvedValue(googleIdentity());
     const prisma = createPrismaMock();
     prisma.user.findUnique.mockResolvedValueOnce({
       id: 'user-1',
