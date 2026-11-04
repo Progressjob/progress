@@ -112,29 +112,33 @@ export const CompaniesListPage: React.FC = () => {
             </svg>
             Industry
           </span>
-          <div className="companies-industry-chips">
-            <button
-              type="button"
-              className={`companies-industry-chip${!industrySlug ? ' is-active' : ''}`}
-              onClick={() => setIndustry('')}
-              aria-pressed={!industrySlug}
-            >
-              All
-            </button>
-            {industries.map((industry) => {
-              const active = industry.slug === industrySlug;
-              return (
-                <button
-                  key={industry.id}
-                  type="button"
-                  className={`companies-industry-chip${active ? ' is-active' : ''}`}
-                  onClick={() => setIndustry(active ? '' : industry.slug)}
-                  aria-pressed={active}
-                >
-                  {industry.name}
-                </button>
-              );
-            })}
+          <div className="companies-industry-scroller">
+            <div className="companies-industry-chips">
+              <button
+                type="button"
+                className={`companies-industry-chip${!industrySlug ? ' is-active' : ''}`}
+                onClick={() => setIndustry('')}
+                aria-pressed={!industrySlug}
+              >
+                All
+              </button>
+              {industries.map((industry) => {
+                const active = industry.slug === industrySlug;
+                return (
+                  <button
+                    key={industry.id}
+                    type="button"
+                    className={`companies-industry-chip${active ? ' is-active' : ''}`}
+                    onClick={() => setIndustry(active ? '' : industry.slug)}
+                    aria-pressed={active}
+                  >
+                    {industry.name}
+                  </button>
+                );
+              })}
+              {/* Keeps the final chip fully reachable on horizontal mobile scroll */}
+              <span className="companies-industry-end-spacer" aria-hidden="true" />
+            </div>
           </div>
         </div>
 

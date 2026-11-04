@@ -2508,31 +2508,67 @@
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 0.45rem !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .companies-directory-container .companies-search-card {
+    overflow: visible !important;
+    max-width: none !important;
   }
 
   .companies-industry-label {
     font-size: 0.68rem !important;
   }
 
-  .companies-industry-chips {
-    flex-wrap: nowrap !important;
+  /* Outer scroller bleeds to screen edges; inner track owns the chip width */
+  .companies-industry-scroller {
+    width: calc(100% + 32px) !important;
+    max-width: none !important;
+    margin-inline: -16px !important;
     overflow-x: auto !important;
+    overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
     scrollbar-width: none !important;
-    gap: 0.4rem !important;
-    padding-bottom: 2px !important;
-    margin-inline: -2px !important;
-    padding-inline: 2px !important;
+    touch-action: pan-x !important;
   }
 
-  .companies-industry-chips::-webkit-scrollbar {
+  .companies-industry-scroller::-webkit-scrollbar {
     display: none !important;
   }
 
+  .companies-industry-chips {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 0.4rem !important;
+    padding: 2px 16px 4px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .companies-industry-end-spacer {
+    display: block !important;
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 1px !important;
+    pointer-events: none !important;
+  }
+
   .companies-industry-chip {
+    flex: 0 0 auto !important;
     flex-shrink: 0 !important;
+    white-space: nowrap !important;
     font-size: 0.76rem !important;
     padding: 0.4rem 0.72rem !important;
+    max-width: none !important;
   }
 
   .companies-active-filter {
