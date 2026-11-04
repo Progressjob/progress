@@ -136,8 +136,6 @@ export const CompaniesListPage: React.FC = () => {
                   </button>
                 );
               })}
-              {/* Keeps the final chip fully reachable on horizontal mobile scroll */}
-              <span className="companies-industry-end-spacer" aria-hidden="true" />
             </div>
           </div>
         </div>

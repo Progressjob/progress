@@ -3740,10 +3740,6 @@ hr {
   min-width: 0;
 }
 
-.companies-industry-end-spacer {
-  display: none;
-}
-
 .companies-industry-chip {
   appearance: none;
   border: 1px solid #dbe3ef;

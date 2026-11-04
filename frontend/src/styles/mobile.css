@@ -2553,15 +2553,6 @@
     overflow: visible !important;
   }
 
-  .companies-industry-end-spacer {
-    display: block !important;
-    flex: 0 0 48px !important;
-    width: 48px !important;
-    min-width: 48px !important;
-    height: 1px !important;
-    pointer-events: none !important;
-  }
-
   .companies-industry-chip {
     flex: 0 0 auto !important;
     flex-shrink: 0 !important;
@@ -2569,6 +2560,11 @@
     font-size: 0.76rem !important;
     padding: 0.4rem 0.72rem !important;
     max-width: none !important;
+  }
+
+  /* Last chip ends flush — no trailing empty gap */
+  .companies-industry-chip:last-child {
+    margin-inline-end: 0 !important;
   }
 
   .companies-active-filter {
