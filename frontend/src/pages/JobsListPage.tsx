@@ -41,7 +41,6 @@ export const JobsListPage: React.FC = () => {
   const industry = searchParams.get('industry') || '';
   const salary = searchParams.get('salary') || '';
   const [search, setSearch] = useState(q);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [listedJobs, setListedJobs] = useState<Job[]>([]);
   const limit = 12;
@@ -177,6 +176,15 @@ export const JobsListPage: React.FC = () => {
     setSearchParams({});
   };
 
+  const handleCollapse = () => {
+    setListedJobs((prev) => prev.slice(0, limit));
+    setPage(1);
+    const el = document.getElementById('job-results');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const hasActiveFilters = Boolean(
     q || category || location || employmentType || experience || education || industry || salary,
   );
@@ -209,9 +217,21 @@ export const JobsListPage: React.FC = () => {
             Jobs in <span>Ethiopia</span>
           </h1>
           <p className="jb-hero-copy">
-            {user
-              ? 'Browse verified vacancies from Progress and partner employers across Ethiopia.'
-              : 'Browse open roles from verified employers. Sign in to view full application details.'}
+            {user ? (
+              <>
+                <span className="jb-hero-copy-desktop">
+                  Browse verified vacancies from Progress and partner employers across Ethiopia.
+                </span>
+                <span className="jb-hero-copy-mobile">Browse verified vacancies.</span>
+              </>
+            ) : (
+              <>
+                <span className="jb-hero-copy-desktop">
+                  Browse open roles from verified employers. Sign in to view full application details.
+                </span>
+                <span className="jb-hero-copy-mobile">Browse verified vacancies.</span>
+              </>
+            )}
           </p>
           {!user && <GuestJobAccessNote />}
 
@@ -226,7 +246,7 @@ export const JobsListPage: React.FC = () => {
             </svg>
             <input
               type="text"
-              placeholder="Job title, keywords, or company..."
+              placeholder="Job titles, keywords..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search jobs"
@@ -249,14 +269,7 @@ export const JobsListPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="mobile-job-filter-bar">
-            <button type="button" aria-expanded={mobileFiltersOpen} aria-controls="job-search-filters"
-              onClick={() => setMobileFiltersOpen((open) => !open)}>
-              {mobileFiltersOpen ? 'Hide filters' : 'Filters'}{hasActiveFilters ? ' · Active' : ''}
-            </button>
-            {jobsData && <span>{jobsData.total} vacancies</span>}
-          </div>
-          <div id="job-search-filters" className={`jb-filters public-job-filters${mobileFiltersOpen ? ' is-open' : ''}`}>
+          <div id="job-search-filters" className="jb-filters public-job-filters">
             <span className="jb-filters-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                 <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
@@ -337,7 +350,10 @@ export const JobsListPage: React.FC = () => {
           <div className="jb-latest-head">
             <div>
               <p className="jb-kicker">{hasActiveFilters ? 'Search results' : 'Latest job vacancies'}</p>
-              <h2 className="jb-section-title">{hasActiveFilters ? 'Matching vacancies' : 'Freshly posted opportunities'}</h2>
+              <h2 className="jb-section-title">
+                {hasActiveFilters ? 'Matching vacancies' : 'Freshly posted opportunities'}
+                {jobsData && <span className="jb-title-count"> · {jobsData.total}</span>}
+              </h2>
               {hasActiveFilters && <p className="jb-filter-summary">{searchSummary}</p>}
             </div>
           </div>
@@ -355,7 +371,7 @@ export const JobsListPage: React.FC = () => {
 
           <LatestVacanciesGrid jobs={listedJobs} loading={jobsQuery.isLoading && page === 1} />
 
-          {hasMore && (
+          {hasMore ? (
             <div className="jb-more-wrap">
               <p className="jb-more-count">
                 Showing <strong>{listedJobs.length}</strong> of <strong>{total}</strong> vacancies
@@ -369,6 +385,21 @@ export const JobsListPage: React.FC = () => {
                 {jobsQuery.isFetching ? 'Loading…' : 'Display more'}
               </button>
             </div>
+          ) : (
+            listedJobs.length > limit && (
+              <div className="jb-more-wrap">
+                <p className="jb-more-count">
+                  All <strong>{total}</strong> vacancies displayed
+                </p>
+                <button
+                  type="button"
+                  className="jb-more-btn jb-collapse-btn"
+                  onClick={handleCollapse}
+                >
+                  Show less ↑
+                </button>
+              </div>
+            )
           )}
         </section>
       </div>

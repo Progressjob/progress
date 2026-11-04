@@ -31,34 +31,40 @@ export const LatestVacanciesGrid: React.FC<{
         return (
           <article key={job.id} className={`jb-latest-item${footer ? ' has-footer' : ''}`}>
             <div className="jb-latest-main">
-              <div className="jb-latest-logo">
-                <CompanyLogoMark
-                  name={job.company?.name}
-                  logoId={job.company?.logo?.id ?? job.company?.logoFileId}
-                  className="jb-company-logo jb-company-logo-fallback"
-                  imgClassName="jb-company-logo"
-                />
+              <div className="jb-latest-header-row">
+                <div className="jb-latest-logo">
+                  <CompanyLogoMark
+                    name={job.company?.name}
+                    logoId={job.company?.logo?.id ?? job.company?.logoFileId}
+                    className="jb-company-logo jb-company-logo-fallback"
+                    imgClassName="jb-company-logo"
+                  />
+                </div>
+                <span className="jb-latest-posted">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                    <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                    <path d="M12 7v5l3 2" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  {posted}
+                </span>
               </div>
               <div className="jb-latest-body">
-                <div className="jb-latest-top">
-                  <h3 className="jb-latest-title">
-                    {publicLinks ? (
-                      <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
-                    ) : (
-                      <Link to={href}>{job.title}</Link>
-                    )}
-                  </h3>
-                  <span className="jb-latest-posted">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-                      <circle cx="12" cy="12" r="9" strokeWidth="2" />
-                      <path d="M12 7v5l3 2" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                    Posted {posted}
-                  </span>
-                </div>
+                <h3 className="jb-latest-title">
+                  {publicLinks ? (
+                    <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
+                  ) : (
+                    <Link to={href}>{job.title}</Link>
+                  )}
+                </h3>
                 <p className="jb-latest-company">{companyLabel(job)}</p>
                 {industryName ? <p className="jb-latest-industry">{industryName}</p> : null}
-                <p className="jb-latest-location">{locationLabel(job)}</p>
+                <p className="jb-latest-location">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" strokeWidth="2"/>
+                    <circle cx="12" cy="10" r="3" strokeWidth="2"/>
+                  </svg>
+                  {locationLabel(job)}
+                </p>
               </div>
             </div>
             {footer ? <div className="jb-latest-footer">{footer(job)}</div> : null}

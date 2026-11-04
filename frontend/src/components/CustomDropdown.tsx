@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface DropdownOption {
   value: string;
@@ -24,12 +25,44 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const updateCoords = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const menuWidth = Math.min(240, window.innerWidth - 16);
+    let left = rect.left;
+    if (left + menuWidth > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - menuWidth - 8);
+    }
+    setCoords({
+      top: rect.bottom + 4,
+      left: Math.max(8, left),
+    });
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updateCoords();
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!menuRef.current || !menuRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     };
@@ -40,13 +73,25 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       }
     };
 
+    const handleScroll = (event: Event) => {
+      if (menuRef.current && menuRef.current.contains(event.target as Node)) {
+        return;
+      }
+      setIsOpen(false);
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
     };
-  }, []);
+  }, [isOpen]);
 
   const handleSelect = (val: string) => {
     onChange(val);
@@ -61,7 +106,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <button
         type="button"
         className="custom-dropdown-trigger"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -81,8 +126,21 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         </svg>
       </button>
 
-      {isOpen && (
-        <div className="custom-dropdown-menu animate-popover-in" role="listbox">
+      {isOpen && coords && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          className="custom-dropdown-menu custom-dropdown-floating-menu"
+          style={{
+            position: 'fixed',
+            top: coords.top,
+            left: coords.left,
+            minWidth: 170,
+            maxWidth: 240,
+            width: 'max-content',
+            zIndex: 99999,
+          }}
+          role="listbox"
+        >
           <div className="dropdown-options-scroll">
             {options.map((opt) => {
               const isSelected = opt.value === value;
@@ -99,8 +157,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                   {isSelected && (
                     <svg
                       className="option-check-icon"
-                      width="15"
-                      height="15"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -112,7 +170,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

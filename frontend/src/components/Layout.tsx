@@ -258,31 +258,28 @@ export const Layout: React.FC = () => {
         </div>
 
         <div className="mobile-footer-groups">
-          <details>
-            <summary>Explore & accounts</summary>
-            <nav aria-label="Footer navigation">
-              <Link to="/jobs">Find jobs</Link>
-              <Link to="/companies">Employers</Link>
-              <Link to="/register">Create account</Link>
-              <Link to="/login">Sign in</Link>
-              <Link to={firstCompanyId ? `/company/${firstCompanyId}/jobs/new` : '/employer/setup'}>Post a job</Link>
-              <Link to="/admin">Admin portal</Link>
-            </nav>
-          </details>
-          <details>
-            <summary>Contact us</summary>
-            <p>Dukem, Oromia Region, Ethiopia</p>
-            <a href="tel:+251118879710">+251 11 887 9710</a>
-            <a href="tel:+251949811818">+251 949 811 818</a>
-            <a href="tel:+251994251515">+251 994 251 515</a>
-            <a href="mailto:progressjobs8@gmail.com">progressjobs8@gmail.com</a>
-            <Link to="/contact">All contact details</Link>
-          </details>
-          <details>
-            <summary>About Progress</summary>
-            <p>We handpick the best among the rest.</p>
-            <p>Licensed, certified & registered O/R/ G/Labor & Social Affairs Bureau.</p>
-          </details>
+          <div className="mobile-footer-columns">
+            <div className="mobile-footer-col">
+              <h4 className="mobile-footer-title">Explore</h4>
+              <nav className="mobile-footer-nav" aria-label="Footer navigation">
+                <Link to="/jobs">Find jobs</Link>
+                <Link to="/companies">Employers</Link>
+                <Link to={firstCompanyId ? `/company/${firstCompanyId}/jobs/new` : '/employer/setup'}>Post a job</Link>
+                <Link to="/login">Sign in</Link>
+                <Link to="/admin">Admin portal</Link>
+              </nav>
+            </div>
+
+            <div className="mobile-footer-col">
+              <h4 className="mobile-footer-title">Contact HQ</h4>
+              <div className="mobile-footer-contact">
+                <span className="mobile-footer-loc">Dukem, Oromia</span>
+                <a href="tel:+251949811818">+251 949 811 818</a>
+                <a href="mailto:progressjobs8@gmail.com" className="mobile-footer-email">progressjobs8@gmail.com</a>
+                <Link to="/contact" className="mobile-footer-more-contact">All details →</Link>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="footer-bottom">

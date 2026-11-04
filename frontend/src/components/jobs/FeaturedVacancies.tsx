@@ -64,13 +64,14 @@ export const FeaturedVacancies: React.FC<{
     <section className="jb-featured" aria-label={title}>
       <div className="jb-featured-head">
         <div>
-          <p className="jb-kicker">
+          <p className="jb-kicker jb-featured-kicker-desktop">
             <span className="jb-kicker-star" aria-hidden>
               ★
             </span>
             {title}
           </p>
-          <h2 className="jb-section-title">{description}</h2>
+          <h2 className="jb-section-title jb-featured-title-desktop">{description}</h2>
+          <h2 className="jb-featured-heading-mobile">Open roles matched to your profession</h2>
         </div>
         {jobs.length > 1 && (
           <div className="jb-featured-nav">
