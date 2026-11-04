@@ -277,9 +277,21 @@ export const JobDetailContent: React.FC<{
 
             <div className="jd-header-info">
               <div className="jd-kicker-row">
-                <span className="jd-company-title">
-                  {job.company ? job.company.name : 'Progress Verified Employer'}
-                </span>
+                {job.company ? (
+                  <>
+                    <span className="jd-company-title jd-company-title-static">
+                      {job.company.name}
+                    </span>
+                    <Link
+                      to={`/companies/${job.company.slug}`}
+                      className="jd-company-title jd-company-title-link"
+                    >
+                      {job.company.name}
+                    </Link>
+                  </>
+                ) : (
+                  <span className="jd-company-title">Progress Verified Employer</span>
+                )}
                 {job.company?.verificationStatus === 'verified' && (
                   <span className="verified-badge-pill">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
@@ -356,21 +368,40 @@ export const JobDetailContent: React.FC<{
 
         <div className="jd-quick-bar">
           <div className="jd-quick-item">
-            <span className="jd-quick-label">Salary / Compensation</span>
+            <span className="jd-quick-label">
+              <span className="jd-ql-full">Salary / Compensation</span>
+              <span className="jd-ql-short">Salary</span>
+            </span>
             <strong className="jd-quick-value text-primary">{compensationLabel(job)}</strong>
           </div>
           <div className="jd-quick-item">
-            <span className="jd-quick-label">Experience</span>
+            <span className="jd-quick-label">
+              <span className="jd-ql-full">Experience</span>
+              <span className="jd-ql-short">Experience</span>
+            </span>
             <strong className="jd-quick-value">{experience || 'Not specified'}</strong>
           </div>
           <div className="jd-quick-item">
-            <span className="jd-quick-label">Duty Station</span>
+            <span className="jd-quick-label">
+              <span className="jd-ql-full">Duty Station</span>
+              <span className="jd-ql-short">Location</span>
+            </span>
             <strong className="jd-quick-value">{job.location?.name || 'Ethiopia'}</strong>
           </div>
           <div className="jd-quick-item">
-            <span className="jd-quick-label">Application Deadline</span>
+            <span className="jd-quick-label">
+              <span className="jd-ql-full">Application Deadline</span>
+              <span className="jd-ql-short">Deadline</span>
+            </span>
             <strong className={`jd-quick-value ${deadline.urgent ? 'text-urgent' : ''}`}>
-              {deadline.label}
+              <span className="jd-qd-full">{deadline.label}</span>
+              <span className="jd-qd-short">
+                {new Date(job.applicationDeadline).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+                {deadline.diffDays >= 0 ? ` · ${deadline.diffDays}d` : ' · closed'}
+              </span>
             </strong>
           </div>
         </div>
@@ -535,7 +566,7 @@ export const JobDetailContent: React.FC<{
           </article>
 
           <aside className="jd-side">
-            <div className="jd-side-card">
+            <div className="jd-side-card jd-side-overview">
               <h3 className="jd-side-title">Job Overview</h3>
               <ul className="jd-overview-list">
                 <li>
@@ -592,7 +623,7 @@ export const JobDetailContent: React.FC<{
               </ul>
             </div>
 
-            <div className="jd-side-card">
+            <div className="jd-side-card jd-side-about">
               <h3 className="jd-side-title">About the Employer</h3>
               <div className="jd-company-preview">
                 <strong>{job.company ? job.company.name : 'Progress Partner Employer'}</strong>
@@ -612,7 +643,7 @@ export const JobDetailContent: React.FC<{
               </div>
             </div>
 
-            <div className="jd-side-card">
+            <div className="jd-side-card jd-side-actions">
               <h3 className="jd-side-title">Quick Actions</h3>
               <div className="jd-actions-grid">
                 <button type="button" className={saved ? 'is-on' : ''} onClick={toggleSave}>
@@ -666,55 +697,74 @@ export const JobDetailContent: React.FC<{
               )}
             </div>
 
-            <div className="jd-side-card">
-              <h3 className="jd-side-title">Share Opportunity</h3>
-              <div className="jd-share-row">
-                <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Telegram"
-                  className="share-btn share-tg"
-                  title="Share on Telegram"
-                >
-                  Tg
-                </a>
-                <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="LinkedIn"
-                  className="share-btn share-li"
-                  title="Share on LinkedIn"
-                >
-                  in
-                </a>
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Facebook"
-                  className="share-btn share-fb"
-                  title="Share on Facebook"
-                >
-                  f
-                </a>
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className="share-btn share-copy"
-                  title="Copy Link"
-                >
-                  {copied ? '✓' : '🔗'}
-                </button>
+            <div className="jd-contact-share">
+              <div className="jd-side-card jd-side-share">
+                <h3 className="jd-side-title">Share Opportunity</h3>
+                <h3 className="jd-side-title jd-side-title-mobile">Share</h3>
+                <div className="jd-share-row">
+                  <a
+                    href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Telegram"
+                    className="share-btn share-tg"
+                    title="Share on Telegram"
+                  >
+                    <span className="share-ico" aria-hidden="true">Tg</span>
+                    <span className="share-name">Telegram</span>
+                  </a>
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="LinkedIn"
+                    className="share-btn share-li"
+                    title="Share on LinkedIn"
+                  >
+                    <span className="share-ico" aria-hidden="true">in</span>
+                    <span className="share-name">LinkedIn</span>
+                  </a>
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Facebook"
+                    className="share-btn share-fb"
+                    title="Share on Facebook"
+                  >
+                    <span className="share-ico" aria-hidden="true">f</span>
+                    <span className="share-name">Facebook</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={copyLink}
+                    className="share-btn share-copy"
+                    title="Copy Link"
+                  >
+                    <span className="share-ico" aria-hidden="true">{copied ? '✓' : '🔗'}</span>
+                    <span className="share-name">{copied ? 'Copied' : 'Copy link'}</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="jd-side-card jd-support-card">
-              <span className="support-badge">Need Assistance?</span>
-              <p>Contact Progress Manpower Supply Dukem Headquarters:</p>
-              <div className="support-phone">+251 949 811 818</div>
-              <div className="support-email">progressjobs8@gmail.com</div>
+              <div className="jd-side-card jd-support-card">
+                <span className="support-badge">Need Assistance?</span>
+                <h3 className="jd-side-title jd-side-title-mobile">Support</h3>
+                <p className="jd-support-desktop-copy">
+                  Contact Progress Manpower Supply Dukem Headquarters:
+                </p>
+                <p className="jd-support-blurb">
+                  Contact Progress Manpower HQ if you need help with this vacancy.
+                </p>
+                <div className="jd-support-links">
+                  <a className="support-phone" href="tel:+251949811818">
+                    +251 949 811 818
+                  </a>
+                  <a className="support-email" href="mailto:progressjobs8@gmail.com">
+                    progressjobs8@gmail.com
+                  </a>
+                </div>
+              </div>
             </div>
           </aside>
         </div>
@@ -744,7 +794,7 @@ export const JobDetailContent: React.FC<{
                   </h3>
                   {item.location && <p className="jd-mini-loc">📍 {item.location.name}</p>}
                   <Link to={`/jobs/${item.slug}`} className="jd-mini-btn">
-                    View details →
+                    View details
                   </Link>
                 </article>
               ))}

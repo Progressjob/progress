@@ -98,13 +98,13 @@ export const LandingPage: React.FC = () => {
               </svg>
               <input
                 type="search"
-                placeholder="Search job title, keywords…"
+                placeholder="Search for jobs"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Search job title, keywords"
+                aria-label="Search for jobs"
               />
-              <button type="submit" className="home-find-btn">
-                <span>FIND JOBS</span>
+              <button type="submit" className="home-find-btn" aria-label="Find jobs">
+                <span>FIND</span>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M13 2 4 14h7l-1 8 10-14h-7l0-6z" />
                 </svg>
@@ -114,12 +114,13 @@ export const LandingPage: React.FC = () => {
             {displayPopular.length > 0 && (
               <div className="home-find-popular">
                 <span className="home-find-popular-label">POPULAR JOBS:</span>
-                <div className="home-find-chips">
+                <div className="home-find-chips" role="list">
                   {displayPopular.map((item) => (
                     <Link
                       key={item.id}
                       to={item.path}
                       className="home-find-chip"
+                      role="listitem"
                       title={'count' in item && item.count !== undefined ? `${item.count} open vacancies` : undefined}
                     >
                       {item.label}
@@ -437,21 +438,12 @@ export const LandingPage: React.FC = () => {
 
         <div className="mobile-category-picker">
           <div className="mobile-category-shortcuts" aria-label="Explore job categories">
-            {categoriesQuery.data?.slice(0, 4).map((category) => (
+            {categoriesQuery.data?.slice(0, 10).map((category) => (
               <Link key={category.id} to={`/jobs?category=${encodeURIComponent(category.slug)}`}>
-                <span>{category.name}</span><span aria-hidden="true">↗</span>
+                {category.name}
               </Link>
             ))}
           </div>
-          <label htmlFor="home-mobile-category">More fields</label>
-          <select id="home-mobile-category" defaultValue="" onChange={(event) => {
-            if (event.target.value) navigate(`/jobs?category=${encodeURIComponent(event.target.value)}`);
-          }}>
-            <option value="" disabled>Browse job categories</option>
-            {categoriesQuery.data?.map((category) => (
-              <option key={category.id} value={category.slug}>{category.name}</option>
-            ))}
-          </select>
         </div>
 
         <div className="categories-grid">
