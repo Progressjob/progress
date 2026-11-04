@@ -3698,6 +3698,88 @@ hr {
 
 .companies-search-card {
   margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.companies-industry-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.companies-industry-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.companies-industry-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.companies-industry-chip {
+  appearance: none;
+  border: 1px solid #dbe3ef;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 0.42rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.companies-industry-chip:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #0b57d0;
+}
+
+.companies-industry-chip.is-active {
+  border-color: #0b57d0;
+  background: #0b57d0;
+  color: #ffffff;
+}
+
+.companies-active-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  color: #475569;
+}
+
+.companies-clear-industry {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #0b57d0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.companies-clear-industry:hover {
+  text-decoration: underline;
 }
 
 .companies-grid {
@@ -3708,19 +3790,25 @@ hr {
 
 .company-directory-card {
   background: #ffffff;
-  border: 1.5px solid #2563eb;
-  border-radius: 20px;
+  border: 1.5px solid #7eb0f0;
+  border-radius: 28px;
   padding: 1.85rem;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.02);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 1px 0 rgba(11, 87, 208, 0.04),
+    0 10px 28px rgba(11, 87, 208, 0.08);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease;
   display: flex;
   flex-direction: column;
 }
 
 .company-directory-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--primary);
-  box-shadow: 0 20px 45px -8px rgba(11, 87, 208, 0.14);
+  transform: translateY(-3px);
+  border-color: #4f8fe0;
+  box-shadow:
+    0 1px 0 rgba(11, 87, 208, 0.06),
+    0 18px 36px rgba(11, 87, 208, 0.14);
 }
 
 .company-card-top {
@@ -3733,7 +3821,7 @@ hr {
 .company-avatar-box {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #0b57d0 0%, #1e40af 100%);
   color: #ffffff;
   font-size: 1.45rem;
@@ -3742,7 +3830,8 @@ hr {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(11, 87, 208, 0.22);
+  box-shadow: 0 4px 14px rgba(11, 87, 208, 0.18);
+  overflow: hidden;
 }
 
 .company-card-headings {

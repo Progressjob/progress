@@ -2496,6 +2496,43 @@
   .companies-search-card {
     margin-bottom: 1.15rem !important;
     padding: 10px 14px !important;
+    gap: 0.65rem !important;
+  }
+
+  .companies-industry-filters {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.45rem !important;
+  }
+
+  .companies-industry-label {
+    font-size: 0.68rem !important;
+  }
+
+  .companies-industry-chips {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 0.4rem !important;
+    padding-bottom: 2px !important;
+    margin-inline: -2px !important;
+    padding-inline: 2px !important;
+  }
+
+  .companies-industry-chips::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .companies-industry-chip {
+    flex-shrink: 0 !important;
+    font-size: 0.76rem !important;
+    padding: 0.4rem 0.72rem !important;
+  }
+
+  .companies-active-filter {
+    font-size: 0.78rem !important;
+    gap: 0.5rem !important;
   }
 
   .companies-grid {
@@ -2503,14 +2540,20 @@
   }
 
   .company-directory-card {
-    padding: 12px 14px !important;
-    border: 1.5px solid #2563eb !important;
-    border-radius: 14px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    padding: 14px 16px !important;
+    border: 1.5px solid #7eb0f0 !important;
+    border-radius: 22px !important;
+    box-shadow:
+      0 1px 0 rgba(11, 87, 208, 0.04),
+      0 8px 20px rgba(11, 87, 208, 0.08) !important;
   }
 
   .company-directory-card:hover {
     transform: none !important;
+    border-color: #7eb0f0 !important;
+    box-shadow:
+      0 1px 0 rgba(11, 87, 208, 0.04),
+      0 8px 20px rgba(11, 87, 208, 0.08) !important;
   }
 
   .company-directory-card .company-card-top {
@@ -2522,7 +2565,7 @@
   .company-directory-card .company-avatar-box {
     width: 40px !important;
     height: 40px !important;
-    border-radius: 10px !important;
+    border-radius: 14px !important;
     font-size: 1.1rem !important;
   }
 
