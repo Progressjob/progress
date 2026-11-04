@@ -3696,6 +3696,10 @@ hr {
   padding: 3.5rem 1.5rem 6rem;
 }
 
+.companies-search-card {
+  margin-bottom: 2.5rem;
+}
+
 .companies-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
@@ -3704,7 +3708,7 @@ hr {
 
 .company-directory-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #2563eb;
   border-radius: 20px;
   padding: 1.85rem;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.02);
@@ -9614,10 +9618,133 @@ a.cv-contact-value {
   margin-bottom: 1.25rem;
 }
 
+.co-card-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.co-fact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.co-fact-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.co-fact-icon {
+  color: var(--primary);
+  opacity: 0.85;
+}
+
+.co-fact-value {
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
 .co-profile-card-title {
   margin: 0 0 0.85rem;
   font-size: 1.15rem;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.co-statements-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.co-statement-divider {
+  border: 0;
+  border-top: 1px solid #e8eef5;
+  margin: 1rem 0;
+}
+
+.co-statement .co-profile-card-title {
+  margin-bottom: 0.45rem;
+}
+
+.co-profile-contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.co-contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-radius: 12px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+a.co-contact-row:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.co-contact-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.co-contact-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.co-contact-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.co-contact-value {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .co-profile-subtitle {
@@ -9680,6 +9807,26 @@ a.cv-contact-value {
 
 .co-profile-statements .co-profile-card {
   margin-bottom: 0;
+}
+
+/* Keep legacy contact grid utilities usable if referenced elsewhere */
+.co-profile-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.co-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-radius: 12px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
 }
 
 .co-profile-jobs {

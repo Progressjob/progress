@@ -33,7 +33,7 @@ export const CompaniesListPage: React.FC = () => {
   });
 
   return (
-      <div className="jobs-list-container">
+      <div className="jobs-list-container companies-directory-container">
         {/* Header */}
         <div className="board-header">
           <span className="section-eyebrow">
@@ -44,13 +44,13 @@ export const CompaniesListPage: React.FC = () => {
             Enterprise Partners
           </span>
           <h1 className="board-title">Verified Employer Directory</h1>
-          <p className="board-subtitle">
+          <p className="board-subtitle companies-board-subtitle">
             Leading enterprises, industrial manufacturers, logistics hubs, and corporate organizations in Ethiopia partnering with Progress Manpower Supply & Training PLC for specialized recruitment.
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="jobs-filter-card" style={{ marginBottom: '2.5rem' }}>
+        <div className="jobs-filter-card companies-search-card">
           <div className="filter-input-wrap">
             <svg className="filter-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <circle cx="11" cy="11" r="8" strokeWidth="2.2" />
@@ -58,10 +58,10 @@ export const CompaniesListPage: React.FC = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search employers by company name, industry, or city..."
+              placeholder="Search companies..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              aria-label="Filter employers"
+              aria-label="Search companies"
             />
             {search && (
               <button type="button" className="filter-clear-btn" onClick={() => setSearch('')}>

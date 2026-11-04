@@ -70,3 +70,4 @@ export const CompanyDetailPage: React.FC = () => {
     </div>
   );
 };
+
