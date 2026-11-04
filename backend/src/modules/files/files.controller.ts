@@ -42,6 +42,7 @@ export class FilesController {
     const { file, stream } = await this.files.open(id);
     response.type(file.mimeType);
     response.setHeader('Content-Disposition', `inline; filename="${file.originalFilename}"`);
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     stream.on('error', (err) => {
       if (!response.headersSent) {
         response.status(404).json({ statusCode: 404, message: 'File not found on disk' });

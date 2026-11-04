@@ -112,7 +112,11 @@ async function listenWithPortFallback(app: INestApplication, preferredPort: numb
 async function bootstrap(AppModule: ReturnType<typeof loadAppModule>): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.enableCors();
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
