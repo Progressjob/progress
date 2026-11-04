@@ -22,7 +22,7 @@ export function resolveWorkspace(
   if (isEmployer && !isCandidate) return 'employer';
   if (isCandidate && !isEmployer) return 'candidate';
   if (stored) return stored;
-  if (isEmployer) return 'employer';
+  // Dual-role with no saved preference: stay in job-seeker mode
   return 'candidate';
 }
 

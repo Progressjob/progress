@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { setStoredWorkspace } from '../auth/workspace';
 
 interface RequireRoleProps {
   roles: string[];
@@ -27,7 +28,7 @@ export const RequireSignedIn: React.FC<{ children: React.ReactNode }> = ({ child
 };
 
 export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => {
-  const { user, loading, hasRole, logout, login } = useAuth();
+  const { user, loading, hasRole, logout, login, setWorkspace } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [switching, setSwitching] = useState(false);
@@ -50,10 +51,19 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
       navigate('/login', { replace: true, state: {} });
     };
 
-    const handleQuickDemoSwitch = async (email: string, pass: string, targetPath: string) => {
+    const handleQuickDemoSwitch = async (
+      email: string,
+      pass: string,
+      targetPath: string,
+      workspace?: 'candidate' | 'employer',
+    ) => {
       setSwitching(true);
       try {
         await login(email, pass);
+        if (workspace) {
+          setStoredWorkspace(workspace);
+          setWorkspace(workspace);
+        }
         navigate(targetPath, { replace: true });
       } catch {
         await logout();
@@ -125,7 +135,9 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
                 type="button"
                 className="dev-chip"
                 disabled={switching}
-                onClick={() => handleQuickDemoSwitch('employer@example.com', 'Employer123!', '/company')}
+                onClick={() =>
+                  handleQuickDemoSwitch('employer@example.com', 'Employer123!', '/company', 'employer')
+                }
                 style={{ background: '#eff6ff', borderColor: '#3b82f6', color: '#1d4ed8' }}
               >
                 {switching ? 'Switching…' : 'Switch to Employer Demo ⚡'}
@@ -136,7 +148,9 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
                 type="button"
                 className="dev-chip"
                 disabled={switching}
-                onClick={() => handleQuickDemoSwitch('candidate@example.com', 'Candidate123!', '/jobs')}
+                onClick={() =>
+                  handleQuickDemoSwitch('candidate@example.com', 'Candidate123!', '/jobs', 'candidate')
+                }
                 style={{ background: '#eff6ff', borderColor: '#3b82f6', color: '#1d4ed8' }}
               >
                 {switching ? 'Switching…' : 'Switch to Candidate Demo ⚡'}

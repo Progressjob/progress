@@ -1,51 +1,84 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { setStoredWorkspace } from '../auth/workspace';
+import {
+  getStoredWorkspace,
+  setStoredWorkspace,
+  type Workspace,
+} from '../auth/workspace';
 import { ApiError } from '../api/client';
 import { GoogleContinueButton } from '../components/GoogleContinueButton';
 import { ProgressLogo } from '../components/ProgressLogo';
 
-export function getValidRedirect(from: string | null | undefined, roles: string[]): string {
-  // 1. Admin/moderator portal
-  if (roles.includes('admin') || roles.includes('moderator')) {
-    if (from && from.startsWith('/admin')) {
-      return from;
-    }
+function isPublicReturnPath(from: string): boolean {
+  return (
+    from === '/' ||
+    from === '/jobs' ||
+    from === '/cv-search' ||
+    from.startsWith('/cv-search/') ||
+    (from.startsWith('/jobs/') && !from.endsWith('/apply')) ||
+    from === '/contact' ||
+    from === '/companies' ||
+    from.startsWith('/companies/')
+  );
+}
+
+/**
+ * Pick post-login destination.
+ * Dual-role accounts (candidate + employer) must respect workspace preference —
+ * otherwise Candidate Demo lands on employer job postings after hire-mode was enabled once.
+ */
+export function getValidRedirect(
+  from: string | null | undefined,
+  roles: string[],
+  workspace: Workspace | null = getStoredWorkspace(),
+): string {
+  const isAdmin = roles.includes('admin') || roles.includes('moderator');
+  const isEmployer = roles.includes('employer');
+  const isCandidate = roles.includes('candidate');
+
+  if (isAdmin) {
+    if (from?.startsWith('/admin')) return from;
     return '/admin';
   }
 
-  // 2. Employer portal: Whenever an employer logs in, they should land first on employer page
-  if (roles.includes('employer')) {
-    if (from && (from.startsWith('/company') || from.startsWith('/employer'))) {
-      return from;
-    }
+  const fromIsEmployer = Boolean(from && (from.startsWith('/company') || from.startsWith('/employer')));
+  const fromIsCandidate = Boolean(
+    from && (from.startsWith('/candidate') || from.endsWith('/apply')),
+  );
+
+  // Dual-role: follow explicit return path, else active workspace (default candidate).
+  if (isEmployer && isCandidate) {
+    if (fromIsEmployer) return from!;
+    if (fromIsCandidate) return from!;
+    if (from && isPublicReturnPath(from)) return from;
+
+    if (workspace === 'employer') return '/company';
+    return '/jobs';
+  }
+
+  if (isEmployer) {
+    if (fromIsEmployer) return from!;
     return '/company';
   }
 
-  // 3. Candidate routes (applications, apply flow, or saved public location)
-  if (from) {
-    if (
-      (from.startsWith('/candidate') || from.endsWith('/apply')) &&
-      roles.includes('candidate')
-    ) {
-      return from;
-    }
-
-    const isPublic =
-      from === '/' ||
-      from === '/jobs' ||
-      from === '/cv-search' ||
-      from.startsWith('/cv-search/') ||
-      (from.startsWith('/jobs/') && !from.endsWith('/apply')) ||
-      from === '/contact';
-
-    if (isPublic) {
-      return from;
-    }
-  }
+  if (fromIsCandidate && isCandidate) return from!;
+  if (from && isPublicReturnPath(from)) return from;
 
   return '/jobs';
+}
+
+function applyWorkspaceForLogin(roles: string[], preferred?: Workspace | null): Workspace {
+  const isEmployer = roles.includes('employer');
+  const isCandidate = roles.includes('candidate');
+
+  if (preferred === 'employer' && isEmployer) return 'employer';
+  if (preferred === 'candidate' && isCandidate) return 'candidate';
+
+  // Employer-only accounts always open hiring.
+  if (isEmployer && !isCandidate) return 'employer';
+  // Candidate-only (or dual-role without preference) stay in job-seeker mode.
+  return 'candidate';
 }
 
 export const LoginPage: React.FC = () => {
@@ -67,15 +100,10 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       const user = await login(identifier, password);
-      const isEmployer =
-        user.roles.includes('employer') &&
-        !user.roles.includes('admin') &&
-        !user.roles.includes('moderator');
-      if (isEmployer) {
-        setStoredWorkspace('employer');
-        setWorkspace('employer');
-      }
-      const target = getValidRedirect(from, user.roles);
+      const nextWorkspace = applyWorkspaceForLogin(user.roles, getStoredWorkspace());
+      setStoredWorkspace(nextWorkspace);
+      setWorkspace(nextWorkspace);
+      const target = getValidRedirect(from, user.roles, nextWorkspace);
       navigate(target, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -93,17 +121,12 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       const { user, isNew } = await loginWithGoogle(idToken);
-      const isEmployer =
-        user.roles.includes('employer') &&
-        !user.roles.includes('admin') &&
-        !user.roles.includes('moderator');
-      if (isEmployer) {
-        setStoredWorkspace('employer');
-        setWorkspace('employer');
-      }
+      const nextWorkspace = applyWorkspaceForLogin(user.roles, getStoredWorkspace());
+      setStoredWorkspace(nextWorkspace);
+      setWorkspace(nextWorkspace);
       const target = isNew
         ? '/candidate/profile?edit=1&welcome=1'
-        : getValidRedirect(from, user.roles);
+        : getValidRedirect(from, user.roles, nextWorkspace);
       navigate(target, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -124,16 +147,17 @@ export const LoginPage: React.FC = () => {
     setActiveDemo(label);
     try {
       const user = await login(demoEmail, demoPass);
-      const isEmployer =
-        user.roles.includes('employer') &&
-        !user.roles.includes('admin') &&
-        !user.roles.includes('moderator');
-      if (isEmployer) {
-        setStoredWorkspace('employer');
-        setWorkspace('employer');
-      }
-      // When explicitly clicking a demo profile, clear mismatched 'from' and go to that role's home
-      const target = getValidRedirect(null, user.roles);
+      // Demo chips force the intended workspace even if the account also has the other role.
+      const preferred: Workspace | null =
+        label === 'employer' ? 'employer' : label === 'candidate' ? 'candidate' : null;
+      const nextWorkspace = applyWorkspaceForLogin(user.roles, preferred);
+      setStoredWorkspace(nextWorkspace);
+      setWorkspace(nextWorkspace);
+
+      const target =
+        label === 'admin'
+          ? '/admin'
+          : getValidRedirect(null, user.roles, nextWorkspace);
       navigate(target, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
