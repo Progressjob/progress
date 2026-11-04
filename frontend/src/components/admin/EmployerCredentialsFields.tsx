@@ -32,19 +32,20 @@ export const EmployerCredentialsFields: React.FC<EmployerCredentialsFieldsProps>
       </div>
       <div className="form-input-group">
         <label htmlFor={`${idPrefix}-pw`}>Temporary password *</label>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <input
             id={`${idPrefix}-pw`}
             required
             minLength={8}
             value={value.temporaryPassword}
             onChange={(e) => set({ temporaryPassword: e.target.value })}
-            style={{ flex: '1 1 200px' }}
+            style={{ flex: 1, minWidth: 0 }}
           />
           <button
             type="button"
-            className="btn-clear-filters"
+            className="btn btn-sm btn-secondary"
             onClick={() => set({ temporaryPassword: generateTemporaryPassword() })}
+            style={{ flexShrink: 0, minHeight: 40, whiteSpace: 'nowrap' }}
           >
             Generate
           </button>

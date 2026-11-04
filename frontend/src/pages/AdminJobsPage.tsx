@@ -88,6 +88,7 @@ export const AdminJobsPage: React.FC = () => {
 
   const [search, setSearch] = useState(q);
   const [showCreate, setShowCreate] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [postMode, setPostMode] = useState<'existing' | 'new'>('existing');
@@ -295,6 +296,7 @@ export const AdminJobsPage: React.FC = () => {
   const hasFilters = Boolean(
     q || status || companyId || industry || employmentType || workplaceType || employerEdited,
   );
+  const activeDropdownCount = [status, companyId, employmentType, workplaceType, employerEdited].filter(Boolean).length;
 
   const rangeLabel = useMemo(() => {
     if (!total) return '0 jobs';
@@ -609,95 +611,129 @@ export const AdminJobsPage: React.FC = () => {
           </div>
         )}
 
-        <div className="jb-filters jb-filters-admin">
-          <span className="jb-filters-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            Filter
-          </span>
-          <label className="jb-filter-select">
-            <span>Status</span>
-            <select
-              id="job-admin-status"
-              value={status}
-              onChange={(e) => setFilter('status', e.target.value)}
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt.value || 'all'} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="jb-filter-select">
-            <span>Company</span>
-            <select
-              id="job-admin-company"
-              value={companyId}
-              onChange={(e) => setFilter('companyId', e.target.value)}
-            >
-              <option value="">All companies</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="jb-filter-select">
-            <span>Employment</span>
-            <select
-              id="job-admin-type"
-              value={employmentType}
-              onChange={(e) => setFilter('employmentType', e.target.value)}
-            >
-              {EMPLOYMENT_OPTIONS.map((opt) => (
-                <option key={opt.value || 'all'} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="jb-filter-select">
-            <span>Workplace</span>
-            <select
-              id="job-admin-place"
-              value={workplaceType}
-              onChange={(e) => setFilter('workplaceType', e.target.value)}
-            >
-              {WORKPLACE_OPTIONS.map((opt) => (
-                <option key={opt.value || 'all'} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="jb-filter-select">
-            <span>Edits</span>
-            <select
-              id="job-admin-edited"
-              value={employerEdited ? 'true' : ''}
-              onChange={(e) => setFilter('employerEdited', e.target.value)}
-            >
-              <option value="">All jobs</option>
-              <option value="true">Edited by employer</option>
-            </select>
-          </label>
-          {hasFilters && (
+        <div className="jb-filters-admin-wrap">
+          <div className="jb-filters-mobile-toggle-bar">
             <button
               type="button"
-              className="btn-clear-filters"
-              onClick={() => {
-                const next = new URLSearchParams();
-                if (view === 'history') next.set('view', 'history');
-                setSearchParams(next);
-                setActionNotice(null);
-              }}
+              className={`jb-filters-toggle-btn ${filtersOpen ? 'is-open' : ''}`}
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen}
             >
-              Reset
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <span>Filters</span>
+              {activeDropdownCount > 0 && (
+                <span className="jb-filter-badge">{activeDropdownCount}</span>
+              )}
+              <span className="jb-toggle-chevron">{filtersOpen ? '▲' : '▼'}</span>
             </button>
-          )}
+            {hasFilters && (
+              <button
+                type="button"
+                className="jb-filter-reset-btn"
+                onClick={() => {
+                  const next = new URLSearchParams();
+                  if (view === 'history') next.set('view', 'history');
+                  setSearchParams(next);
+                  setActionNotice(null);
+                }}
+              >
+                Reset all
+              </button>
+            )}
+          </div>
+
+          <div className={`jb-filters jb-filters-admin ${filtersOpen ? 'is-open' : ''}`}>
+            <span className="jb-filters-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Filter
+            </span>
+            <label className="jb-filter-select">
+              <span>Status</span>
+              <select
+                id="job-admin-status"
+                value={status}
+                onChange={(e) => setFilter('status', e.target.value)}
+              >
+                {statusOptions.map((opt) => (
+                  <option key={opt.value || 'all'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="jb-filter-select">
+              <span>Company</span>
+              <select
+                id="job-admin-company"
+                value={companyId}
+                onChange={(e) => setFilter('companyId', e.target.value)}
+              >
+                <option value="">All companies</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="jb-filter-select">
+              <span>Employment</span>
+              <select
+                id="job-admin-type"
+                value={employmentType}
+                onChange={(e) => setFilter('employmentType', e.target.value)}
+              >
+                {EMPLOYMENT_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'all'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="jb-filter-select">
+              <span>Workplace</span>
+              <select
+                id="job-admin-place"
+                value={workplaceType}
+                onChange={(e) => setFilter('workplaceType', e.target.value)}
+              >
+                {WORKPLACE_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'all'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="jb-filter-select">
+              <span>Edits</span>
+              <select
+                id="job-admin-edited"
+                value={employerEdited ? 'true' : ''}
+                onChange={(e) => setFilter('employerEdited', e.target.value)}
+              >
+                <option value="">All jobs</option>
+                <option value="true">Edited by employer</option>
+              </select>
+            </label>
+            {hasFilters && (
+              <button
+                type="button"
+                className="btn-clear-filters"
+                onClick={() => {
+                  const next = new URLSearchParams();
+                  if (view === 'history') next.set('view', 'history');
+                  setSearchParams(next);
+                  setActionNotice(null);
+                }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

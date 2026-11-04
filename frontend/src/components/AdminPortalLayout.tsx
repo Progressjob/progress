@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '../auth/AuthContext';
 import { ProgressLogo } from './ProgressLogo';
 import { AccountDropdown } from './AccountDropdown';
+import { NotificationBell } from './NotificationBell';
 
 const primaryLinks = [
   ['Dashboard', '/admin'],
@@ -22,29 +23,29 @@ export const AdminPortalLayout = () => {
     setMenuOpen(false);
   }, [location.key]);
 
-  useEffect(() => {
-    document.body.classList.toggle('nav-locked', menuOpen);
-    return () => document.body.classList.remove('nav-locked');
-  }, [menuOpen]);
-
   return (
     <div className="app-shell admin-shell">
       <header className={`top-nav admin-topbar ${menuOpen ? 'is-menu-open' : ''}`}>
-        <Link to="/admin" className="brand-logo-link" aria-label="Admin dashboard">
-          <ProgressLogo size="sm" />
-        </Link>
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-controls="admin-nav-panel"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-        </button>
+        <div className="nav-brand">
+          <Link to="/admin" className="brand-logo-link" aria-label="Admin dashboard">
+            <ProgressLogo size="sm" />
+          </Link>
+        </div>
+        <div className="nav-mobile-actions">
+          {user && <NotificationBell />}
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="admin-nav-panel"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className="nav-toggle-bar" />
+            <span className="nav-toggle-bar" />
+            <span className="nav-toggle-bar" />
+          </button>
+        </div>
         <div
           className={`nav-overlay ${menuOpen ? 'is-open' : ''}`}
           onClick={() => setMenuOpen(false)}
@@ -57,6 +58,7 @@ export const AdminPortalLayout = () => {
             ))}
           </nav>
           <div className="nav-auth">
+            {user && <NotificationBell />}
             {user && (
               <AccountDropdown
                 name={`${user.firstName} ${user.lastName}`}

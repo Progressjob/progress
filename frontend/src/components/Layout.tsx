@@ -1,4 +1,5 @@
 import { AccountDropdown } from './AccountDropdown';
+import { NotificationBell } from './NotificationBell';
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -33,11 +34,6 @@ export const Layout: React.FC = () => {
       setWorkspace('candidate');
     }
   }, [user, workspace, hasEmployerAccount, setWorkspace]);
-
-  useEffect(() => {
-    document.body.classList.toggle('nav-locked', menuOpen);
-    return () => document.body.classList.remove('nav-locked');
-  }, [menuOpen]);
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -98,18 +94,21 @@ export const Layout: React.FC = () => {
           </Link>
         </div>
 
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-controls="site-nav-panel"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-        </button>
+        <div className="nav-mobile-actions">
+          {user && <NotificationBell />}
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="site-nav-panel"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className="nav-toggle-bar" />
+            <span className="nav-toggle-bar" />
+            <span className="nav-toggle-bar" />
+          </button>
+        </div>
 
         <div
           className={`nav-overlay ${menuOpen ? 'is-open' : ''}`}
@@ -290,6 +289,34 @@ export const Layout: React.FC = () => {
               <strong>Web:</strong> progressjobsplc.com
             </div>
           </div>
+        </div>
+
+        <div className="mobile-footer-groups">
+          <details>
+            <summary>Explore & accounts</summary>
+            <nav aria-label="Footer navigation">
+              <Link to="/jobs">Find jobs</Link>
+              <Link to="/companies">Employers</Link>
+              <Link to="/register">Create account</Link>
+              <Link to="/login">Sign in</Link>
+              <Link to={firstCompanyId ? `/company/${firstCompanyId}/jobs/new` : '/employer/setup'}>Post a job</Link>
+              <Link to="/admin">Admin portal</Link>
+            </nav>
+          </details>
+          <details>
+            <summary>Contact us</summary>
+            <p>Dukem, Oromia Region, Ethiopia</p>
+            <a href="tel:+251118879710">+251 11 887 9710</a>
+            <a href="tel:+251949811818">+251 949 811 818</a>
+            <a href="tel:+251994251515">+251 994 251 515</a>
+            <a href="mailto:progressjobs8@gmail.com">progressjobs8@gmail.com</a>
+            <Link to="/contact">All contact details</Link>
+          </details>
+          <details>
+            <summary>About Progress</summary>
+            <p>We handpick the best among the rest.</p>
+            <p>Licensed, certified & registered O/R/ G/Labor & Social Affairs Bureau.</p>
+          </details>
         </div>
 
         <div className="footer-bottom">

@@ -41,6 +41,7 @@ export const JobsListPage: React.FC = () => {
   const industry = searchParams.get('industry') || '';
   const salary = searchParams.get('salary') || '';
   const [search, setSearch] = useState(q);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [listedJobs, setListedJobs] = useState<Job[]>([]);
   const limit = 12;
@@ -248,7 +249,14 @@ export const JobsListPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="jb-filters">
+          <div className="mobile-job-filter-bar">
+            <button type="button" aria-expanded={mobileFiltersOpen} aria-controls="job-search-filters"
+              onClick={() => setMobileFiltersOpen((open) => !open)}>
+              {mobileFiltersOpen ? 'Hide filters' : 'Filters'}{hasActiveFilters ? ' · Active' : ''}
+            </button>
+            {jobsData && <span>{jobsData.total} vacancies</span>}
+          </div>
+          <div id="job-search-filters" className={`jb-filters public-job-filters${mobileFiltersOpen ? ' is-open' : ''}`}>
             <span className="jb-filters-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                 <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />

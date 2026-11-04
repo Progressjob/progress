@@ -220,33 +220,39 @@ export const AdminTaxonomyPage: React.FC = () => {
       <div
         style={{
           display: 'flex',
+          gap: '0.65rem',
+          alignItems: 'center',
+          marginBottom: '0.85rem',
           flexWrap: 'wrap',
-          gap: '0.85rem',
-          alignItems: 'flex-end',
-          marginBottom: '0.25rem',
         }}
       >
-        <div className="form-input-group" style={{ flex: '1 1 240px', maxWidth: '420px', margin: 0 }}>
-          <label htmlFor="taxonomy-search">Search {nounPlural.toLowerCase()}</label>
+        <label htmlFor="taxonomy-search" className="notif-search" style={{ flex: '1 1 240px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" strokeWidth="2" />
+            <path d="M20 20l-3.5-3.5" strokeWidth="2" strokeLinecap="round" />
+          </svg>
           <input
             id="taxonomy-search"
-            placeholder="Name or slug…"
+            type="search"
+            placeholder={`Search ${nounPlural.toLowerCase()}…`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label={`Search ${nounPlural.toLowerCase()}`}
           />
-        </div>
-        <div className="form-input-group" style={{ margin: 0, minWidth: '160px' }}>
-          <label htmlFor="taxonomy-status">Status</label>
+        </label>
+        <label className="notif-date-select">
+          <span className="visually-hidden">Status filter</span>
           <select
             id="taxonomy-status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            aria-label="Filter by status"
           >
-            <option value="all">All</option>
+            <option value="all">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </div>
+        </label>
       </div>
 
       {actionError && <div className="alert-box-error">{actionError}</div>}
@@ -274,19 +280,19 @@ export const AdminTaxonomyPage: React.FC = () => {
             <div className="admin-taxonomy-list">
               {items.map((item) => (
                 <article key={item.id} className="admin-taxonomy-row">
-                  <div className="admin-taxonomy-identity">
+                  <div className="admin-taxonomy-header-line">
                     <h3>{item.name}</h3>
-                    <p>
-                      <code>{item.slug}</code>
-                      <span className="admin-taxonomy-dot">·</span>
-                      {item.usageLabel}
-                    </p>
+                    <span
+                      className={`admin-taxonomy-status ${item.isActive ? 'is-active' : 'is-inactive'}`}
+                    >
+                      {item.isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
-                  <span
-                    className={`admin-taxonomy-status ${item.isActive ? 'is-active' : 'is-inactive'}`}
-                  >
-                    {item.isActive ? 'Active' : 'Inactive'}
-                  </span>
+                  <div className="admin-taxonomy-meta-line">
+                    <code>{item.slug}</code>
+                    <span className="admin-taxonomy-dot">·</span>
+                    <span className="admin-taxonomy-usage">{item.usageLabel}</span>
+                  </div>
                   <div className="admin-taxonomy-actions">
                     <button type="button" className="btn btn-sm btn-secondary" onClick={() => openEdit(item)}>
                       Edit
@@ -340,7 +346,7 @@ export const AdminTaxonomyPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                className="btn-clear-filters"
+                className="admin-modal-close"
                 onClick={() => setFormOpen(false)}
                 disabled={saveMutation.isPending}
                 aria-label="Close"
@@ -431,7 +437,7 @@ export const AdminTaxonomyPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                className="btn-clear-filters"
+                className="admin-modal-close"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteMutation.isPending}
                 aria-label="Close"

@@ -188,14 +188,21 @@ export const AdminCompaniesPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="form-input-group" style={{ maxWidth: "420px" }}>
-        <label htmlFor="co-search">Search companies</label>
-        <input
-          id="co-search"
-          placeholder="Name, email, city, phone…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="admin-search-wrap" style={{ maxWidth: "440px", marginBottom: "1rem" }}>
+        <label htmlFor="co-search" className="notif-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" strokeWidth="2" />
+            <path d="M20 20l-3.5-3.5" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            id="co-search"
+            type="search"
+            placeholder="Search by name, email, city, phone…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search companies"
+          />
+        </label>
       </div>
 
       {formError && !showRegister && !editTarget && !terminateTarget && (
@@ -249,52 +256,57 @@ export const AdminCompaniesPage: React.FC = () => {
           const suspended = c.portalStatus === "suspended";
           return (
             <article key={c.id} className="admin-company-row">
-              <div className="directory-company-identity">
-                <CompanyLogoMark
-                  name={c.name}
-                  logoId={c.logo?.id}
-                  className="jb-company-logo jb-company-logo-fallback"
-                  imgClassName="jb-company-logo"
-                />
-                <div>
-                  <h2>{c.name}</h2>
-                  <p>{c.email || c.city || "Contact details not provided"}</p>
-                  {c.contactPerson && <small>Contact: {c.contactPerson}</small>}
+              <div className="directory-company-header">
+                <div className="directory-company-identity">
+                  <CompanyLogoMark
+                    name={c.name}
+                    logoId={c.logo?.id}
+                    className="jb-company-logo jb-company-logo-fallback"
+                    imgClassName="jb-company-logo"
+                  />
+                  <div className="directory-company-text">
+                    <h2>{c.name}</h2>
+                    <p>{c.email || c.city || "Contact details not provided"}</p>
+                    {c.contactPerson && <small>Contact: {c.contactPerson}</small>}
+                  </div>
+                </div>
+                <div className="directory-company-badge-wrap">
+                  <span className={`verification-state ${c.verificationStatus}`}>
+                    {c.verificationStatus === "verified"
+                      ? "Approved"
+                      : c.verificationStatus === "pending"
+                        ? "Awaiting review"
+                        : "Rejected"}
+                  </span>
+                  {suspended && (
+                    <span className="verification-state rejected">Suspended</span>
+                  )}
                 </div>
               </div>
-              <div className="directory-company-state">
-                <span className={`verification-state ${c.verificationStatus}`}>
-                  {c.verificationStatus === "verified"
-                    ? "Approved"
-                    : c.verificationStatus === "pending"
-                      ? "Awaiting review"
-                      : "Rejected"}
-                </span>
-                {suspended && (
-                  <span className="verification-state rejected">Suspended</span>
-                )}
-                <small>
+
+              <div className="directory-company-meta-strip">
+                <span className="directory-meta-pill">
                   {c.canSelfPublishJobs
-                    ? "Direct publishing enabled"
-                    : "Jobs require admin review"}
-                </small>
-              </div>
-              <div className="directory-company-counts">
-                <Link to={`/admin/jobs?companyId=${c.id}`}>
-                  <strong>{c._count?.jobs ?? 0}</strong>
-                  <small>Jobs</small>
+                    ? "Direct publishing"
+                    : "Jobs require review"}
+                </span>
+                <span className="directory-meta-dot" aria-hidden="true">•</span>
+                <Link to={`/admin/jobs?companyId=${c.id}`} className="directory-meta-stat">
+                  <strong>{c._count?.jobs ?? 0}</strong> Jobs
                 </Link>
-                <div>
-                  <strong>{c._count?.members ?? 0}</strong>
-                  <small>Members</small>
-                </div>
+                <span className="directory-meta-dot" aria-hidden="true">•</span>
+                <span className="directory-meta-stat">
+                  <strong>{c._count?.members ?? 0}</strong> Members
+                </span>
               </div>
+
               <div className="directory-company-actions">
-                <button onClick={() => openEdit(c)}>Edit company</button>
+                <button type="button" onClick={() => openEdit(c)}>Edit company</button>
                 <Link to={`/admin/verification?company=${c.id}`}>
                   Review licence
                 </Link>
                 <button
+                  type="button"
                   disabled={
                     toggleMutation.isPending ||
                     suspended ||
@@ -308,10 +320,11 @@ export const AdminCompaniesPage: React.FC = () => {
                   }
                 >
                   {c.canSelfPublishJobs
-                    ? "Require job review"
+                    ? "Require review"
                     : "Allow direct posting"}
                 </button>
                 <button
+                  type="button"
                   className={suspended ? "" : "is-danger"}
                   disabled={portalMutation.isPending}
                   onClick={() => {
@@ -410,11 +423,15 @@ export const AdminCompaniesPage: React.FC = () => {
               onChange={setEditForm}
               idPrefix="edit"
             />
-            <div className="form-input-group">
-              <p>Review the business licence before approving this company.</p>
+            <div className="admin-licence-review-box">
+              <h3>Business Licence Verification</h3>
+              <p className="admin-licence-review-desc">
+                Review the business licence before approving this company.
+              </p>
               {editTarget.documents?.[0] ? (
                 <button
                   type="button"
+                  className="admin-licence-download-btn"
                   onClick={() =>
                     void apiDownloadFile(
                       editTarget.documents![0].fileId,
@@ -423,50 +440,57 @@ export const AdminCompaniesPage: React.FC = () => {
                     ).catch((err: Error) => setFormError(err.message))
                   }
                 >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
                   Download business licence
                 </button>
               ) : (
-                <p>
+                <p className="admin-licence-missing-alert">
                   No business licence on file. Approval is blocked until one is
                   uploaded.
                 </p>
               )}
-              <label htmlFor="review-note">
-                Review note (required for rejection)
-              </label>
-              <textarea
-                id="review-note"
-                value={editReviewNote}
-                onChange={(e) => setEditReviewNote(e.target.value)}
-              />
-              <label htmlFor="edit-ver">Licence review decision</label>
-              <select
-                id="edit-ver"
-                value={editVerification}
-                onChange={(e) =>
-                  setEditVerification(
-                    e.target.value as Company["verificationStatus"],
-                  )
-                }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  borderRadius: "12px",
-                  border: "1px solid #cbd5e1",
-                }}
-              >
-                <option value="pending">Pending</option>
-                <option
-                  value="verified"
-                  disabled={
-                    !editTarget.documents?.length &&
-                    !editForm.businessLicenceFileId
+              <div className="admin-field-group">
+                <label htmlFor="review-note">
+                  Review note <small>(required for rejection)</small>
+                </label>
+                <textarea
+                  id="review-note"
+                  className="admin-review-textarea"
+                  placeholder="Reason for rejection or review notes…"
+                  value={editReviewNote}
+                  onChange={(e) => setEditReviewNote(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="admin-field-group">
+                <label htmlFor="edit-ver">Licence review decision</label>
+                <select
+                  id="edit-ver"
+                  className="admin-select-field"
+                  value={editVerification}
+                  onChange={(e) =>
+                    setEditVerification(
+                      e.target.value as Company["verificationStatus"],
+                    )
                   }
                 >
-                  Approve company
-                </option>
-                <option value="rejected">Rejected</option>
-              </select>
+                  <option value="pending">Pending review</option>
+                  <option
+                    value="verified"
+                    disabled={
+                      !editTarget.documents?.length &&
+                      !editForm.businessLicenceFileId
+                    }
+                  >
+                    Approve company
+                  </option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
             </div>
             <ModalActions
               submitLabel={
@@ -544,37 +568,15 @@ const Modal: React.FC<{
   <div
     role="dialog"
     aria-modal="true"
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(15, 23, 42, 0.55)",
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "center",
-      zIndex: 900,
-      padding: "2rem 1rem",
-      overflowY: "auto",
-    }}
+    className="admin-modal-overlay"
     onClick={onClose}
   >
     <div
-      className="card stack"
-      style={{
-        maxWidth: "720px",
-        width: "100%",
-        maxHeight: "90vh",
-        overflowY: "auto",
-      }}
+      className="admin-modal-dialog"
       onClick={(e) => e.stopPropagation()}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h2 style={{ margin: 0 }}>{title}</h2>
+      <div className="admin-modal-header">
+        <h2>{title}</h2>
         <button
           type="button"
           className="admin-modal-close"
@@ -584,7 +586,9 @@ const Modal: React.FC<{
           ✕
         </button>
       </div>
-      {children}
+      <div className="admin-modal-body">
+        {children}
+      </div>
     </div>
   </div>
 );
@@ -594,24 +598,16 @@ const ModalActions: React.FC<{
   pending: boolean;
   onCancel: () => void;
 }> = ({ submitLabel, pending, onCancel }) => (
-  <div
-    style={{
-      display: "flex",
-      gap: "0.75rem",
-      marginTop: "1.25rem",
-      flexWrap: "wrap",
-    }}
-  >
+  <div className="admin-modal-actions">
+    <button type="button" className="admin-modal-btn-cancel" onClick={onCancel}>
+      Cancel
+    </button>
     <button
       type="submit"
-      className="btn-auth-submit"
-      style={{ width: "auto" }}
+      className="admin-modal-btn-primary"
       disabled={pending}
     >
       {submitLabel}
-    </button>
-    <button type="button" className="btn-clear-filters" onClick={onCancel}>
-      Cancel
     </button>
   </div>
 );

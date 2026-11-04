@@ -435,6 +435,25 @@ export const LandingPage: React.FC = () => {
           <p className="section-subtitle">Discover vacancies tailored to your specialized domain</p>
         </div>
 
+        <div className="mobile-category-picker">
+          <div className="mobile-category-shortcuts" aria-label="Explore job categories">
+            {categoriesQuery.data?.slice(0, 4).map((category) => (
+              <Link key={category.id} to={`/jobs?category=${encodeURIComponent(category.slug)}`}>
+                <span>{category.name}</span><span aria-hidden="true">↗</span>
+              </Link>
+            ))}
+          </div>
+          <label htmlFor="home-mobile-category">More fields</label>
+          <select id="home-mobile-category" defaultValue="" onChange={(event) => {
+            if (event.target.value) navigate(`/jobs?category=${encodeURIComponent(event.target.value)}`);
+          }}>
+            <option value="" disabled>Browse job categories</option>
+            {categoriesQuery.data?.map((category) => (
+              <option key={category.id} value={category.slug}>{category.name}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="categories-grid">
           {categoriesQuery.data?.slice(0, 10).map((cat) => (
             <Link key={cat.id} to={`/jobs?category=${cat.slug}`} className="category-tile">

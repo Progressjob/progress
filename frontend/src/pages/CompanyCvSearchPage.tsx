@@ -238,7 +238,9 @@ export const CompanyCvSearchPage: React.FC = () => {
                                   </div>
                                   <div className="cv-stat-box cv-stat-box-highlight">
                                     <span className="cv-stat-label">Talent Sourcing Hotline</span>
-                                    <strong className="cv-stat-number" style={{ fontSize: '1.15rem' }}>+251 949 811 818</strong>
+                                    <strong className="cv-stat-number" style={{ fontSize: '1.15rem' }}>
+                                      <a href="tel:+251949811818" className="cv-hotline-link">+251 949 811 818</a>
+                                    </strong>
                                     <span className="cv-stat-sub">Progress Dukem Headquarters</span>
                                   </div>
                               </div>
