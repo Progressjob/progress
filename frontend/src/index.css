@@ -3790,8 +3790,8 @@ hr {
 
 .company-directory-card {
   background: #ffffff;
-  border: 1.5px solid #7eb0f0;
-  border-radius: 28px;
+  border: 1px solid #e0ebf8;
+  border-radius: 24px;
   padding: 1.85rem;
   box-shadow:
     0 1px 0 rgba(11, 87, 208, 0.04),
@@ -3805,7 +3805,7 @@ hr {
 
 .company-directory-card:hover {
   transform: translateY(-3px);
-  border-color: #4f8fe0;
+  border-color: #bcd5f5;
   box-shadow:
     0 1px 0 rgba(11, 87, 208, 0.06),
     0 18px 36px rgba(11, 87, 208, 0.14);

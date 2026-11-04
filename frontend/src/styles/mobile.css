@@ -2540,54 +2540,75 @@
   }
 
   .company-directory-card {
-    padding: 14px 16px !important;
-    border: 1.5px solid #7eb0f0 !important;
-    border-radius: 22px !important;
+    padding: 15px 16px !important;
+    background: #ffffff !important;
+    border: 1px solid #e0ebf8 !important;
+    border-radius: 24px !important;
     box-shadow:
-      0 1px 0 rgba(11, 87, 208, 0.04),
-      0 8px 20px rgba(11, 87, 208, 0.08) !important;
+      0 2px 4px rgba(15, 23, 42, 0.02),
+      0 8px 22px -2px rgba(11, 87, 208, 0.06) !important;
+    transition: all 0.2s ease !important;
   }
 
-  .company-directory-card:hover {
+  .company-directory-card:hover,
+  .company-directory-card:active {
     transform: none !important;
-    border-color: #7eb0f0 !important;
+    border-color: #bcd5f5 !important;
     box-shadow:
-      0 1px 0 rgba(11, 87, 208, 0.04),
-      0 8px 20px rgba(11, 87, 208, 0.08) !important;
+      0 2px 4px rgba(15, 23, 42, 0.02),
+      0 10px 28px -2px rgba(11, 87, 208, 0.1) !important;
   }
 
   .company-directory-card .company-card-top {
-    gap: 0.65rem !important;
-    margin-bottom: 0.4rem !important;
+    gap: 0.75rem !important;
+    margin-bottom: 0.45rem !important;
     align-items: center !important;
   }
 
   .company-directory-card .company-avatar-box {
-    width: 40px !important;
-    height: 40px !important;
+    width: 44px !important;
+    height: 44px !important;
     border-radius: 14px !important;
-    font-size: 1.1rem !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 3px 10px rgba(11, 87, 208, 0.12) !important;
   }
 
   .company-directory-card .verified-badge {
     font-size: 0.68rem !important;
-    padding: 0.15rem 0.45rem !important;
-    margin-bottom: 0.15rem !important;
+    padding: 2px 8px !important;
+    margin-bottom: 0.2rem !important;
+    border-radius: 999px !important;
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #dcfce7 !important;
+    font-weight: 650 !important;
   }
 
   .company-directory-card .company-title a {
-    font-size: 1rem !important;
-    line-height: 1.25 !important;
+    font-size: 1.02rem !important;
+    font-weight: 750 !important;
+    line-height: 1.3 !important;
+    color: #0f2744 !important;
   }
 
   .company-directory-card .company-tags-row {
-    margin-bottom: 0.4rem !important;
-    gap: 0.35rem !important;
+    margin-bottom: 0.5rem !important;
+    gap: 0.4rem !important;
   }
 
   .company-directory-card .tag-pill {
     font-size: 0.72rem !important;
-    padding: 0.18rem 0.5rem !important;
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    background: #f8fafc !important;
+    border: 1px solid #edf2f7 !important;
+    color: #475569 !important;
+  }
+
+  .company-directory-card .tag-pill.tag-location {
+    background: #f0f7ff !important;
+    border-color: #e0eefd !important;
+    color: #0b57d0 !important;
   }
 
   /* Hide company bio/description snippet on mobile to keep cards compact */
@@ -2596,18 +2617,45 @@
   }
 
   .company-directory-card .company-card-bottom {
-    padding-top: 0.45rem !important;
-    margin-top: 0.15rem !important;
+    padding-top: 0.6rem !important;
+    margin-top: 0.25rem !important;
+    border-top: 1px solid #f1f5f9 !important;
   }
 
   .company-directory-card .vacancies-pill {
-    font-size: 0.75rem !important;
+    font-size: 0.74rem !important;
+    color: #64748b !important;
+    background: #f8fafc !important;
+    border: 1px solid #edf2f7 !important;
+    border-radius: 999px !important;
+    padding: 3px 9px !important;
+  }
+
+  .company-directory-card .vacancies-pill strong {
+    color: #0b57d0 !important;
+    font-weight: 750 !important;
   }
 
   .company-directory-card .btn-view-company-roles {
     min-height: 32px !important;
-    padding: 0.25rem 0.7rem !important;
+    padding: 5px 13px !important;
     font-size: 0.78rem !important;
+    font-weight: 650 !important;
+    border-radius: 999px !important;
+    background: #eff6ff !important;
+    color: #0b57d0 !important;
+    border: 1px solid #dbeafe !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .company-directory-card .btn-view-company-roles:hover,
+  .company-directory-card .btn-view-company-roles:active {
+    background: #dbeafe !important;
+    border-color: #bfdbfe !important;
   }
 
   /* ========================================================
