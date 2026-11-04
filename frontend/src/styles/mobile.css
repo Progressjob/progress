@@ -1459,11 +1459,6 @@
     border-radius: 10px;
     box-shadow: none;
   }
-  .employer-postings .emp-stat-card:hover { transform: none; box-shadow: none; }
-  .employer-postings .emp-stat-card.is-active-filter {
-    background: #eaf2ff;
-    border-color: #c3d8fa;
-  }
   .employer-postings .emp-stat-card-header { order: 1; margin: 2px 0 0; }
   .employer-postings .cv-stat-label {
     color: #475569;
@@ -2038,3 +2033,93 @@
     white-space: normal !important;
   }
 }
+
+.employer-job-filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: .8rem;
+  font-weight: 650;
+  color: #334155;
+}
+
+.employer-result-count {
+  margin: 0 0 10px;
+  color: #475569;
+  font-size: .85rem;
+}
+
+@media screen and (max-width: 768px) {
+  .employer-postings .employer-filter-controls { align-items: end; }
+}
+
+
+.employer-status-filter {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.employer-status-chips {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 4px 3px 7px;
+  scrollbar-width: none;
+}
+
+.employer-status-chips::-webkit-scrollbar { display: none; }
+
+.employer-status-chips .home-find-chip {
+  flex: 0 0 auto;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.employer-status-chips .home-find-chip[aria-pressed='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+@media screen and (max-width: 768px) {
+  .employer-postings .employer-filter-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.employer-posting-totals {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.employer-posting-totals h2 {
+  margin: 0 0 6px;
+  color: #475569;
+  font-size: .8rem;
+}
+
+.employer-posting-totals dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.employer-posting-totals dl > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.employer-posting-totals dl > div + div { border-inline-start: 1px solid #e2e8f0; }
+.employer-posting-totals dt { color: #475569; font-size: .72rem; }
+.employer-posting-totals dd { margin: 0; color: #0f2744; font-size: 1.1rem; font-weight: 750; }

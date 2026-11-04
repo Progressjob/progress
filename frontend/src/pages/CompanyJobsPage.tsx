@@ -26,6 +26,10 @@ interface JobUrgency {
   badgeType: 'expired' | 'closing' | 'normal';
 }
 
+function isPastPosting(job: Job, expired: boolean): boolean {
+  return expired || ['closed', 'rejected', 'archived'].includes(job.status);
+}
+
 function getJobUrgency(job: Job): JobUrgency {
   if (job.status === 'closed') {
     return {
@@ -148,10 +152,8 @@ export const CompanyJobsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [tab, setTab] = useState<'open' | 'history' | 'all'>('open');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'closing_soon' | 'deadline_latest' | 'applications' | 'title'>('newest');
+  const [statusFilter, setStatusFilter] = useState<string>('open');
   const [currentPage, setCurrentPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -192,7 +194,8 @@ export const CompanyJobsPage: React.FC = () => {
           : `"${job.title}" has been updated and submitted for administrator review.`,
       );
       void queryClient.invalidateQueries({ queryKey: ['company', 'jobs', companyId] });
-      setTab('open');
+      setStatusFilter('open');
+      setCurrentPage(1);
     },
     onError: (err: Error) => {
       setReopenError(err.message || 'Failed to update and reopen job');
@@ -214,41 +217,29 @@ export const CompanyJobsPage: React.FC = () => {
   const companies = companiesQuery.data ?? [];
   const rawJobs = jobsQuery.data ?? [];
 
-  // Categorize jobs into Open vs History
-  const { openJobs, historyJobs, publishedCount, reviewCount } = useMemo(() => {
-    const open: Job[] = [];
-    const history: Job[] = [];
-    let pubCount = 0;
-    let revCount = 0;
-
-    for (const job of rawJobs) {
-      const urgency = getJobUrgency(job);
-      const isExpired = urgency.isExpired;
-      const isClosedState = ['closed', 'rejected', 'archived'].includes(job.status);
-
-      if (isExpired || isClosedState) {
-        history.push(job);
-      } else {
-        open.push(job);
-        if (job.status === 'published') pubCount++;
-        if (job.status === 'pending_review') revCount++;
-      }
-    }
-
-    return {
-      openJobs: open,
-      historyJobs: history,
-      publishedCount: pubCount,
-      reviewCount: revCount,
-    };
-  }, [rawJobs]);
+  const totals = rawJobs.reduce(
+    (counts, job) => {
+      if (isPastPosting(job, getJobUrgency(job).isExpired)) counts.past++;
+      else if (job.status === 'published') counts.live++;
+      else if (job.status === 'pending_review') counts.review++;
+      return counts;
+    },
+    { live: 0, review: 0, past: 0 },
+  );
 
   // Filter and sort jobs
   const filteredJobs = useMemo(() => {
-    let list: Job[] = [];
-    if (tab === 'open') list = openJobs;
-    else if (tab === 'history') list = historyJobs;
-    else list = rawJobs;
+    let list = rawJobs.filter((job) => {
+      if (statusFilter === 'all') return true;
+      const expired = getJobUrgency(job).isExpired;
+      const inHistory = isPastPosting(job, expired);
+
+      if (statusFilter === 'open') return !inHistory;
+      if (statusFilter === 'history') return inHistory;
+      if (statusFilter === 'expired') return expired;
+      if (statusFilter === 'closed' || statusFilter === 'rejected') return job.status === statusFilter;
+      return !inHistory && job.status === statusFilter;
+    });
 
     // Search query filter
     const q = searchQuery.trim().toLowerCase();
@@ -263,41 +254,12 @@ export const CompanyJobsPage: React.FC = () => {
       });
     }
 
-    // Status filter
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'expired') {
-        list = list.filter((j) => getJobUrgency(j).isExpired);
-      } else {
-        list = list.filter((j) => j.status === statusFilter && !getJobUrgency(j).isExpired);
-      }
-    }
-
-    // Sorting
-    return [...list].sort((a, b) => {
-      if (sortBy === 'closing_soon') {
-        const dA = new Date(a.applicationDeadline).getTime() || 0;
-        const dB = new Date(b.applicationDeadline).getTime() || 0;
-        return dA - dB;
-      }
-      if (sortBy === 'deadline_latest') {
-        const dA = new Date(a.applicationDeadline).getTime() || 0;
-        const dB = new Date(b.applicationDeadline).getTime() || 0;
-        return dB - dA;
-      }
-      if (sortBy === 'applications') {
-        const countA = a._count?.applications ?? 0;
-        const countB = b._count?.applications ?? 0;
-        return countB - countA;
-      }
-      if (sortBy === 'title') {
-        return a.title.localeCompare(b.title);
-      }
-      // default: newest
+    return list.sort((a, b) => {
       const tA = new Date(a.createdAt || a.postedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.postedAt || 0).getTime();
       return tB - tA;
     });
-  }, [rawJobs, openJobs, historyJobs, tab, searchQuery, statusFilter, sortBy]);
+  }, [rawJobs, searchQuery, statusFilter]);
 
   // Pagination calculation
   const totalItems = filteredJobs.length;
@@ -330,8 +292,7 @@ export const CompanyJobsPage: React.FC = () => {
 
   const handleResetFilters = () => {
     setSearchQuery('');
-    setStatusFilter('all');
-    setSortBy('newest');
+    setStatusFilter('open');
     setCurrentPage(1);
   };
 
@@ -380,98 +341,16 @@ export const CompanyJobsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Top 4 KPI Stat Cards */}
-      <div className="employer-stats-grid">
-        <div
-          className={`emp-stat-card${tab === 'open' && statusFilter === 'all' ? ' is-active-filter' : ''}`}
-          onClick={() => {
-            setTab('open');
-            setStatusFilter('all');
-            setCurrentPage(1);
-          }}
-          title="Click to view open positions"
-        >
-          <div className="emp-stat-card-header">
-            <span className="cv-stat-label">
-              <span className="employer-desktop-label">Active & Open</span>
-              <span className="employer-mobile-label">Open</span>
-            </span>
-            <span className="emp-stat-badge-icon" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
-              💼
-            </span>
-          </div>
-          <strong className="cv-stat-number">{openJobs.length}</strong>
-          <span className="cv-stat-sub">Live, review, and drafts</span>
-        </div>
-
-        <div
-          className={`emp-stat-card${tab === 'open' && statusFilter === 'published' ? ' is-active-filter' : ''}`}
-          onClick={() => {
-            setTab('open');
-            setStatusFilter('published');
-            setCurrentPage(1);
-          }}
-          title="Click to view published jobs"
-        >
-          <div className="emp-stat-card-header">
-            <span className="cv-stat-label">
-              <span className="employer-desktop-label">Published Live</span>
-              <span className="employer-mobile-label">Live</span>
-            </span>
-            <span className="emp-stat-badge-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
-              🟢
-            </span>
-          </div>
-          <strong className="cv-stat-number text-primary">{publishedCount}</strong>
-          <span className="cv-stat-sub">Accepting active applications</span>
-        </div>
-
-        <div
-          className={`emp-stat-card${tab === 'open' && statusFilter === 'pending_review' ? ' is-active-filter' : ''}`}
-          onClick={() => {
-            setTab('open');
-            setStatusFilter('pending_review');
-            setCurrentPage(1);
-          }}
-          title="Click to view jobs under moderation"
-        >
-          <div className="emp-stat-card-header">
-            <span className="cv-stat-label">
-              <span className="employer-desktop-label">Under Review</span>
-              <span className="employer-mobile-label">Review</span>
-            </span>
-            <span className="emp-stat-badge-icon" style={{ background: '#fffbeb', color: '#d97706' }}>
-              ⏳
-            </span>
-          </div>
-          <strong className="cv-stat-number" style={{ color: '#d97706' }}>
-            {reviewCount}
-          </strong>
-          <span className="cv-stat-sub">Pending admin approval</span>
-        </div>
-
-        <div
-          className={`emp-stat-card${tab === 'history' ? ' is-active-filter' : ''}`}
-          onClick={() => {
-            setTab('history');
-            setStatusFilter('all');
-            setCurrentPage(1);
-          }}
-          title="Click to view expired and closed jobs"
-        >
-          <div className="emp-stat-card-header">
-            <span className="cv-stat-label">
-              <span className="employer-desktop-label">History & Closed</span>
-              <span className="employer-mobile-label">Closed</span>
-            </span>
-            <span className="emp-stat-badge-icon" style={{ background: '#f8fafc', color: '#64748b' }}>
-              📁
-            </span>
-          </div>
-          <strong className="cv-stat-number">{historyJobs.length}</strong>
-          <span className="cv-stat-sub">Expired deadline or closed</span>
-        </div>
-      </div>
+      {jobsQuery.isSuccess && rawJobs.length > 0 && (
+        <section className="employer-posting-totals" aria-labelledby="posting-totals-heading">
+          <h2 id="posting-totals-heading">Posting totals</h2>
+          <dl>
+            <div><dt>Live</dt><dd>{totals.live}</dd></div>
+            <div><dt>Under review</dt><dd>{totals.review}</dd></div>
+            <div><dt>Past jobs</dt><dd>{totals.past}</dd></div>
+          </dl>
+        </section>
+      )}
 
       {message && (
         <div className="employer-jobs-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -511,55 +390,6 @@ export const CompanyJobsPage: React.FC = () => {
 
       {rawJobs.length > 0 && (
         <div className="employer-jobs-panel">
-          {/* Navigation Tabs and Controls */}
-          <div className="employer-tabs-header">
-            <div className="employer-tabs-nav" role="tablist" aria-label="Job postings filter tabs">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'open'}
-                className={`employer-jobs-tab${tab === 'open' ? ' is-active' : ''}`}
-                onClick={() => {
-                  setTab('open');
-                  setCurrentPage(1);
-                }}
-              >
-                <span className="employer-desktop-label">Open & Active</span><span className="employer-mobile-label">Open</span>
-                <span className="employer-job-pill-count">{openJobs.length}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'history'}
-                className={`employer-jobs-tab${tab === 'history' ? ' is-active' : ''}`}
-                onClick={() => {
-                  setTab('history');
-                  setCurrentPage(1);
-                }}
-              >
-                <span className="employer-desktop-label">History & Closed</span><span className="employer-mobile-label">History</span>
-                <span className="employer-job-pill-count">{historyJobs.length}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'all'}
-                className={`employer-jobs-tab${tab === 'all' ? ' is-active' : ''}`}
-                onClick={() => {
-                  setTab('all');
-                  setCurrentPage(1);
-                }}
-              >
-                <span className="employer-desktop-label">All Postings</span><span className="employer-mobile-label">All</span>
-                <span className="employer-job-pill-count">{rawJobs.length}</span>
-              </button>
-            </div>
-
-            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-              Showing {totalItems} {totalItems === 1 ? 'vacancy' : 'vacancies'}
-            </div>
-          </div>
-
           {/* Search, Filter & Sort Toolbar for Many Jobs */}
           <div className="employer-management-bar">
             <div className="employer-search-wrap">
@@ -586,70 +416,53 @@ export const CompanyJobsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="employer-filter-controls">
-              <select
-                className="employer-select-filter"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                aria-label="Filter by status"
-              >
-                <option value="all">All Statuses</option>
-                <option value="published">Published Live</option>
-                <option value="pending_review">Under Review</option>
-                <option value="draft">Draft</option>
-                <option value="expired">Deadline Passed</option>
-                <option value="closed">Closed</option>
-                <option value="rejected">Rejected</option>
-              </select>
-
-              <select
-                className="employer-select-filter"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                aria-label="Sort by"
-              >
-                <option value="newest">Sort: Newest First</option>
-                <option value="closing_soon">Sort: Deadline (Closing Soon)</option>
-                <option value="deadline_latest">Sort: Deadline (Latest)</option>
-                <option value="applications">Sort: Most Applications</option>
-                <option value="title">Sort: Job Title (A–Z)</option>
-              </select>
-
-              {(searchQuery || statusFilter !== 'all' || sortBy !== 'newest') && (
-                <button
-                  type="button"
-                  className="btn-clear-filters"
-                  onClick={handleResetFilters}
-                  style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
-                >
-                  Clear Filters
-                </button>
-              )}
+            <div className="employer-status-filter" role="group" aria-label="Show jobs">
+              <span className="employer-job-filter-label">Show jobs</span>
+              <div className="employer-status-chips">
+                {[
+                  ['open', 'Open jobs'],
+                  ['all', 'All jobs'],
+                  ['history', 'History'],
+                  ['published', 'Live'],
+                  ['pending_review', 'Under review'],
+                  ['draft', 'Drafts'],
+                  ['expired', 'Expired'],
+                  ['closed', 'Closed'],
+                  ['rejected', 'Rejected'],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="home-find-chip"
+                    aria-pressed={statusFilter === value}
+                    onClick={() => {
+                      setStatusFilter(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {(searchQuery || statusFilter !== 'open') && (
+              <button type="button" className="btn-clear-filters" onClick={handleResetFilters}>
+                Clear Filters
+              </button>
+            )}
           </div>
 
-          {/* Jobs List */}
+          <p className="employer-result-count" role="status">
+            {totalItems} {totalItems === 1 ? 'job' : 'jobs'} found
+          </p>
+
           {filteredJobs.length === 0 ? (
             <div className="empty-results-box" style={{ padding: '3rem 1.5rem' }}>
               <div className="empty-icon-circle">📂</div>
-              <h3>
-                {searchQuery || statusFilter !== 'all'
-                  ? 'No matching job postings found'
-                  : tab === 'open'
-                    ? 'No open postings currently'
-                    : 'No past job history'}
-              </h3>
-              <p>
-                {searchQuery || statusFilter !== 'all'
-                  ? 'Try clearing your search terms or filters to see all available opportunities.'
-                  : tab === 'open'
-                    ? 'Create a new job posting or check History to reactivate closed positions.'
-                    : 'Jobs whose application deadline has expired or were manually closed will appear here for easy republication.'}
-              </p>
-              {(searchQuery || statusFilter !== 'all') && (
+              <h3>No matching job postings</h3>
+              <p>Choose another job status or clear your search to see more postings.</p>
+              {(searchQuery || statusFilter !== 'open') && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -989,7 +802,7 @@ export const CompanyJobsPage: React.FC = () => {
 
             <div className="emp-modal-body">
               <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
-                Closing this vacancy will immediately remove it from the public candidate job board. The vacancy, along with its applicant count and statistics, will be safely preserved in your <strong>History & Closed</strong> tab so you can update its timeline and republish it at any time.
+                Closing this vacancy will immediately remove it from the public candidate job board. The vacancy, along with its applicant count and statistics, will be safely preserved in the <strong>History</strong> filter so you can update its timeline and republish it at any time.
               </p>
             </div>
 
