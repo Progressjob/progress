@@ -3,7 +3,11 @@ dist/
 .env
 .env.*
 !.env.example
-storage/
+storage/*
+!storage/logo/
+!storage/logo/**
+!storage/cv/demo/
+!storage/cv/demo/**
 coverage/
 *.log
 .dev-server-port
