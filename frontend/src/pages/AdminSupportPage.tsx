@@ -88,7 +88,7 @@ export function AdminSupportPage() {
       : undefined;
 
   return (
-    <div className="admin-screen">
+    <div className="admin-screen support-screen">
       <header className="admin-screen-header">
         <div>
           <span className="section-eyebrow">Help desk</span>

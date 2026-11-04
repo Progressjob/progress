@@ -52,7 +52,7 @@ export function AdminVerificationPage() {
       Number(a.id === params.get("company")),
   );
   return (
-    <div className="admin-screen">
+    <div className="admin-screen verification-screen">
       <header className="admin-screen-header">
         <div>
           <span className="section-eyebrow">Employer onboarding</span>

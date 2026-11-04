@@ -135,7 +135,7 @@ export const CompanyPostJobPage: React.FC = () => {
 
   if (company && company.verificationStatus !== 'verified') {
     return (
-      <div className="profile-edit-page">
+      <div className="profile-edit-page employer-job-form">
         <div className="profile-edit-nav">
           <BackButton fallback={`/company/${companyId}/jobs`} />
         </div>
@@ -145,7 +145,7 @@ export const CompanyPostJobPage: React.FC = () => {
   }
 
   return (
-    <div className="profile-edit-page">
+    <div className="profile-edit-page employer-job-form">
       <div className="profile-edit-nav">
         <BackButton fallback={`/company/${companyId}/jobs`} />
         <Link

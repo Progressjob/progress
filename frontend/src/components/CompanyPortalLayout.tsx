@@ -1,3 +1,4 @@
+import { SiteNavbar } from './SiteNavbar';
 import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -13,7 +14,6 @@ import {
 } from '../auth/nav';
 import { employerHomeDestination, employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
-import { ProgressLogo } from './ProgressLogo';
 import { AdminContactCard } from './AdminContactCard';
 import { WorkspaceSwitch } from './WorkspaceSwitch';
 
@@ -22,7 +22,6 @@ export const CompanyPortalLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { companyId } = useParams<{ companyId?: string }>();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
 
   const companiesQuery = useQuery({
@@ -43,17 +42,8 @@ export const CompanyPortalLayout: React.FC = () => {
   });
 
   useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
     setWorkspace('employer');
   }, [setWorkspace]);
-
-  useEffect(() => {
-    document.body.classList.toggle('nav-locked', menuOpen);
-    return () => document.body.classList.remove('nav-locked');
-  }, [menuOpen]);
 
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
@@ -89,41 +79,47 @@ export const CompanyPortalLayout: React.FC = () => {
 
   const switchToCandidate = () => {
     setWorkspace('candidate');
-    setMenuOpen(false);
     navigate('/jobs');
   };
 
   const switchToEmployer = () => {
     setWorkspace('employer');
-    setMenuOpen(false);
     navigate(employerHomeDestination(employerCompanyId));
   };
 
   return (
-    <div className="app-shell">
-      <header className={`top-nav ${menuOpen ? 'is-menu-open' : ''}`}>
-        <div className="nav-brand">
-          <Link to="/" className="brand-logo-link">
-            <ProgressLogo size="sm" />
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-controls="employer-nav-panel"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-          <span className="nav-toggle-bar" />
-        </button>
-
-        <div className={`nav-overlay ${menuOpen ? 'is-open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
-        <div id="employer-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <nav className="nav-links" aria-label="Employer navigation">
+    <div className="app-shell employer-workspace">
+      <SiteNavbar label="Employer navigation" account={<>
+            {user && (
+              <>
+                {hasBothAccounts && (
+                  <WorkspaceSwitch
+                    workspace={workspace}
+                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
+                  />
+                )}
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account">
+                  <p className="nav-account-heading">Hiring workspace</p>
+                  <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
+                  <NavLink className="employer-account-duplicate" to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
+                  {hasRole('candidate') && (
+                    <>
+                      <NavLink to="/candidate/applications" onClick={() => setWorkspace('candidate')}>My applications</NavLink>
+                      <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
+                    </>
+                  )}
+                  <Link className="employer-account-duplicate" to="/">Homepage</Link>
+                  <Link className="mobile-nav-notifications" to="/notifications">Notifications</Link>
+                  <Link to="/contact">Contact support</Link>
+                  <div className="nav-account-separator" />
+                  <button type="button" onClick={() => void handleFindWork()} disabled={switching}>
+                    {switching ? 'Switching…' : 'Switch to finding work'}
+                  </button>
+                  <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
+                </AccountDropdown>
+              </>
+            )}
+      </>}>
             <NavLink to="/">Home</NavLink>
             {companyId ? (
               <>
@@ -168,40 +164,8 @@ export const CompanyPortalLayout: React.FC = () => {
             >
               CV search
             </NavLink>
-          </nav>
 
-          <div className="nav-auth">
-            {user && (
-              <>
-                {hasBothAccounts && (
-                  <WorkspaceSwitch
-                    workspace={workspace}
-                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
-                  />
-                )}
-                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account">
-                  <p className="nav-account-heading">Hiring workspace</p>
-                  <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
-                  <NavLink to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
-                  {hasRole('candidate') && (
-                    <>
-                      <NavLink to="/candidate/applications" onClick={() => setWorkspace('candidate')}>My applications</NavLink>
-                      <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
-                    </>
-                  )}
-                  <Link to="/">Homepage</Link>
-                  <Link to="/contact">Contact support</Link>
-                  <div className="nav-account-separator" />
-                  <button type="button" onClick={() => void handleFindWork()} disabled={switching}>
-                    {switching ? 'Switching…' : 'Switch to finding work'}
-                  </button>
-                  <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
-                </AccountDropdown>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      </SiteNavbar>
 
       <main className="main-container">
         <Outlet />

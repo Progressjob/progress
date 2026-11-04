@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { SiteNavbar } from './SiteNavbar';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { ProgressLogo } from './ProgressLogo';
 import { AccountDropdown } from './AccountDropdown';
 import { NotificationBell } from './NotificationBell';
 
@@ -16,48 +15,10 @@ const primaryLinks = [
 export const AdminPortalLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.key]);
 
   return (
     <div className="app-shell admin-shell">
-      <header className={`top-nav admin-topbar ${menuOpen ? 'is-menu-open' : ''}`}>
-        <div className="nav-brand">
-          <Link to="/admin" className="brand-logo-link" aria-label="Admin dashboard">
-            <ProgressLogo size="sm" />
-          </Link>
-        </div>
-        <div className="nav-mobile-actions">
-          {user && <NotificationBell />}
-          <button
-            type="button"
-            className="nav-toggle"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            aria-controls="admin-nav-panel"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <span className="nav-toggle-bar" />
-            <span className="nav-toggle-bar" />
-            <span className="nav-toggle-bar" />
-          </button>
-        </div>
-        <div
-          className={`nav-overlay ${menuOpen ? 'is-open' : ''}`}
-          onClick={() => setMenuOpen(false)}
-          aria-hidden="true"
-        />
-        <div id="admin-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <nav className="nav-links admin-primary-nav" aria-label="Admin navigation">
-            {primaryLinks.map(([label, href]) => (
-              <NavLink key={href} to={href} end={href === '/admin'}>{label}</NavLink>
-            ))}
-          </nav>
-          <div className="nav-auth">
+      <SiteNavbar label="Admin navigation" admin account={<>
             {user && <NotificationBell />}
             {user && (
               <AccountDropdown
@@ -79,9 +40,12 @@ export const AdminPortalLayout = () => {
                 }}>Sign out</button>
               </AccountDropdown>
             )}
-          </div>
-        </div>
-      </header>
+      </>}>
+            {primaryLinks.map(([label, href]) => (
+              <NavLink key={href} to={href} end={href === '/admin'}>{label}</NavLink>
+            ))}
+
+      </SiteNavbar>
       <main className="main-container admin-content">
         <Outlet />
       </main>

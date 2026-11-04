@@ -1,5 +1,5 @@
+import { SiteNavbar } from './SiteNavbar';
 import { AccountDropdown } from './AccountDropdown';
-import { NotificationBell } from './NotificationBell';
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -12,7 +12,6 @@ export const Layout: React.FC = () => {
   const { user, logout, hasRole, workspace, setWorkspace, enableCandidate } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const firstCompanyId = user?.companyMemberships[0]?.companyId;
   const hasEmployerAccount = Boolean(user && firstCompanyId && hasRole('employer'));
@@ -26,17 +25,12 @@ export const Layout: React.FC = () => {
   const showProfileEdit = Boolean(user && (showingEmployer || hasRole('candidate')));
 
   useEffect(() => {
-    setMenuOpen(false);
-  }, [location.key]);
-
-  useEffect(() => {
     if (user && workspace === 'employer' && !hasEmployerAccount) {
       setWorkspace('candidate');
     }
   }, [user, workspace, hasEmployerAccount, setWorkspace]);
 
   const handleLogout = async () => {
-    setMenuOpen(false);
     await logout();
     navigate('/login', { replace: true, state: {} });
   };
@@ -52,7 +46,6 @@ export const Layout: React.FC = () => {
         await enableCandidate();
       }
       setWorkspace('candidate');
-      setMenuOpen(false);
       navigate('/jobs');
     } finally {
       setSwitching(false);
@@ -64,7 +57,6 @@ export const Layout: React.FC = () => {
       navigate('/login', { state: { from: '/employer/setup' } });
       return;
     }
-    setMenuOpen(false);
     if (firstCompanyId && hasRole('employer')) {
       setWorkspace('employer');
       navigate(`/company/${firstCompanyId}/jobs/new`);
@@ -75,49 +67,75 @@ export const Layout: React.FC = () => {
 
   const switchToCandidate = () => {
     setWorkspace('candidate');
-    setMenuOpen(false);
     navigate('/jobs');
   };
 
   const switchToEmployer = () => {
     setWorkspace('employer');
-    setMenuOpen(false);
     navigate(employerHomeDestination(firstCompanyId));
   };
 
   return (
     <div className="app-shell">
-      <header className={`top-nav ${menuOpen ? 'is-menu-open' : ''}`}>
-        <div className="nav-brand">
-          <Link to="/" className="brand-logo-link">
-            <ProgressLogo size="sm" />
-          </Link>
-        </div>
-
-        <div className="nav-mobile-actions">
-          {user && <NotificationBell />}
-          <button
-            type="button"
-            className="nav-toggle"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            aria-controls="site-nav-panel"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <span className="nav-toggle-bar" />
-            <span className="nav-toggle-bar" />
-            <span className="nav-toggle-bar" />
-          </button>
-        </div>
-
-        <div
-          className={`nav-overlay ${menuOpen ? 'is-open' : ''}`}
-          onClick={() => setMenuOpen(false)}
-          aria-hidden="true"
-        />
-
-        <div id="site-nav-panel" className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <nav className="nav-links" aria-label="Main navigation">
+      <SiteNavbar label="Main navigation" account={<>
+            {user ? (
+              <>
+                {!showingEmployer && hasRole('candidate') ? (
+                  <Link to="/candidate/applications" className="nav-switch-mode">My applications</Link>
+                ) : (
+                  <button type="button" className="nav-switch-mode" onClick={handlePostJob}>Post a job</button>
+                )}
+                {hasBothAccounts && (
+                  <WorkspaceSwitch
+                    workspace={workspace}
+                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
+                  />
+                )}
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}>
+                      <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
+                      {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
+                      {hasRole('candidate') && (
+                        <>
+                          <NavLink to="/candidate/applications">My applications</NavLink>
+                          <NavLink to="/candidate/saved-jobs">Saved jobs</NavLink>
+                        </>
+                      )}
+                      {hasEmployerAccount && firstCompanyId && (
+                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Manage posted jobs</NavLink>
+                      )}
+                      {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
+                      <Link className="mobile-nav-notifications" to="/notifications">Notifications</Link>
+                      <Link to="/contact">Contact support</Link>
+                      <div className="nav-account-separator" />
+                      <button type="button" disabled={switching}
+                        onClick={showingEmployer ? handleFindWork : handlePostJob}>
+                        {switching ? 'Switching…' : showingEmployer ? 'Switch to finding work' : 'Hire talent / Post a job'}
+                      </button>
+                      <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
+                </AccountDropdown>
+              </>
+            ) : (
+              <>
+              <div className="mobile-guest-account">
+                <AccountDropdown name="Guest" subtitle="Account">
+                  <Link to="/login">Sign in</Link>
+                  <Link to="/register">Create account</Link>
+                </AccountDropdown>
+              </div>
+              <div className="auth-buttons">
+                <Link to="/login" className="btn-nav-login">
+                  Sign In
+                </Link>
+                <Link to="/register" className="btn-nav-register">
+                  <span>Get Started</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </Link>
+              </div>
+              </>
+            )}
+      </>}>
             <NavLink
               to="/"
               end
@@ -152,60 +170,8 @@ export const Layout: React.FC = () => {
               Contact
             </NavLink>
 
-          </nav>
 
-          <div className="nav-auth">
-            {user ? (
-              <>
-                {!showingEmployer && hasRole('candidate') ? (
-                  <Link to="/candidate/applications" className="nav-switch-mode">My applications</Link>
-                ) : (
-                  <button type="button" className="nav-switch-mode" onClick={handlePostJob}>Post a job</button>
-                )}
-                {hasBothAccounts && (
-                  <WorkspaceSwitch
-                    workspace={workspace}
-                    onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
-                  />
-                )}
-                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}>
-                      <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
-                      {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
-                      {hasRole('candidate') && (
-                        <>
-                          <NavLink to="/candidate/applications">My applications</NavLink>
-                          <NavLink to="/candidate/saved-jobs">Saved jobs</NavLink>
-                        </>
-                      )}
-                      {hasEmployerAccount && firstCompanyId && (
-                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Manage posted jobs</NavLink>
-                      )}
-                      {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
-                      <Link to="/contact">Contact support</Link>
-                      <div className="nav-account-separator" />
-                      <button type="button" disabled={switching}
-                        onClick={showingEmployer ? handleFindWork : handlePostJob}>
-                        {switching ? 'Switching…' : showingEmployer ? 'Switch to finding work' : 'Hire talent / Post a job'}
-                      </button>
-                      <button type="button" className="nav-account-logout" onClick={handleLogout}>Sign out</button>
-                </AccountDropdown>
-              </>
-            ) : (
-              <div className="auth-buttons">
-                <Link to="/login" className="btn-nav-login">
-                  Sign In
-                </Link>
-                <Link to="/register" className="btn-nav-register">
-                  <span>Get Started</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      </SiteNavbar>
 
       <main className="main-container">
         <Outlet />

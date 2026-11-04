@@ -202,7 +202,7 @@ export const CompanyCvSearchPage: React.FC = () => {
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
                 return (
-                      <div className="jobs-list-container">
+                      <div className="jobs-list-container employer-cv-search">
                         {/* Header */}
                         <div className="board-header">
                           <span className="section-eyebrow">
@@ -213,13 +213,20 @@ export const CompanyCvSearchPage: React.FC = () => {
                             </svg>
                             Progress Talent Network
                           </span>
-                          <h1 className="board-title">Candidate CV Bank & Talent Search</h1>
+                          <h1 className="board-title">
+                            <span className="cv-search-title-full">Candidate CV Bank &amp; Talent Search</span>
+                            <span className="employer-mobile-label">CV Search</span>
+                          </h1>
                           <p className="board-subtitle">
                             Search pre-screened Ethiopian professionals, verified graduates, and skilled specialists ready for immediate placement.
                             {portal.isBrowse
                                 ? ' Opening a profile activates hiring features so you can view the complete CV dossier.'
                                 : ''}
                           </p>
+                          <div className="cv-mobile-overview">
+                            <span>{spotlightQuery.isLoading ? '…' : searchableCount} candidates</span>
+                            <a href="tel:+251949811818">Call support</a>
+                          </div>
                         </div>
 
                             {/* Stats Bar */}
@@ -229,7 +236,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                 <strong className="cv-stat-number">{spotlightQuery.isLoading ? '…' : searchableCount}</strong>
                                 <span className="cv-stat-sub">Verified candidates</span>
                               </div>
-                                  <div className="cv-stat-box">
+                                  <div className="cv-stat-box cv-stat-access">
                                     <span className="cv-stat-label">Hiring Access</span>
                                     <strong className="cv-stat-number text-primary" style={{ fontSize: '1.25rem' }}>
                                       {portal.accessLabel}

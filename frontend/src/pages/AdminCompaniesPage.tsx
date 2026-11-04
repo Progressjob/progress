@@ -18,6 +18,7 @@ import type { Company } from "../types/api";
 
 export const AdminCompaniesPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const [expandedActions, setExpandedActions] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -152,7 +153,7 @@ export const AdminCompaniesPage: React.FC = () => {
   );
 
   return (
-    <div className="stack">
+    <div className="stack admin-companies-screen">
       <div
         className="page-header"
         style={{
@@ -166,7 +167,7 @@ export const AdminCompaniesPage: React.FC = () => {
         <div>
           <span className="section-eyebrow">Employer management</span>
           <h1>Companies</h1>
-          <Link to="/admin/verification">
+          <Link to="/admin/verification" className="company-action-desktop">
             Open employer verification queue →
           </Link>
           <p className="muted">
@@ -186,6 +187,9 @@ export const AdminCompaniesPage: React.FC = () => {
         >
           + Register company
         </button>
+        <Link to="/admin/verification" className="company-action-mobile companies-verify-link">
+          Verification →
+        </Link>
       </div>
 
       <div className="admin-search-wrap" style={{ maxWidth: "440px", marginBottom: "1rem" }}>
@@ -228,6 +232,7 @@ export const AdminCompaniesPage: React.FC = () => {
         ].map(([value, label]) => (
           <button
             key={value}
+            aria-pressed={statusFilter === value}
             className={statusFilter === value ? "selected" : ""}
             onClick={() => setStatusFilter(value)}
           >
@@ -301,43 +306,57 @@ export const AdminCompaniesPage: React.FC = () => {
               </div>
 
               <div className="directory-company-actions">
-                <button type="button" onClick={() => openEdit(c)}>Edit company</button>
+                <button type="button" onClick={() => openEdit(c)}>
+                  Edit<span className="company-action-desktop"> company</span>
+                </button>
                 <Link to={`/admin/verification?company=${c.id}`}>
-                  Review licence
+                  <span className="company-action-desktop">Review licence</span>
+                  <span className="company-action-mobile">Licence</span>
                 </Link>
                 <button
                   type="button"
-                  disabled={
-                    toggleMutation.isPending ||
-                    suspended ||
-                    c.verificationStatus !== "verified"
-                  }
-                  onClick={() =>
-                    toggleMutation.mutate({
-                      id: c.id,
-                      canSelfPublishJobs: !c.canSelfPublishJobs,
-                    })
-                  }
+                  className="company-action-more"
+                  aria-expanded={expandedActions === c.id}
+                  aria-controls={`company-actions-${c.id}`}
+                  onClick={() => setExpandedActions(expandedActions === c.id ? null : c.id)}
                 >
-                  {c.canSelfPublishJobs
-                    ? "Require review"
-                    : "Allow direct posting"}
+                  {expandedActions === c.id ? "Less" : "More"}
                 </button>
-                <button
-                  type="button"
-                  className={suspended ? "" : "is-danger"}
-                  disabled={portalMutation.isPending}
-                  onClick={() => {
-                    if (suspended)
-                      portalMutation.mutate({ id: c.id, suspended: false });
-                    else {
-                      setFormError(null);
-                      setTerminateTarget(c);
+                <div id={`company-actions-${c.id}`} className={`company-secondary-actions${expandedActions === c.id ? " is-open" : ""}`}>
+                  <button
+                    type="button"
+                    disabled={
+                      toggleMutation.isPending ||
+                      suspended ||
+                      c.verificationStatus !== "verified"
                     }
-                  }}
-                >
-                  {suspended ? "Restore access" : "Suspend access"}
-                </button>
+                    onClick={() =>
+                      toggleMutation.mutate({
+                        id: c.id,
+                        canSelfPublishJobs: !c.canSelfPublishJobs,
+                      })
+                    }
+                  >
+                    {c.canSelfPublishJobs
+                      ? "Require review"
+                      : "Allow direct posting"}
+                  </button>
+                  <button
+                    type="button"
+                    className={suspended ? "" : "is-danger"}
+                    disabled={portalMutation.isPending}
+                    onClick={() => {
+                      if (suspended)
+                        portalMutation.mutate({ id: c.id, suspended: false });
+                      else {
+                        setFormError(null);
+                        setTerminateTarget(c);
+                      }
+                    }}
+                  >
+                    {suspended ? "Restore access" : "Suspend access"}
+                  </button>
+                </div>
               </div>
             </article>
           );

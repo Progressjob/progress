@@ -42,7 +42,7 @@ export const AdminCandidatesPage: React.FC = () => {
   );
 
   return (
-    <div className="stack">
+    <div className="stack admin-candidates-screen">
       <div className="page-header">
         <span className="section-eyebrow">Talent management</span>
         <h1>Candidates</h1>

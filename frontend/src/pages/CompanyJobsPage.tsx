@@ -336,16 +336,16 @@ export const CompanyJobsPage: React.FC = () => {
   };
 
   return (
-    <div className="jobs-list-container">
+    <div className="jobs-list-container employer-postings">
       {companyQuery.data && <CompanyVerificationNotice company={companyQuery.data} />}
 
       {/* Header */}
       <div className="board-header" style={{ textAlign: 'left', marginBottom: '2.15rem' }}>
         <div className="company-portal-header-row">
           <div>
-            <span className="section-eyebrow">Employer Portal</span>
+            <span className="section-eyebrow"><span className="employer-desktop-label">Employer Portal</span><span className="employer-mobile-label">{companyQuery.data?.name ?? "Employer Portal"}</span></span>
             <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
-              {companyQuery.data?.name ?? 'Company'} — Job Postings
+              <span className="employer-desktop-label">{companyQuery.data?.name ?? 'Company'} — </span>Job Postings
             </h1>
             <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
               {companyQuery.data?.verificationStatus !== 'verified'
@@ -392,7 +392,10 @@ export const CompanyJobsPage: React.FC = () => {
           title="Click to view open positions"
         >
           <div className="emp-stat-card-header">
-            <span className="cv-stat-label">Active & Open</span>
+            <span className="cv-stat-label">
+              <span className="employer-desktop-label">Active & Open</span>
+              <span className="employer-mobile-label">Open</span>
+            </span>
             <span className="emp-stat-badge-icon" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
               💼
             </span>
@@ -411,7 +414,10 @@ export const CompanyJobsPage: React.FC = () => {
           title="Click to view published jobs"
         >
           <div className="emp-stat-card-header">
-            <span className="cv-stat-label">Published Live</span>
+            <span className="cv-stat-label">
+              <span className="employer-desktop-label">Published Live</span>
+              <span className="employer-mobile-label">Live</span>
+            </span>
             <span className="emp-stat-badge-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
               🟢
             </span>
@@ -430,7 +436,10 @@ export const CompanyJobsPage: React.FC = () => {
           title="Click to view jobs under moderation"
         >
           <div className="emp-stat-card-header">
-            <span className="cv-stat-label">Under Review</span>
+            <span className="cv-stat-label">
+              <span className="employer-desktop-label">Under Review</span>
+              <span className="employer-mobile-label">Review</span>
+            </span>
             <span className="emp-stat-badge-icon" style={{ background: '#fffbeb', color: '#d97706' }}>
               ⏳
             </span>
@@ -451,7 +460,10 @@ export const CompanyJobsPage: React.FC = () => {
           title="Click to view expired and closed jobs"
         >
           <div className="emp-stat-card-header">
-            <span className="cv-stat-label">History & Closed</span>
+            <span className="cv-stat-label">
+              <span className="employer-desktop-label">History & Closed</span>
+              <span className="employer-mobile-label">Closed</span>
+            </span>
             <span className="emp-stat-badge-icon" style={{ background: '#f8fafc', color: '#64748b' }}>
               📁
             </span>
@@ -512,7 +524,7 @@ export const CompanyJobsPage: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                Open & Active
+                <span className="employer-desktop-label">Open & Active</span><span className="employer-mobile-label">Open</span>
                 <span className="employer-job-pill-count">{openJobs.length}</span>
               </button>
               <button
@@ -525,7 +537,7 @@ export const CompanyJobsPage: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                History & Closed
+                <span className="employer-desktop-label">History & Closed</span><span className="employer-mobile-label">History</span>
                 <span className="employer-job-pill-count">{historyJobs.length}</span>
               </button>
               <button
@@ -538,7 +550,7 @@ export const CompanyJobsPage: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                All Postings
+                <span className="employer-desktop-label">All Postings</span><span className="employer-mobile-label">All</span>
                 <span className="employer-job-pill-count">{rawJobs.length}</span>
               </button>
             </div>
@@ -677,7 +689,7 @@ export const CompanyJobsPage: React.FC = () => {
                           {renderStatusBadge(job, urgency)}
                         </div>
 
-                        <p className="emp-job-details">
+                        <p className="emp-job-details employer-desktop-label">
                           {detailParts.map((part, index) => (
                             <React.Fragment key={`${job.id}-detail-${index}`}>
                               {index > 0 && <span className="emp-job-details-sep" aria-hidden="true">·</span>}
@@ -694,7 +706,7 @@ export const CompanyJobsPage: React.FC = () => {
                             <span className="emp-job-metric-label">Apps</span>
                           </div>
                           {typeof job._count?.views === 'number' && (
-                            <div className="emp-job-metric">
+                            <div className="emp-job-metric employer-desktop-label">
                               <span className="emp-job-metric-value">{job._count.views}</span>
                               <span className="emp-job-metric-label">Views</span>
                             </div>

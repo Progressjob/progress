@@ -30,7 +30,7 @@ export function AccountDropdown({ name, subtitle, children }: {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }}>
     <button type="button" className="nav-account-trigger" ref={trigger}
-      aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>
+      aria-label={`Account menu for ${name}`} aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>
       <span className="user-avatar-initial" aria-hidden="true">{name.trim().charAt(0) || 'U'}</span>
       <span className="user-pill-name"><strong>{name}</strong><small>{subtitle}</small></span>
       <svg className="nav-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">

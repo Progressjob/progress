@@ -192,7 +192,7 @@ export function NotificationsPage() {
   const hasMore = Boolean(query.hasNextPage);
 
   return (
-    <div className="admin-screen">
+    <div className="admin-screen notifications-screen">
       <BackButton fallback={admin ? "/admin" : "/"} />
       <header className="admin-screen-header">
         <div>

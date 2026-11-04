@@ -30,6 +30,7 @@ type Sent = {
 
 export function AdminNotificationComposer() {
   const [audience, setAudience] = useState<Audience>("selected");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Recipient[]>([]);
   const [title, setTitle] = useState("");
@@ -136,7 +137,10 @@ export function AdminNotificationComposer() {
                   aria-label="Search recipients"
                   placeholder="Search by name or email…"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPickerOpen(true);
+                  }}
                 />
                 {selected.length > 0 && (
                   <div className="recipient-chips">
@@ -155,8 +159,18 @@ export function AdminNotificationComposer() {
                     ))}
                   </div>
                 )}
+                <button
+                  type="button"
+                  className="recipient-picker-toggle"
+                  aria-expanded={pickerOpen}
+                  aria-controls="notification-recipient-options"
+                  onClick={() => setPickerOpen((open) => !open)}
+                >
+                  {pickerOpen ? "Hide recipients" : "Browse recipients"} · {selected.length} selected
+                </button>
                 <div
-                  className="recipient-options"
+                  id="notification-recipient-options"
+                  className={`recipient-options${pickerOpen ? " is-open" : ""}`}
                   aria-label="Available recipients"
                 >
                   {recipients.isLoading ? (

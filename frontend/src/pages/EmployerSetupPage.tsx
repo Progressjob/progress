@@ -111,7 +111,7 @@ export const EmployerSetupPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-page-container">
+    <div className="auth-page-container employer-onboarding">
       <div className="auth-card auth-card-wide">
         <div className="auth-card-brand">
           <ProgressLogo size="md" />
