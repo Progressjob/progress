@@ -30,104 +30,114 @@ function formatYears(value?: number | string | null): string {
   return `${shown} ${n === 1 ? 'yr' : 'yrs'} exp`;
 }
 
-  function clip(text?: string | null, max = 150): string {
-    const value = text?.replace(/\s+/g, ' ').trim() ?? '';
-    if (!value) return '';
-    if (value.length <= max) return value;
-    return `${value.slice(0, max).trim()}…`;
+function clip(text?: string | null, max = 150): string {
+  const value = text?.replace(/\s+/g, ' ').trim() ?? '';
+  if (!value) return '';
+  if (value.length <= max) return value;
+  return `${value.slice(0, max).trim()}…`;
+}
+
+function initials(card: TalentCard): string {
+  return `${card.firstName[0] ?? ''}${card.lastName[0] ?? ''}`.toUpperCase() || 'CV';
+}
+
+function formatAvailability(status?: string | null): string {
+  if (!status) return 'Available for hire';
+  return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Marketing-style pool size: 50+, 100+, 200+… instead of an exact count. */
+function formatTalentPoolCount(count: number): string {
+  if (!Number.isFinite(count) || count <= 0) return '0';
+  const thresholds = [1000, 500, 200, 100, 50, 25, 10];
+  for (const threshold of thresholds) {
+    if (count >= threshold) return `${threshold}+`;
   }
+  return String(count);
+}
 
-  function initials(card: TalentCard): string {
-    return `${card.firstName[0] ?? ''}${card.lastName[0] ?? ''}`.toUpperCase() || 'CV';
-  }
+const TalentResultCard: React.FC<{ card: TalentCard; onView: () => void; viewLabel: string }> = ({
+  card,
+  onView,
+  viewLabel,
+}) => {
+  const years = formatYears(card.yearsExperience);
+  const photo = card.photoFileId ? publicFileUrl(card.photoFileId) : null;
+  const title = card.currentTitle || card.headline || 'Professional Candidate';
+  const summary = clip(card.summary);
+  const location = talentLocation(card);
+  const availability = formatAvailability(card.availabilityStatus);
 
-  function formatAvailability(status?: string | null): string {
-    if (!status) return 'Available for hire';
-    return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
+  return (
+    <article className="cv-card-modern">
+      <div className="cv-card-header">
+        <div className="cv-card-avatar-wrap">
+          {photo ? (
+            <img className="cv-card-avatar-img" src={photo} alt="" />
+          ) : (
+            <div className="cv-card-avatar-fallback">{initials(card)}</div>
+          )}
+          <span className="cv-status-indicator" title={availability} />
+        </div>
 
-  const TalentResultCard: React.FC<{ card: TalentCard; onView: () => void; viewLabel: string }> = ({
-    card,
-    onView,
-    viewLabel,
-  }) => {
-    const years = formatYears(card.yearsExperience);
-    const photo = card.photoFileId ? publicFileUrl(card.photoFileId) : null;
-    const title = card.currentTitle || card.headline || 'Professional Candidate';
-    const summary = clip(card.summary);
-    const location = talentLocation(card);
-    const availability = formatAvailability(card.availabilityStatus);
+        <div className="cv-card-primary-info">
+          <div className="cv-card-name-row">
+            <h3 className="cv-candidate-name">
+              {card.firstName} {card.lastName}
+            </h3>
+            <span className="verified-badge-pill" title="Verified Candidate">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+              </svg>
+              Verified
+            </span>
+          </div>
+          <p className="cv-card-headline">{title}</p>
+          <p className="cv-card-meta-compact">
+            {years ? <span>{years}</span> : null}
+            {years ? <span aria-hidden>·</span> : null}
+            <span>{location}</span>
+          </p>
+        </div>
+      </div>
 
-    return (
-              <article className="cv-card-modern">
-                {/* Top Banner Row */}
-                <div className="cv-card-header">
-                  <div className="cv-card-avatar-wrap">
-                    {photo ? (
-                      <img className="cv-card-avatar-img" src={photo} alt="" />
-                    ) : (
-                      <div className="cv-card-avatar-fallback">{initials(card)}</div>
-                    )}
-                    <span className="cv-status-indicator" title={availability} />
-                  </div>
-
-                  <div className="cv-card-primary-info">
-                    <div className="cv-card-name-row">
-                      <h3 className="cv-candidate-name">
-                        {card.firstName} {card.lastName}
-                      </h3>
-                      <span className="verified-badge-pill" title="Verified Candidate">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                        </svg>
-                        Verified
-                      </span>
-                    </div>
-                      <p className="cv-card-headline">{title}</p>
-                    </div>
-                  </div>
-
-                  {/* Meta Pills */}
-                  <div className="cv-card-badges-row">
-                    <span className="tag-pill tag-location">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
-                        <circle cx="12" cy="10" r="3" strokeWidth="2" />
-                      </svg>
-                      {location}
-                    </span>
-                    {years && (
-                        <span className="tag-pill tag-exp">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                            <polyline points="12 6 12 12 16 14" strokeWidth="2" />
-                          </svg>
-                          {years}
+      <div className="cv-card-badges-row">
+        <span className="tag-pill tag-location">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" />
+            <circle cx="12" cy="10" r="3" strokeWidth="2" />
+          </svg>
+          {location}
+        </span>
+        {years && (
+          <span className="tag-pill tag-exp">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+              <polyline points="12 6 12 12 16 14" strokeWidth="2" />
+            </svg>
+            {years}
           </span>
         )}
-                  <span className="tag-pill tag-avail">
-                    🟢 {availability}
-                  </span>
-                </div>
+        <span className="tag-pill tag-avail">🟢 {availability}</span>
+      </div>
 
-                {/* Summary Snippet */}
-                {summary ? (
-                  <p className="cv-card-bio">“{summary}”</p>
-                ) : (
-                  <p className="cv-card-bio muted">Candidate profile active with credentials and experience on file.</p>
-                )}
+      {summary ? (
+        <p className="cv-card-bio">“{summary}”</p>
+      ) : (
+        <p className="cv-card-bio muted">Candidate profile active with credentials and experience on file.</p>
+      )}
 
-                {/* Card Action */}
-                <div className="cv-card-action-bar">
-                  <button type="button" className="btn-cv-view" onClick={onView}>
-                    <span>{viewLabel}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-              </article>
-              );
+      <div className="cv-card-action-bar">
+        <button type="button" className="btn-cv-view" onClick={onView}>
+          <span className="cv-view-label-full">{viewLabel}</span>
+          <span className="cv-view-label-short">View CV</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+    </article>
+  );
 };
 
 export const CompanyCvSearchPage: React.FC = () => {
@@ -199,7 +209,6 @@ export const CompanyCvSearchPage: React.FC = () => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const listLoading = searchQuery.isLoading;
   const listError = searchQuery.error;
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
                 return (
                       <div className="jobs-list-container employer-cv-search">
@@ -217,15 +226,19 @@ export const CompanyCvSearchPage: React.FC = () => {
                             <span className="cv-search-title-full">Candidate CV Bank &amp; Talent Search</span>
                             <span className="employer-mobile-label">CV Search</span>
                           </h1>
-                          <p className="board-subtitle">
+                          <p className="board-subtitle cv-board-subtitle">
                             Search pre-screened Ethiopian professionals, verified graduates, and skilled specialists ready for immediate placement.
                             {portal.isBrowse
                                 ? ' Opening a profile activates hiring features so you can view the complete CV dossier.'
                                 : ''}
                           </p>
+                          <p className="cv-mobile-blurb">
+                            Browse skilled professionals and find the right hire for your team.
+                          </p>
                           <div className="cv-mobile-overview">
-                            <span>{spotlightQuery.isLoading ? '…' : searchableCount} candidates</span>
-                            <a href="tel:+251949811818">Call support</a>
+                            <span>
+                              {spotlightQuery.isLoading ? '…' : `${formatTalentPoolCount(searchableCount)} candidates`}
+                            </span>
                           </div>
                         </div>
 
@@ -233,7 +246,9 @@ export const CompanyCvSearchPage: React.FC = () => {
                             <div className="cv-stats-row">
                               <div className="cv-stat-box">
                                 <span className="cv-stat-label">Searchable Talent</span>
-                                <strong className="cv-stat-number">{spotlightQuery.isLoading ? '…' : searchableCount}</strong>
+                                <strong className="cv-stat-number">
+                                  {spotlightQuery.isLoading ? '…' : formatTalentPoolCount(searchableCount)}
+                                </strong>
                                 <span className="cv-stat-sub">Verified candidates</span>
                               </div>
                                   <div className="cv-stat-box cv-stat-access">
@@ -252,69 +267,95 @@ export const CompanyCvSearchPage: React.FC = () => {
                                   </div>
                               </div>
 
-                                  {/* Talent Search Capsule */}
-                                  <div className="jobs-filter-card">
-                                    <form className="cv-search-form-row" onSubmit={handleSubmit}>
-                                      <div className="filter-input-wrap" style={{ flex: 1 }}>
-                                        <svg className="filter-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                          <circle cx="11" cy="11" r="8" strokeWidth="2.2" />
-                                          <path d="M21 21l-4.35-4.35" strokeWidth="2.2" strokeLinecap="round" />
-                                        </svg>
-                                        <input
-                                          id="cv-q"
-                                          type="text"
-                                          value={draft}
-                                          onChange={(e) => setDraft(e.target.value)}
-                                          placeholder="Search by job title, skill, or qualification (e.g. Accountant, Developer, Sales)..."
-                                          aria-label="Search candidates"
-                                        />
-                                        {draft && (
-                                          <button
-                                            type="button"
-                                            className="filter-clear-btn"
-                                            onClick={() => {
-                                              setDraft('');
-                                              applySearch('');
-                                            }}
-                                          >
-                                            ✕
-                                          </button>
-                                        )}
-                                      </div>
-                                      <button type="submit" className="btn-search-hero">
-                                        <span>Find Talent</span>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                          <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                                  <div className="jobs-filter-card cv-search-card">
+                                    <form className="cv-search-form-row cv-search-capsule" onSubmit={handleSubmit}>
+                                      <svg className="cv-search-capsule-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                                        <circle cx="11" cy="11" r="8" strokeWidth="2.2" />
+                                        <path d="M21 21l-4.35-4.35" strokeWidth="2.2" strokeLinecap="round" />
+                                      </svg>
+                                      <input
+                                        id="cv-q"
+                                        type="search"
+                                        value={draft}
+                                        onChange={(e) => setDraft(e.target.value)}
+                                        placeholder="Search for skills…"
+                                        aria-label="Search candidates"
+                                        autoComplete="off"
+                                      />
+                                      {draft && (
+                                        <button
+                                          type="button"
+                                          className="cv-search-capsule-clear"
+                                          onClick={() => {
+                                            setDraft('');
+                                            applySearch('');
+                                          }}
+                                          aria-label="Clear search"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                      <button type="submit" className="cv-search-capsule-btn">
+                                        <span className="cv-search-btn-full">Find Talent</span>
+                                        <span className="cv-search-btn-short">Search</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                                          <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                       </button>
                                     </form>
 
-                                    {/* Popular Tags */}
-                                    <div className="cv-popular-row">
-                                      <span className="cv-popular-label">Filter:</span>
-                                      <div className="cv-popular-tags">
-                                        <button
-                                          type="button"
-                                          className={`cv-tag-pill ${!searching ? 'is-active' : ''}`}
-                                          onClick={() => applySearch('')}
-                                        >
-                                          All
-                                        </button>
-                                        {POPULAR_ROLES.map((role) => {
-                                          const active = query.toLowerCase() === role.toLowerCase();
-                                          return (
-                                            <button
-                                              key={role}
-                                              type="button"
-                                              className={`cv-tag-pill ${active ? 'is-active' : ''}`}
-                                              onClick={() => applySearch(role)}
-                                            >
-                                              {role}
-                                            </button>
-                                          );
-                                        })}
+                                    <div className="companies-industry-filters cv-role-filters" role="group" aria-label="Filter by role">
+                                      <span className="companies-industry-label">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                                          <path d="M4 6h16M7 12h10M10 18h4" strokeWidth="2" strokeLinecap="round" />
+                                        </svg>
+                                        Role
+                                      </span>
+                                      <div className="companies-industry-scroller">
+                                        <div className="companies-industry-chips">
+                                          <button
+                                            type="button"
+                                            className={`companies-industry-chip${!searching ? ' is-active' : ''}`}
+                                            onClick={() => applySearch('')}
+                                            aria-pressed={!searching}
+                                          >
+                                            All
+                                          </button>
+                                          {POPULAR_ROLES.map((role) => {
+                                            const active = query.toLowerCase() === role.toLowerCase();
+                                            return (
+                                              <button
+                                                key={role}
+                                                type="button"
+                                                className={`companies-industry-chip${active ? ' is-active' : ''}`}
+                                                onClick={() => applySearch(active ? '' : role)}
+                                                aria-pressed={active}
+                                              >
+                                                {role}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
                                     </div>
+
+                                    {searching && (
+                                      <div className="companies-active-filter">
+                                        <span>
+                                          Showing <strong>{query}</strong> candidates
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className="companies-clear-industry"
+                                          onClick={() => {
+                                            setDraft('');
+                                            applySearch('');
+                                          }}
+                                        >
+                                          Clear role
+                                        </button>
+                                      </div>
+                                    )}
                                 </div>
 
                                   {/* Results Header */}
@@ -386,45 +427,34 @@ export const CompanyCvSearchPage: React.FC = () => {
       )}
 
                                             {total > PAGE_SIZE && (
-                                                <div className="pagination-wrapper" style={{ marginTop: '2.5rem' }}>
-                                                  <button
-                                                    type="button"
-                                                    className="pagination-btn"
-                                                    disabled={page <= 1}
-                                                    onClick={() => {
-                                                      applySearch(query, page - 1);
-                                                      scrollToResults();
-                                                    }}
-                                                  >
-                                                    ← Previous
-                                                  </button>
-                                                  {pageNumbers.map((n) => (
-                                                    <button
-                                                      key={n}
-                                                      type="button"
-                                                      className={`pagination-btn${n === page ? ' is-current' : ''}`}
-                                                      disabled={n === page}
-                                                      onClick={() => {
-                                                        applySearch(query, n);
-                                                        scrollToResults();
-                                                      }}
-                                                    >
-                                                      Page {n}
-                                                    </button>
-                                                  ))}
-                                                    <button
-                                                      type="button"
-                                                      className="pagination-btn"
-                                                      disabled={page >= totalPages}
-                                                      onClick={() => {
-                                                        applySearch(query, page + 1);
-                                                        scrollToResults();
-                                                      }}
-                                                    >
-                                                      Next →
-                                                    </button>
-                                                </div>
-      )}
+                                              <div className="pagination-wrapper cv-pagination" aria-label="Pagination">
+                                                <button
+                                                  type="button"
+                                                  className="pagination-btn"
+                                                  disabled={page <= 1}
+                                                  onClick={() => {
+                                                    applySearch(query, page - 1);
+                                                    scrollToResults();
+                                                  }}
+                                                >
+                                                  ← Prev
+                                                </button>
+                                                <span className="pagination-info">
+                                                  Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  className="pagination-btn"
+                                                  disabled={page >= totalPages}
+                                                  onClick={() => {
+                                                    applySearch(query, page + 1);
+                                                    scrollToResults();
+                                                  }}
+                                                >
+                                                  Next →
+                                                </button>
+                                              </div>
+                                            )}
                                               </div>
                                             );
 };
