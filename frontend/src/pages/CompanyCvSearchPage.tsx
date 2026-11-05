@@ -20,7 +20,9 @@ const POPULAR_ROLES = [
 ];
 const MIN_QUERY = 2;
 const PAGE_SIZE = 12;
-const WORK_STATUS_FILTER_OPTIONS = WORK_STATUS_OPTIONS.map((option) => ({
+const WORK_STATUS_FILTER_OPTIONS = WORK_STATUS_OPTIONS.filter(
+  (option) => option.value !== 'not_looking',
+).map((option) => ({
   value: option.value,
   label: option.label,
 }));
