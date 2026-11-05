@@ -512,10 +512,21 @@ export const CandidateProfilePage: React.FC = () => {
       openedForEdit.current = false;
       return;
     }
-    if (!profileQuery.data || openedForEdit.current) return;
-    openedForEdit.current = true;
-    openProfile(profileQuery.data);
+    if (!profileQuery.data) return;
+    if (!openedForEdit.current) {
+      openedForEdit.current = true;
+      openProfile(profileQuery.data);
+    }
   }, [searchParams, profileQuery.data]);
+
+  useEffect(() => {
+    if (open?.section !== 'profile') return;
+    const panel = document.getElementById('profile-edit');
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const field = panel.querySelector<HTMLElement>('input, select, textarea');
+    field?.focus({ preventScroll: true });
+  }, [open?.section]);
 
   if (profileQuery.isLoading) {
     return <div className="pb-card">Loading your profile…</div>;
@@ -853,7 +864,11 @@ export const CandidateProfilePage: React.FC = () => {
       )}
 
       {open?.section === 'profile' && (
-        <section className="pb-card" style={{ marginBottom: '1rem' }}>
+        <section
+          id="profile-edit"
+          className="pb-card"
+          style={{ marginBottom: '1rem', scrollMarginTop: '1rem' }}
+        >
           <form
             className="pb-composer"
             style={{ marginTop: 0 }}

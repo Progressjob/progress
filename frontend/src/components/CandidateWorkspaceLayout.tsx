@@ -99,11 +99,22 @@ export const CandidateWorkspaceLayout: React.FC = () => {
     : 'Your profile';
 
   const openEdit = () => {
-    if (location.pathname === '/candidate/profile') {
-      navigate('/candidate/profile?edit=1', { replace: true });
-      return;
-    }
-    navigate('/candidate/profile?edit=1');
+    const onProfile = location.pathname === '/candidate/profile';
+    navigate('/candidate/profile?edit=1', { replace: onProfile });
+
+    const scrollToEdit = (attempt = 0) => {
+      const panel = document.getElementById('profile-edit');
+      if (panel) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const field = panel.querySelector<HTMLElement>('input, select, textarea');
+        field?.focus({ preventScroll: true });
+        return;
+      }
+      if (attempt < 30) {
+        window.setTimeout(() => scrollToEdit(attempt + 1), 50);
+      }
+    };
+    window.setTimeout(() => scrollToEdit(), onProfile ? 0 : 80);
   };
 
   const isListView =
