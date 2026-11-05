@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  ApiError,
   apiFetch,
   clearStoredTokens,
   getStoredTokens,
@@ -54,6 +55,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/** Survives React StrictMode remounts so session restore + token refresh run once. */
+let bootstrapPromise: Promise<AuthUser | null> | null = null;
+
 function normalizeMe(raw: AuthMeResponse): AuthUser {
   return {
     id: raw.id,
@@ -96,10 +100,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setWorkspaceState(nextWorkspace);
       setStoredWorkspace(nextWorkspace);
       return normalized;
-    } catch {
-      clearStoredTokens();
-      setUser(null);
-      return null;
+    } catch (err) {
+      const { accessToken: stillAccess, refreshToken: stillRefresh } = getStoredTokens();
+      // Tokens already cleared by the API client ⇒ session is dead.
+      if (!stillAccess && !stillRefresh) {
+        setUser(null);
+        return null;
+      }
+      // Keep tokens on transient failures (network/5xx, or 401 while refresh
+      // token remains after a failed renew attempt) so reload can recover.
+      if (err instanceof ApiError && err.status === 401 && !stillRefresh) {
+        clearStoredTokens();
+        setUser(null);
+        return null;
+      }
+      throw err;
     }
   }, []);
 
@@ -108,13 +123,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearStoredTokens();
       queryClient.clear();
       setUser(null);
+      bootstrapPromise = null;
     });
-    void refreshUser().finally(() => setLoading(false));
-  }, [refreshUser]);
+    let cancelled = false;
+    if (!bootstrapPromise) {
+      bootstrapPromise = refreshUser().catch((err) => {
+        bootstrapPromise = null;
+        throw err;
+      });
+    }
+    void bootstrapPromise
+      .then((loaded) => {
+        if (cancelled) return;
+        if (loaded) {
+          setUser(loaded);
+          const nextWorkspace = resolveWorkspace(loaded.roles, getStoredWorkspace());
+          setWorkspaceState(nextWorkspace);
+          setStoredWorkspace(nextWorkspace);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        // Transient bootstrap failure — tokens kept; user stays signed-out in UI
+        // until the next successful refreshUser / reload.
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshUser, queryClient]);
 
   const login = useCallback(
     async (identifier: string, password: string): Promise<AuthUser> => {
       clearStoredTokens();
+      bootstrapPromise = null;
       queryClient.clear();
       setUser(null);
       const tokens = await apiFetch<TokenResponse>('/auth/login', {
@@ -133,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = useCallback(
     async (idToken: string): Promise<{ user: AuthUser; isNew: boolean }> => {
       clearStoredTokens();
+      bootstrapPromise = null;
       queryClient.clear();
       setUser(null);
       const tokens = await authApi.loginWithGoogle(idToken);
@@ -147,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = useCallback(
     async (input: RegisterInput): Promise<AuthUser> => {
       clearStoredTokens();
+      bootstrapPromise = null;
       queryClient.clear();
       setUser(null);
       const payload = {
@@ -198,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     clearStoredTokens();
+    bootstrapPromise = null;
     queryClient.clear();
     setUser(null);
   }, [queryClient]);

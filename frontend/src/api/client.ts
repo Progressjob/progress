@@ -52,6 +52,14 @@ export function setOnUnauthorized(cb: () => void): void {
   onUnauthorizedCallback = cb;
 }
 
+function clearTokensIfUnchanged(refreshToken: string): void {
+  // A concurrent refresh may have already rotated and stored a new pair.
+  // Only wipe the session if we still hold the token that just failed.
+  if (getStoredTokens().refreshToken === refreshToken) {
+    clearStoredTokens();
+  }
+}
+
 async function performRefresh(): Promise<string | null> {
   const { refreshToken } = getStoredTokens();
   if (!refreshToken) return null;
@@ -63,14 +71,22 @@ async function performRefresh(): Promise<string | null> {
       body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) {
-      clearStoredTokens();
+      const latest = getStoredTokens();
+      // Concurrent refresh may have already rotated successfully.
+      if (latest.accessToken && latest.refreshToken && latest.refreshToken !== refreshToken) {
+        return latest.accessToken;
+      }
+      // 401/403 = refresh token revoked/expired. Network/5xx must not log the user out.
+      if (res.status === 401 || res.status === 403) {
+        clearTokensIfUnchanged(refreshToken);
+      }
       return null;
     }
     const tokens = (await res.json()) as TokenResponse;
     setStoredTokens(tokens);
     return tokens.accessToken;
   } catch {
-    clearStoredTokens();
+    // Transient network / proxy failure — keep tokens so a reload can recover.
     return null;
   }
 }
@@ -163,8 +179,8 @@ export async function apiFetch<T = unknown>(
         headers: buildHeaders(newAccess),
         body: serializeBody(),
       });
-    } else {
-      clearStoredTokens();
+    } else if (!getStoredTokens().refreshToken) {
+      // Refresh definitively failed and cleared the session.
       onUnauthorizedCallback?.();
     }
   }
