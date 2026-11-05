@@ -94,11 +94,14 @@ export const Layout: React.FC = () => {
                 <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}>
                       <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
                       {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
-                      {hasRole('candidate') && (
+                      {hasRole('candidate') && !showingEmployer && (
                         <>
                           <NavLink to="/candidate/applications">My applications</NavLink>
                           <NavLink to="/candidate/saved-jobs">Saved jobs</NavLink>
                         </>
+                      )}
+                      {hasRole('candidate') && showingEmployer && (
+                        <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                       )}
                       {hasEmployerAccount && firstCompanyId && (
                         <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Manage posted jobs</NavLink>

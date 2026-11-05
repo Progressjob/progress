@@ -103,10 +103,7 @@ export const CompanyPortalLayout: React.FC = () => {
                   <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
                   <NavLink className="employer-account-duplicate" to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
                   {hasRole('candidate') && (
-                    <>
-                      <NavLink to="/candidate/applications" onClick={() => setWorkspace('candidate')}>My applications</NavLink>
-                      <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
-                    </>
+                    <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                   )}
                   <Link className="employer-account-duplicate" to="/">Homepage</Link>
                   <Link className="mobile-nav-notifications" to="/notifications">Notifications</Link>
