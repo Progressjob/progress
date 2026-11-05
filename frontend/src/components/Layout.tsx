@@ -2,7 +2,6 @@ import { SiteNavbar } from './SiteNavbar';
 import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getStoredTokens } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { isExactPath, isPublicCvSearch, isSectionPath, navActive } from '../auth/nav';
 import { employerHomeDestination, employerProfileEditPath, hiringDestination } from '../auth/workspace';
@@ -10,9 +9,7 @@ import { ProgressLogo } from './ProgressLogo';
 import { WorkspaceSwitch } from './WorkspaceSwitch';
 
 export const Layout: React.FC = () => {
-  const { user, loading, logout, hasRole, workspace, setWorkspace, enableCandidate } = useAuth();
-  const restoringSession =
-    loading && Boolean(getStoredTokens().accessToken || getStoredTokens().refreshToken);
+  const { user, restoringSession, logout, hasRole, workspace, setWorkspace, enableCandidate } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [switching, setSwitching] = useState(false);
@@ -121,10 +118,10 @@ export const Layout: React.FC = () => {
                 </AccountDropdown>
               </>
             ) : restoringSession ? (
-              <div className="auth-buttons" aria-busy="true" aria-label="Restoring session">
-                <span className="btn-nav-login" style={{ opacity: 0.55, pointerEvents: 'none' }}>
-                  Restoring…
-                </span>
+              <div className="mobile-guest-account" aria-busy="true" aria-label="Restoring session">
+                <AccountDropdown name="…" subtitle="Restoring session">
+                  <p className="nav-account-heading">Restoring your session…</p>
+                </AccountDropdown>
               </div>
             ) : (
               <>

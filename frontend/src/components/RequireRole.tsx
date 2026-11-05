@@ -8,23 +8,24 @@ interface RequireRoleProps {
   children: React.ReactNode;
 }
 
+function SessionRestoring(): React.ReactElement {
+  return (
+    <div className="card" style={{ maxWidth: '400px', margin: '4rem auto', textAlign: 'center' }}>
+      Loading…
+    </div>
+  );
+}
+
 export const RequireSignedIn: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <div className="card" style={{ maxWidth: '400px', margin: '4rem auto', textAlign: 'center' }}>
-        Checking session...
-      </div>
-    );
-  }
+  // Optimistic snapshot user: render the page immediately while /auth/me confirms.
+  if (user) return <>{children}</>;
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
+  if (loading) return <SessionRestoring />;
 
-  return <>{children}</>;
+  return <Navigate to="/login" state={{ from: location.pathname }} replace />;
 };
 
 export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => {
@@ -33,9 +34,8 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ roles, children }) => 
   const navigate = useNavigate();
   const [switching, setSwitching] = useState(false);
 
-  if (loading) {
-    return <div className="card" style={{ maxWidth: '400px', margin: '4rem auto', textAlign: 'center' }}>Checking session...</div>;
-  }
+  // Keep signed-in chrome; only block when we have no optimistic user yet.
+  if (!user && loading) return <SessionRestoring />;
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;

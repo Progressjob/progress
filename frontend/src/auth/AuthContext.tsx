@@ -5,8 +5,11 @@ import {
   apiFetch,
   clearStoredTokens,
   getStoredTokens,
+  getStoredUserSnapshot,
+  hasStoredSession,
   setOnUnauthorized,
   setStoredTokens,
+  setStoredUserSnapshot,
 } from '../api/client';
 import { authApi, type EnableEmployerInput, type EnableEmployerResponse } from '../api/auth';
 import type { AuthMeResponse, TokenResponse } from '../types/api';
@@ -41,6 +44,8 @@ export interface RegisterInput {
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
+  /** True while tokens exist and /auth/me has not finished confirming the session. */
+  restoringSession: boolean;
   workspace: Workspace;
   setWorkspace: (workspace: Workspace) => void;
   login: (identifier: string, password: string) => Promise<AuthUser>;
@@ -58,6 +63,24 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 /** Survives React StrictMode remounts so session restore + token refresh run once. */
 let bootstrapPromise: Promise<AuthUser | null> | null = null;
 
+function isAuthUserSnapshot(value: unknown): value is AuthUser {
+  if (!value || typeof value !== 'object') return false;
+  const u = value as Partial<AuthUser>;
+  return (
+    typeof u.id === 'string' &&
+    typeof u.email === 'string' &&
+    typeof u.firstName === 'string' &&
+    typeof u.lastName === 'string' &&
+    Array.isArray(u.roles)
+  );
+}
+
+function readOptimisticUser(): AuthUser | null {
+  if (!hasStoredSession()) return null;
+  const snap = getStoredUserSnapshot<AuthUser>();
+  return isAuthUserSnapshot(snap) ? snap : null;
+}
+
 function normalizeMe(raw: AuthMeResponse): AuthUser {
   return {
     id: raw.id,
@@ -73,10 +96,23 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
   };
 }
 
+function applyAuthenticatedUser(
+  normalized: AuthUser,
+  setUser: (user: AuthUser) => void,
+  setWorkspaceState: (workspace: Workspace) => void,
+): AuthUser {
+  const nextWorkspace = resolveWorkspace(normalized.roles, getStoredWorkspace());
+  setUser(normalized);
+  setWorkspaceState(nextWorkspace);
+  setStoredWorkspace(nextWorkspace);
+  setStoredUserSnapshot(normalized);
+  return normalized;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<AuthUser | null>(() => readOptimisticUser());
+  const [loading, setLoading] = useState<boolean>(() => hasStoredSession());
   const [workspace, setWorkspaceState] = useState<Workspace>(
     () => getStoredWorkspace() ?? 'candidate',
   );
@@ -94,12 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const me = await apiFetch<AuthMeResponse>('/auth/me');
-      const normalized = normalizeMe(me);
-      const nextWorkspace = resolveWorkspace(normalized.roles, getStoredWorkspace());
-      setUser(normalized);
-      setWorkspaceState(nextWorkspace);
-      setStoredWorkspace(nextWorkspace);
-      return normalized;
+      return applyAuthenticatedUser(normalizeMe(me), setUser, setWorkspaceState);
     } catch (err) {
       const { accessToken: stillAccess, refreshToken: stillRefresh } = getStoredTokens();
       // Tokens already cleared by the API client ⇒ session is dead.
@@ -125,6 +156,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       bootstrapPromise = null;
     });
+    if (!hasStoredSession()) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     if (!bootstrapPromise) {
       bootstrapPromise = refreshUser().catch((err) => {
@@ -136,18 +171,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then((loaded) => {
         if (cancelled) return;
         if (loaded) {
-          setUser(loaded);
-          const nextWorkspace = resolveWorkspace(loaded.roles, getStoredWorkspace());
-          setWorkspaceState(nextWorkspace);
-          setStoredWorkspace(nextWorkspace);
-        } else {
+          applyAuthenticatedUser(loaded, setUser, setWorkspaceState);
+        } else if (!hasStoredSession()) {
           setUser(null);
         }
+        // If tokens remain but loaded is null, keep optimistic snapshot user.
       })
       .catch(() => {
-        // Transient bootstrap failure — tokens kept; user stays signed-out in UI
-        // until the next successful refreshUser / reload.
-        if (!cancelled) setUser(null);
+        // Transient bootstrap failure — keep optimistic user/tokens so refresh
+        // does not look like a logout.
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -259,11 +291,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [user],
   );
 
+  const restoringSession = loading && hasStoredSession();
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        restoringSession,
         workspace,
         setWorkspace,
         login,

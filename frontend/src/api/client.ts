@@ -5,6 +5,7 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/
 const ACCESS_KEY = 'ej_access_token';
 const REFRESH_KEY = 'ej_refresh_token';
 const EXPIRES_KEY = 'ej_expires_at';
+const USER_SNAPSHOT_KEY = 'ej_user_snapshot';
 
 export function getStoredTokens(): { accessToken: string | null; refreshToken: string | null } {
   return {
@@ -13,16 +14,41 @@ export function getStoredTokens(): { accessToken: string | null; refreshToken: s
   };
 }
 
+export function hasStoredSession(): boolean {
+  const { accessToken, refreshToken } = getStoredTokens();
+  return Boolean(accessToken || refreshToken);
+}
+
 export function setStoredTokens(tokens: TokenResponse): void {
   localStorage.setItem(ACCESS_KEY, tokens.accessToken);
   localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
   localStorage.setItem(EXPIRES_KEY, tokens.expiresAt);
 }
 
+/** Lightweight profile kept for instant signed-in UI on refresh (not a security boundary). */
+export function getStoredUserSnapshot<T>(): T | null {
+  try {
+    const raw = localStorage.getItem(USER_SNAPSHOT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUserSnapshot(user: unknown): void {
+  localStorage.setItem(USER_SNAPSHOT_KEY, JSON.stringify(user));
+}
+
+export function clearStoredUserSnapshot(): void {
+  localStorage.removeItem(USER_SNAPSHOT_KEY);
+}
+
 export function clearStoredTokens(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(EXPIRES_KEY);
+  clearStoredUserSnapshot();
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('progress.workspace');
     localStorage.removeItem('progress.saved_jobs');
