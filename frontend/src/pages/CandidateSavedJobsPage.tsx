@@ -92,7 +92,7 @@ export const CandidateSavedJobsPage: React.FC = () => {
               key={item.jobId}
               className={`jb-featured-card saved-job-card${closed ? ' is-closed' : ''}`}
             >
-              <div className="saved-job-top">
+              <div className="saved-job-row">
                 <div className="saved-job-logo">
                   <CompanyLogoMark
                     name={job.company?.name}
@@ -101,17 +101,21 @@ export const CandidateSavedJobsPage: React.FC = () => {
                     imgClassName="saved-job-logo-img"
                   />
                 </div>
-                {closed && <span className="saved-job-closed-badge">Closed</span>}
+                <div className="saved-job-body">
+                  <div className="saved-job-head">
+                    <h3 className="jb-featured-title">
+                      {closed ? job.title : <Link to={href}>{job.title}</Link>}
+                    </h3>
+                    {closed && <span className="saved-job-closed-badge">Closed</span>}
+                  </div>
+                  <p className="jb-featured-company">{companyLabel(job)}</p>
+                  <p className="saved-job-meta">
+                    {job.location?.name || 'Ethiopia'}
+                    <span aria-hidden="true"> · </span>
+                    {job.employmentType.replaceAll('_', ' ')}
+                  </p>
+                </div>
               </div>
-              <h3 className="jb-featured-title">
-                {closed ? job.title : <Link to={href}>{job.title}</Link>}
-              </h3>
-              <p className="jb-featured-company">{companyLabel(job)}</p>
-              <p className="saved-job-meta">
-                {job.location?.name || 'Ethiopia'}
-                <span aria-hidden="true"> · </span>
-                {job.employmentType.replaceAll('_', ' ')}
-              </p>
               <div className="jb-featured-foot">
                 <div className={`jb-deadline${deadline.urgent || closed ? ' is-urgent' : ''}`}>
                   <span className="jb-deadline-label">Deadline</span>
@@ -126,7 +130,7 @@ export const CandidateSavedJobsPage: React.FC = () => {
                   )}
                   <button
                     type="button"
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-secondary saved-job-remove"
                     disabled={unsaveMutation.isPending}
                     onClick={() => unsaveMutation.mutate(job.id)}
                   >

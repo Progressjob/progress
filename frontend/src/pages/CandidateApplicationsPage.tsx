@@ -66,24 +66,32 @@ export const CandidateApplicationsPage: React.FC = () => {
                     app.job?.title ?? app.jobId
                   )}
                 </h3>
-                <p>{app.job?.company?.name ?? '—'}</p>
+                <p>
+                  <span>{app.job?.company?.name ?? '—'}</span>
+                  <span className="apps-card-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <time dateTime={app.appliedAt}>
+                    {new Date(app.appliedAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </time>
+                </p>
               </div>
-              <span className="badge badge-info">{app.status.replace(/_/g, ' ')}</span>
-            </div>
-            <div className="apps-card-foot">
-              <time dateTime={app.appliedAt}>
-                Applied {new Date(app.appliedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </time>
-              {!TERMINAL_STATES.has(app.status) && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-danger"
-                  disabled={withdrawMutation.isPending}
-                  onClick={() => withdrawMutation.mutate(app.id)}
-                >
-                  Withdraw
-                </button>
-              )}
+              <div className="apps-card-side">
+                <span className="badge badge-info">{app.status.replace(/_/g, ' ')}</span>
+                {!TERMINAL_STATES.has(app.status) && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger apps-withdraw"
+                    disabled={withdrawMutation.isPending}
+                    onClick={() => withdrawMutation.mutate(app.id)}
+                  >
+                    Withdraw
+                  </button>
+                )}
+              </div>
             </div>
           </article>
         ))}

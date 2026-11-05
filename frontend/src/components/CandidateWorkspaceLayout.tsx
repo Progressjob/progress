@@ -8,9 +8,7 @@ import {
   experienceStageLabel,
   isOpenToOpportunities,
   locationLine,
-  nextVisibility,
   profileStrength,
-  visibilityLabel,
   websiteHref,
 } from '../utils/candidateProfile';
 
@@ -89,14 +87,6 @@ export const CandidateWorkspaceLayout: React.FC = () => {
     },
   });
 
-  const visibilityMutation = useMutation({
-    mutationFn: (profileVisibility: 'public' | 'employers' | 'private') =>
-      candidateApi.updateProfile({ profileVisibility }),
-    onSuccess: () => {
-      void invalidate();
-    },
-  });
-
   const profile = profileQuery.data;
   const percent = profile ? profileStrength(profile) : 0;
   const photoUrl = profile?.photoFileId ? publicFileUrl(profile.photoFileId) : null;
@@ -116,8 +106,12 @@ export const CandidateWorkspaceLayout: React.FC = () => {
     navigate('/candidate/profile?edit=1');
   };
 
+  const isListView =
+    location.pathname.startsWith('/candidate/applications') ||
+    location.pathname.startsWith('/candidate/saved-jobs');
+
   return (
-    <div className="profile-builder-page candidate-workspace">
+    <div className={`profile-builder-page candidate-workspace${isListView ? ' is-list' : ''}`}>
       <section className="cw-banner" aria-label="Profile overview">
         {profileQuery.isError ? (
           <div className="cw-banner-error">
@@ -181,43 +175,44 @@ export const CandidateWorkspaceLayout: React.FC = () => {
               <div className="cw-banner-main">
                 <h1>{profileQuery.isLoading ? 'Loading…' : fullName}</h1>
                 {profile?.gender ? <p className="cw-gender">{profile.gender}</p> : null}
-                <ul className="cw-facts">
-                  <li>
-                    <IconPin />
-                    <span>{displayOrFallback(locationText, 'Add your location')}</span>
-                  </li>
-                  <li>
-                    <IconMail />
-                    <span>{profile?.user?.email || 'Add your email'}</span>
-                  </li>
-                  <li>
-                    <IconPhone />
-                    <span>{displayOrFallback(profile?.user?.phone, 'Add your phone')}</span>
-                  </li>
-                  <li>
-                    <IconGlobe />
-                    {websiteLink ? (
-                      <a href={websiteLink} target="_blank" rel="noreferrer">
-                        {website}
-                      </a>
-                    ) : (
-                      <span>Add a website</span>
-                    )}
-                  </li>
-                </ul>
               </div>
+
+              <ul className="cw-facts cw-facts-contact">
+                <li>
+                  <IconPin />
+                  <span>{displayOrFallback(locationText, 'Add your location')}</span>
+                </li>
+                <li>
+                  <IconMail />
+                  <span>{profile?.user?.email || 'Add your email'}</span>
+                </li>
+                <li>
+                  <IconPhone />
+                  <span>{displayOrFallback(profile?.user?.phone, 'Add your phone')}</span>
+                </li>
+                <li>
+                  <IconGlobe />
+                  {websiteLink ? (
+                    <a href={websiteLink} target="_blank" rel="noreferrer">
+                      {website}
+                    </a>
+                  ) : (
+                    <span>Add a website</span>
+                  )}
+                </li>
+              </ul>
 
               <ul className="cw-facts cw-facts-right">
                 <li>
-                  <span className="cw-fact-label">Profession:</span>
+                  <span className="cw-fact-label">Profession</span>
                   <span>{displayOrFallback(profile?.headline)}</span>
                 </li>
                 <li>
-                  <span className="cw-fact-label">Career Level:</span>
+                  <span className="cw-fact-label">Career Level</span>
                   <span>{profile ? experienceStageLabel(profile) : 'Not specified'}</span>
                 </li>
                 <li>
-                  <span className="cw-fact-label">Managerial Experience:</span>
+                  <span className="cw-fact-label">Managerial Exp.</span>
                   <span>{displayOrFallback(profile?.managerialExperience)}</span>
                 </li>
               </ul>
@@ -234,34 +229,13 @@ export const CandidateWorkspaceLayout: React.FC = () => {
                   <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeWidth="2" />
                   <rect x="4" y="7" width="16" height="13" rx="2" strokeWidth="2" />
                 </svg>
-                {openToWork ? 'Open to New Opportunities' : 'Not currently looking'}
+                <span className="cw-open-full">
+                  {openToWork ? 'Open to New Opportunities' : 'Not currently looking'}
+                </span>
+                <span className="cw-open-short">
+                  {openToWork ? 'Open to work' : 'Not looking'}
+                </span>
               </button>
-              {profile && (
-                <button
-                  type="button"
-                  className="cw-eye"
-                  title={visibilityLabel(profile.profileVisibility)}
-                  aria-label={visibilityLabel(profile.profileVisibility)}
-                  disabled={visibilityMutation.isPending}
-                  onClick={() => visibilityMutation.mutate(nextVisibility(profile.profileVisibility))}
-                >
-                  {profile.profileVisibility === 'private' ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M3 3l18 18" strokeWidth="2" />
-                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" strokeWidth="2" />
-                      <path
-                        d="M9.9 5.1A9.8 9.8 0 0 1 12 5c7 0 11 7 11 7a18.6 18.6 0 0 1-3.2 3.8M6.1 6.1C3 8.3 1 12 1 12s4 7 11 7a10.4 10.4 0 0 0 4.2-.9"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" strokeWidth="2" />
-                      <circle cx="12" cy="12" r="3" strokeWidth="2" />
-                    </svg>
-                  )}
-                </button>
-              )}
             </div>
           </>
         )}

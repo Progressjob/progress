@@ -29,10 +29,13 @@
   main input[type='file'] { width: 100%; }
   main input[type='file']::file-selector-button { min-height: 40px; }
   :is(button, a, input, select, textarea) { touch-action: manipulation; }
-  :is(.btn, .btn-sm, .pb-edit, .pb-add, .pb-icon-btn, .filter-clear-btn,
+  :is(.btn, .btn-sm, .filter-clear-btn,
       .pagination-btn, .emp-page-btn, .profile-upload-btn, .admin-modal-close,
       .job-deadline-preset-pill, .dropdown-option-item) { min-height: 44px; }
-  .pb-icon-btn, .admin-modal-close { min-width: 44px; }
+  .admin-modal-close { min-width: 44px; }
+  /* Profile builder controls stay compact on phones; keep usable tap targets. */
+  .candidate-workspace :is(.pb-edit, .pb-add) { min-height: 30px; }
+  .candidate-workspace .pb-icon-btn { min-width: 32px; min-height: 32px; }
 
   /* Navigation remains in the existing mobile drawer. */
   .top-nav { padding-inline: 16px; }
@@ -217,101 +220,183 @@
   .stacked-table { min-width: 0; width: 100%; }
   .stacked-table td { flex-wrap: wrap; overflow-wrap: anywhere; }
 
-  /* Candidate workspace and employer editors. */
+  /* Candidate workspace — compact framed mobile profile. */
+  .main-container:has(.candidate-workspace) {
+    padding-inline: 12px;
+    padding-block: 12px 20px;
+  }
+  .profile-builder-page.candidate-workspace {
+    padding-inline: 0;
+    gap: 0;
+  }
+  .candidate-workspace {
+    gap: 10px;
+  }
   .cw-banner {
-    padding: 18px 16px;
-    border-radius: 22px;
+    padding: 12px;
+    border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(11, 87, 208, 0.18);
+  }
+  .cw-banner-top {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cw-progress {
+    gap: 0.45rem;
+    font-size: 0.72rem;
+  }
+  .cw-progress-track {
+    width: 72px;
+    height: 6px;
+  }
+  .cw-edit {
+    font-size: 0.78rem;
+    gap: 0.25rem;
+    min-height: 32px;
+    padding: 0 2px;
+  }
+  .cw-edit svg {
+    width: 12px;
+    height: 12px;
   }
   .cw-banner-body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 12px 14px;
+    gap: 8px 10px;
     align-items: center;
   }
-  .cw-avatar-wrap,
-  .cw-avatar {
-    width: 68px;
-    height: 68px;
+  .cw-avatar-wrap {
+    grid-row: 1;
+    grid-column: 1;
+    width: 56px;
+    height: 56px;
   }
   .cw-avatar {
-    font-size: 1.45rem;
-    border-width: 3px;
+    width: 56px;
+    height: 56px;
+    font-size: 1.2rem;
+    border-width: 2px;
   }
   .cw-avatar-cam {
-    width: 24px;
-    height: 24px;
-    right: 0;
-    bottom: 0;
+    width: 22px;
+    height: 22px;
+    right: -2px;
+    bottom: -2px;
+  }
+  .cw-avatar-cam svg {
+    width: 11px;
+    height: 11px;
+  }
+  .cw-banner-main {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
   }
   .cw-banner-main h1 {
-    font-size: 1.3rem;
-    line-height: 1.25;
-    margin-bottom: 4px;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    margin: 0;
   }
-  .cw-banner-main .cw-facts li {
-    font-size: 0.82rem;
+  .cw-gender {
+    margin: 2px 0 0;
+    font-size: 0.75rem;
+  }
+  .cw-facts-contact {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    margin-top: 2px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .cw-facts-contact li,
+  .cw-facts-contact a {
+    align-items: flex-start;
     gap: 6px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+  .cw-facts-contact svg {
+    width: 12px;
+    height: 12px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .cw-facts-contact span,
+  .cw-facts-contact a {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    overflow-wrap: anywhere;
   }
   .cw-facts-right {
     grid-column: 1 / -1;
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    padding: 10px 12px;
-    margin-top: 4px;
+    grid-row: auto;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-top: 2px;
+    gap: 6px;
   }
   .cw-facts-right li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
+    display: grid;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+    gap: 4px 8px;
+    align-items: start;
+    font-size: 0.72rem;
+    line-height: 1.3;
   }
   .cw-facts-right .cw-fact-label {
-    opacity: 0.85;
-    font-size: 0.78rem;
+    opacity: 0.88;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    white-space: normal;
   }
-  .cw-banner-top {
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 12px;
+  .cw-facts-right span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
   .cw-banner-foot {
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center;
-    gap: 10px;
-    margin-top: 14px;
+    gap: 8px;
+    margin-top: 10px;
   }
   .cw-open-badge {
     flex: 1;
     min-width: 0;
     justify-content: center;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    gap: 0.35rem;
+    padding: 7px 10px;
+    font-size: 0.72rem;
+    min-height: 34px;
   }
-  .cw-eye {
+  .cw-open-badge svg {
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255, 255, 255, 0.22);
   }
-  .pb-entry-top, .pb-card-head,
-  .pb-cv-file, .pb-cv-actions, .pb-composer-actions, .pb-entry-actions {
-    flex-wrap: wrap; gap: 10px;
-  }
+  .cw-open-full { display: none; }
+  .cw-open-short { display: inline; }
   .cw-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
-    padding: 4px;
-    background: #eef2f6;
-    border-radius: 16px;
+    gap: 3px;
+    width: 100%;
+    margin: 0 0 4px;
+    padding: 3px;
+    background: #e8eef5;
+    border: 1px solid #dbe4ee;
+    border-radius: 14px;
   }
   .cw-tabs a,
   .cw-tab {
@@ -319,15 +404,174 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 40px;
-    padding: 6px 4px;
-    font-size: 0.78rem;
-    font-weight: 650;
-    border-radius: 12px;
+    min-height: 36px;
+    padding: 5px 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 11px;
     white-space: nowrap;
   }
+  .cw-tab.is-active {
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+  }
+  .profile-builder-grid,
+  .profile-builder-main,
+  .profile-builder-aside {
+    gap: 10px;
+  }
   .profile-builder-aside { position: static; }
-  .pb-card, .pb-composer { padding: 16px; }
+  .pb-card,
+  .pb-side {
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  }
+  .pb-card-head {
+    align-items: center;
+    margin-bottom: 0.55rem;
+    gap: 8px;
+  }
+  .pb-card-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    gap: 0.35rem;
+  }
+  .pb-card-title svg {
+    width: 13px;
+    height: 13px;
+  }
+  .pb-edit,
+  .pb-add {
+    min-height: 30px;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.72rem;
+    gap: 0.2rem;
+  }
+  .pb-edit svg,
+  .pb-add svg {
+    width: 11px;
+    height: 11px;
+  }
+  .pb-empty {
+    padding: 0.7rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  .pb-body {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+  .pb-entry {
+    padding: 0.55rem 0;
+  }
+  .pb-entry-top {
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .pb-entry h3 {
+    font-size: 0.88rem;
+    line-height: 1.3;
+  }
+  .pb-entry p {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+  .pb-entry-actions {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .pb-icon-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 8px;
+  }
+  .pb-chips {
+    gap: 0.35rem;
+  }
+  .pb-chip {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.78rem;
+  }
+  .pb-inline-add {
+    margin-top: 0.55rem;
+    gap: 0.4rem;
+  }
+  .pb-inline-add input {
+    padding: 0.45rem 0.65rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    min-height: 40px;
+  }
+  .pb-side h3 {
+    font-size: 0.68rem;
+  }
+  .pb-side-sub {
+    margin: 0.15rem 0 0.65rem;
+    font-size: 0.74rem;
+  }
+  .pb-cv-file {
+    gap: 0.55rem;
+    padding: 0.65rem 0.7rem;
+    border-radius: 12px;
+    margin: 0.55rem 0;
+  }
+  .pb-cv-file-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 0.58rem;
+  }
+  .pb-cv-file strong {
+    font-size: 0.78rem;
+  }
+  .pb-dropzone {
+    margin-top: 0.55rem;
+    padding: 0.75rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+  }
+  .pb-cv-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+  }
+  .pb-cv-ghost {
+    padding: 0.55rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.74rem;
+    min-height: 38px;
+  }
+  .pb-composer {
+    margin-top: 0.55rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    gap: 0.55rem;
+  }
+  .pb-composer-grid,
+  .pb-lang-skills {
+    gap: 0.55rem;
+  }
+  .pb-choice {
+    padding: 0.65rem 0.55rem;
+    border-radius: 12px;
+    font-size: 0.82rem;
+  }
+  .pb-welcome {
+    margin-bottom: 0.65rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 12px;
+  }
+  .pb-welcome p {
+    font-size: 0.82rem;
+  }
+  .pb-entry-top, .pb-card-head,
+  .pb-cv-file, .pb-composer-actions, .pb-entry-actions {
+    flex-wrap: nowrap;
+  }
   .pb-duty-toolbar, .pb-choice-row { flex-wrap: wrap; }
   .profile-edit-hero, .profile-form-section, .profile-edit-footer { padding: 16px; }
   .profile-edit-hero-main, .profile-upload-card-content { align-items: flex-start; gap: 12px; }
@@ -335,6 +579,207 @@
   .profile-edit-footer, .profile-edit-footer-btns { flex-direction: column; align-items: stretch; gap: 12px; }
   .profile-edit-footer-btns > * { width: 100%; min-height: 44px; }
   .profile-upload-card { padding: 14px; }
+
+  /* Applications + Saved Jobs: collapse banner, denser list cards. */
+  .candidate-workspace.is-list .cw-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+  .candidate-workspace.is-list .cw-banner-top {
+    order: 2;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .candidate-workspace.is-list .cw-progress { display: none; }
+  .candidate-workspace.is-list .cw-banner-body {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .candidate-workspace.is-list .cw-avatar-wrap,
+  .candidate-workspace.is-list .cw-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  .candidate-workspace.is-list .cw-avatar {
+    font-size: 0.9rem;
+    border-width: 2px;
+  }
+  .candidate-workspace.is-list .cw-avatar-cam { display: none; }
+  .candidate-workspace.is-list .cw-banner-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .candidate-workspace.is-list .cw-banner-main h1 {
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .candidate-workspace.is-list .cw-gender,
+  .candidate-workspace.is-list .cw-facts-contact,
+  .candidate-workspace.is-list .cw-facts-right,
+  .candidate-workspace.is-list .cw-banner-foot {
+    display: none !important;
+  }
+  .candidate-workspace.is-list .cw-edit {
+    font-size: 0.72rem;
+    min-height: 28px;
+  }
+  .candidate-workspace.is-list .cw-tabs {
+    margin-bottom: 2px;
+  }
+  .candidate-workspace.is-list .cw-page-stack {
+    gap: 8px;
+  }
+
+  .saved-jobs-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px;
+  }
+  .saved-job-card.jb-featured-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    row-gap: 2px;
+    align-items: start;
+    min-height: 0;
+    min-width: 0;
+    max-width: none;
+    padding: 8px 10px;
+    border-radius: 14px;
+    gap: 2px 10px;
+  }
+  .saved-job-card .saved-job-row { display: contents; }
+  .saved-job-card .saved-job-logo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+  .saved-job-logo-img { padding: 4px; }
+  .saved-job-logo-fallback { font-size: 1.05rem; }
+  .saved-job-card .saved-job-body {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .saved-job-body .jb-featured-title {
+    font-size: 0.84rem;
+    line-height: 1.25;
+    -webkit-line-clamp: 1;
+  }
+  .saved-job-body .jb-featured-company {
+    margin-top: 1px;
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+  .saved-job-meta { display: none; }
+  .saved-job-card .jb-featured-foot {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+    align-items: center;
+    gap: 6px;
+  }
+  .saved-job-card .jb-deadline {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+  }
+  .saved-job-card .jb-deadline-label { display: none; }
+  .saved-job-card .jb-deadline strong {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .saved-job-actions { gap: 4px; }
+  .saved-job-card .jb-featured-go {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+  .saved-job-card .jb-featured-go svg {
+    width: 12px;
+    height: 12px;
+  }
+  .saved-job-remove {
+    min-height: 28px !important;
+    padding: 0.15rem 0.5rem !important;
+    font-size: 0.68rem !important;
+    border-radius: 8px !important;
+  }
+  .saved-job-unavailable {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  .candidate-workspace.is-list .pb-card {
+    padding: 10px;
+  }
+  .candidate-workspace.is-list .pb-empty {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.78rem;
+  }
+  .candidate-workspace.is-list .pb-card .btn {
+    min-height: 34px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.78rem;
+  }
+
+  .apps-card-list { gap: 8px; }
+  .apps-card {
+    padding: 10px;
+    border-radius: 14px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+  }
+  .apps-card-top {
+    align-items: center;
+    gap: 8px;
+  }
+  .apps-card-copy h3 {
+    font-size: 0.84rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .apps-card-copy p {
+    margin-top: 2px;
+    font-size: 0.7rem;
+    gap: 0.25rem;
+  }
+  .apps-card-side {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  .apps-card-side .badge {
+    font-size: 0.62rem;
+    padding: 0.18rem 0.45rem;
+    white-space: nowrap;
+  }
+  .apps-withdraw {
+    min-height: 28px !important;
+    width: auto !important;
+    padding: 0.18rem 0.5rem !important;
+    font-size: 0.68rem !important;
+    border-radius: 8px !important;
+  }
+
   .job-form-radio-grid { display: grid; }
   .job-form-radio-card { min-width: 0; }
   .select-company-switcher, .employer-select-filter { max-width: 100%; min-width: 0; width: 100%; }
@@ -419,12 +864,19 @@
 
 @media screen and (max-width: 380px) {
   .main-container, .admin-content { padding-inline: 12px; }
+  .main-container:has(.candidate-workspace) { padding-inline: 10px; }
   .profile-edit-hero-main, .profile-upload-card-content { flex-direction: column; }
   .directory-company-identity { flex-wrap: wrap; }
   .stats-grid, .employer-stats-grid { grid-template-columns: minmax(0, 1fr); }
   .landing-page .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
   .job-detail-page .jd-quick-bar { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  .pb-card-head { align-items: flex-start; }
+  .candidate-workspace .cw-banner { padding: 10px; border-radius: 16px; }
+  .candidate-workspace .cw-banner-main h1 { font-size: 0.98rem; }
+  .candidate-workspace .cw-tabs a,
+  .candidate-workspace .cw-tab { font-size: 0.64rem; padding: 4px 2px; min-height: 34px; }
+  .candidate-workspace .pb-card,
+  .candidate-workspace .pb-side { padding: 10px; border-radius: 14px; }
+  .pb-card-head { align-items: center; }
 }
 
 @media screen and (max-width: 768px) {
@@ -433,8 +885,9 @@
   .jb-featured-track { max-width: 100%; overscroll-behavior-x: contain; }
   .jb-featured-card { min-width: min(230px, 100%); max-width: 100%; }
   .jb-nav-btn { width: 44px; height: 44px; }
-  .pb-cv-actions { grid-template-columns: minmax(0, 1fr); }
-  .pb-cv-actions > *, .pb-composer-actions > .btn { width: 100%; }
+  .candidate-workspace .pb-cv-actions { grid-template-columns: 1fr 1fr; }
+  .pb-composer-actions > .btn { width: auto; }
+  .pb-composer-actions { flex-wrap: wrap; }
   .profile-edit-nav { flex-wrap: wrap; gap: 8px; }
   .profile-edit-card > .alert-box-error { margin-inline: 16px; }
   .admin-jobs-form-actions { flex-wrap: wrap; }
