@@ -2,7 +2,6 @@ import { SiteNavbar } from './SiteNavbar';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { AccountDropdown } from './AccountDropdown';
-import { NotificationBell } from './NotificationBell';
 
 const primaryLinks = [
   ['Dashboard', '/admin'],
@@ -19,7 +18,6 @@ export const AdminPortalLayout = () => {
   return (
     <div className="app-shell admin-shell">
       <SiteNavbar label="Admin navigation" admin account={<>
-            {user && <NotificationBell />}
             {user && (
               <AccountDropdown
                 name={`${user.firstName} ${user.lastName}`}
