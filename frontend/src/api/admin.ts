@@ -199,9 +199,10 @@ export const adminApi = {
       body: { questions },
     }),
   talentSpotlight: () => apiFetch<TalentSpotlightResponse>('/admin/talent/spotlight'),
-  searchTalent: (params: { q?: string; page?: number; limit?: number }) => {
+  searchTalent: (params: { q?: string; availabilityStatus?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params.q?.trim()) qs.set('q', params.q.trim());
+    if (params.availabilityStatus?.trim()) qs.set('availabilityStatus', params.availabilityStatus.trim());
     if (params.page) qs.set('page', String(params.page));
     if (params.limit) qs.set('limit', String(params.limit));
     const query = qs.toString();

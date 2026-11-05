@@ -104,13 +104,27 @@ export class TalentService {
     return { searchableCount, items: rows.map(toCard) };
   }
 
-  async search(q?: string, page = 1, limit = 12) {
+  async search(q?: string, page = 1, limit = 12, availabilityStatus?: string) {
     const safePage = Math.max(page, 1);
     const safeLimit = Math.min(Math.max(limit, 1), 50);
     const term = q?.trim() ?? '';
     // No keyword: paginate the full visible pool. Filter only when the query is at least 2 chars.
-    const where =
+    const status = availabilityStatus?.trim();
+    const baseWhere: Prisma.CandidateProfileWhereInput =
       term.length >= MIN_QUERY_LENGTH ? searchWhere(term) : visibleWhere;
+    const statusFilter: Prisma.CandidateProfileWhereInput | undefined = status
+      ? {
+          availabilityStatus: {
+            in:
+              status === 'full_time'
+                ? ['full_time', 'open', 'immediately_available', 'available_with_notice']
+                : [status],
+          },
+        }
+      : undefined;
+    const where: Prisma.CandidateProfileWhereInput = statusFilter
+      ? { AND: [baseWhere, statusFilter] }
+      : baseWhere;
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.candidateProfile.findMany({
         where,

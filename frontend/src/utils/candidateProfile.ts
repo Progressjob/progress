@@ -1,4 +1,9 @@
-import { EXPERIENCE_STAGES, type ExperienceStage } from '../constants/candidateProfile';
+import {
+  EXPERIENCE_STAGES,
+  WORK_STATUS_OPTIONS,
+  type ExperienceStage,
+  type WorkStatusValue,
+} from '../constants/candidateProfile';
 import type { CandidateProfile } from '../types/api';
 
 export function locationLine(profile: CandidateProfile): string {
@@ -75,7 +80,35 @@ export function experienceStageSelectValue(profile: Pick<CandidateProfile, 'care
 }
 
 export function isOpenToOpportunities(profile: CandidateProfile): boolean {
-  return profile.availabilityStatus !== 'not_looking';
+  return normalizeWorkStatus(profile.availabilityStatus) !== 'not_looking';
+}
+
+const LEGACY_WORK_STATUS: Record<string, WorkStatusValue> = {
+  open: 'full_time',
+  immediately_available: 'full_time',
+  available_with_notice: 'full_time',
+};
+
+export function normalizeWorkStatus(value?: string | null): WorkStatusValue | '' {
+  const raw = value?.trim();
+  if (!raw) return '';
+  const mapped = LEGACY_WORK_STATUS[raw] ?? raw;
+  return WORK_STATUS_OPTIONS.some((option) => option.value === mapped)
+    ? (mapped as WorkStatusValue)
+    : '';
+}
+
+export function workStatusLabel(value?: string | null, fallback = 'Work status not set'): string {
+  const normalized = normalizeWorkStatus(value);
+  if (!normalized) {
+    if (!value?.trim()) return fallback;
+    return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return WORK_STATUS_OPTIONS.find((option) => option.value === normalized)?.label ?? fallback;
+}
+
+export function workStatusSelectValue(profile: Pick<CandidateProfile, 'availabilityStatus'>): string {
+  return normalizeWorkStatus(profile.availabilityStatus);
 }
 
 export function visibilityLabel(value: CandidateProfile['profileVisibility']): string {

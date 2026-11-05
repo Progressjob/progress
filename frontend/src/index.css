@@ -5179,7 +5179,6 @@ hr {
 }
 
 .cw-edit,
-.cw-open-badge,
 .cw-avatar-cam {
   border: 0;
   background: transparent;
@@ -5335,31 +5334,42 @@ hr {
 .cw-banner-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
   margin-top: 1.15rem;
 }
 
-.cw-open-badge {
+.cw-work-status {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  background: rgba(255, 255, 255, 0.16);
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 700;
+  cursor: pointer;
 }
 
-.cw-open-badge.is-on {
+.cw-work-status.is-on {
   background: rgba(255, 255, 255, 0.92);
   color: #0b57d0;
 }
 
-.cw-open-short {
-  display: none;
+.cw-work-status svg {
+  flex-shrink: 0;
+}
+
+.cw-work-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cw-tabs {
@@ -6816,6 +6826,14 @@ hr {
 .cv-search-btn-short,
 .cv-view-label-short {
   display: none;
+}
+
+.cv-status-filters {
+  margin-top: 0.85rem;
+}
+
+.cv-status-filters .custom-dropdown-container {
+  min-width: 168px;
 }
 
 .cv-role-filters {
@@ -13017,6 +13035,52 @@ a.admin-metric:hover {
   .profile-edit-hero {
     padding: 1.25rem;
   }
+}
+
+.employer-onboarding-uploads {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-logo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  gap: 2px;
+}
+
+.profile-logo-empty span {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.profile-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.profile-upload-status {
+  margin-top: 0.4rem;
+}
+
+.profile-upload-processing {
+  font-size: 0.82rem;
+}
+
+.profile-upload-error {
+  color: #b91c1c;
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+}
+
+.employer-hint-short,
+.employer-btn-short {
+  display: none;
 }
 
 .profile-upload-card {

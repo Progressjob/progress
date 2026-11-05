@@ -60,11 +60,12 @@ export const BusinessLicenceUpload: React.FC<BusinessLicenceUploadProps> = ({
             )}
           </div>
           <p className="profile-upload-hint">
-            PDF, PNG or JPEG · Max 5 MB. Kept strictly private for admin verification.
+            <span className="employer-hint-full">PDF, PNG or JPEG · Max 5 MB. Kept strictly private for admin verification.</span>
+            <span className="employer-hint-short">PDF/PNG/JPEG · max 5 MB</span>
           </p>
 
           {value && (
-            <div style={{ marginTop: '0.5rem' }}>
+            <div className="profile-upload-status">
               <span className="profile-pill-success" role="status">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
@@ -76,7 +77,7 @@ export const BusinessLicenceUpload: React.FC<BusinessLicenceUploadProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+      <div className="profile-upload-actions">
         <input
           id={id}
           type="file"
@@ -84,7 +85,7 @@ export const BusinessLicenceUpload: React.FC<BusinessLicenceUploadProps> = ({
           required={required && !value}
           disabled={busy}
           onChange={handleFileChange}
-          style={{ display: 'none' }}
+          hidden
         />
         <label
           htmlFor={id}
@@ -95,13 +96,18 @@ export const BusinessLicenceUpload: React.FC<BusinessLicenceUploadProps> = ({
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          {busy ? 'Uploading licence…' : value ? 'Replace document' : 'Upload licence file'}
+          <span className="employer-btn-full">
+            {busy ? 'Uploading licence…' : value ? 'Replace document' : 'Upload licence file'}
+          </span>
+          <span className="employer-btn-short">
+            {busy ? 'Uploading…' : value ? 'Replace' : 'Upload licence'}
+          </span>
         </label>
-        {busy && <span className="muted" style={{ fontSize: '0.82rem' }}>Processing upload…</span>}
+        {busy && <span className="muted profile-upload-processing">Processing…</span>}
       </div>
 
       {error && (
-        <p className="muted" role="alert" style={{ color: '#b91c1c', margin: '0.25rem 0 0', fontSize: '0.82rem' }}>
+        <p className="profile-upload-error" role="alert">
           {error}
         </p>
       )}

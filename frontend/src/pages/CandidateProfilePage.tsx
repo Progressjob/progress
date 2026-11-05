@@ -8,9 +8,14 @@ import {
   EXPERIENCE_STAGES,
   GENDER_OPTIONS,
   MANAGERIAL_EXPERIENCE_OPTIONS,
+  WORK_STATUS_OPTIONS,
 } from '../constants/candidateProfile';
 import { EDUCATION_LEVELS } from '../constants/educationLevels';
-import { experienceStageSelectValue, hasNoExperienceFlag } from '../utils/candidateProfile';
+import {
+  experienceStageSelectValue,
+  hasNoExperienceFlag,
+  workStatusSelectValue,
+} from '../utils/candidateProfile';
 import type {
   CandidateCertification,
   CandidateEducation,
@@ -165,6 +170,7 @@ export const CandidateProfilePage: React.FC = () => {
   const [region, setRegion] = useState('');
   const [country, setCountry] = useState('');
   const [phone, setPhone] = useState('');
+  const [workStatus, setWorkStatus] = useState('');
   const [summary, setSummary] = useState('');
   const [skillName, setSkillName] = useState('');
 
@@ -234,6 +240,7 @@ export const CandidateProfilePage: React.FC = () => {
         region: region.trim() || null,
         country: country.trim() || null,
         phone: phone.trim(),
+        availabilityStatus: workStatus || null,
       }),
     onSuccess: async () => {
       setActionError(null);
@@ -448,6 +455,7 @@ export const CandidateProfilePage: React.FC = () => {
     setRegion(profile.region ?? '');
     setCountry(profile.country ?? '');
     setPhone(profile.user?.phone ?? '');
+    setWorkStatus(workStatusSelectValue(profile));
     setOpen({ section: 'profile' });
   };
 
@@ -561,7 +569,8 @@ export const CandidateProfilePage: React.FC = () => {
     city !== (profile.city ?? '') ||
     region !== (profile.region ?? '') ||
     country !== (profile.country ?? '') ||
-    phone !== (profile.user?.phone ?? '');
+    phone !== (profile.user?.phone ?? '') ||
+    workStatus !== workStatusSelectValue(profile);
   const summaryDirty = summary !== (profile.summary ?? '');
   const applyDutyFormat = (kind: 'bold' | 'italic' | 'underline' | 'ul' | 'ol') => {
     const area = dutiesRef.current;
@@ -953,6 +962,21 @@ export const CandidateProfilePage: React.FC = () => {
                   {MANAGERIAL_EXPERIENCE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field pb-span-2">
+                <label htmlFor="pb-work-status">Work status</label>
+                <select
+                  id="pb-work-status"
+                  value={workStatus}
+                  onChange={(e) => setWorkStatus(e.target.value)}
+                >
+                  <option value="">Select work status</option>
+                  {WORK_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>

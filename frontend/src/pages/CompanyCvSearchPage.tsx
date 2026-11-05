@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { publicFileUrl } from '../api/files';
+import { CustomDropdown } from '../components/CustomDropdown';
+import { WORK_STATUS_OPTIONS } from '../constants/candidateProfile';
 import type { TalentCard } from '../types/api';
+import { workStatusLabel } from '../utils/candidateProfile';
 import { useTalentPortal } from '../utils/talentPortal';
 
 const POPULAR_ROLES = [
@@ -17,6 +20,10 @@ const POPULAR_ROLES = [
 ];
 const MIN_QUERY = 2;
 const PAGE_SIZE = 12;
+const WORK_STATUS_FILTER_OPTIONS = WORK_STATUS_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
 
 function talentLocation(card: TalentCard): string {
   return [card.city, card.region, card.country].filter(Boolean).join(' · ') || 'Ethiopia';
@@ -41,11 +48,6 @@ function initials(card: TalentCard): string {
   return `${card.firstName[0] ?? ''}${card.lastName[0] ?? ''}`.toUpperCase() || 'CV';
 }
 
-function formatAvailability(status?: string | null): string {
-  if (!status) return 'Available for hire';
-  return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 /** Marketing-style pool size: 50+, 100+, 200+… instead of an exact count. */
 function formatTalentPoolCount(count: number): string {
   if (!Number.isFinite(count) || count <= 0) return '0';
@@ -66,7 +68,7 @@ const TalentResultCard: React.FC<{ card: TalentCard; onView: () => void; viewLab
   const title = card.currentTitle || card.headline || 'Professional Candidate';
   const summary = clip(card.summary);
   const location = talentLocation(card);
-  const availability = formatAvailability(card.availabilityStatus);
+  const availability = workStatusLabel(card.availabilityStatus, 'Work status not set');
 
   return (
     <article className="cv-card-modern">
@@ -118,7 +120,9 @@ const TalentResultCard: React.FC<{ card: TalentCard; onView: () => void; viewLab
             {years}
           </span>
         )}
-        <span className="tag-pill tag-avail">🟢 {availability}</span>
+        {card.availabilityStatus ? (
+          <span className="tag-pill tag-avail">🟢 {availability}</span>
+        ) : null}
       </div>
 
       {summary ? (
@@ -144,6 +148,7 @@ export const CompanyCvSearchPage: React.FC = () => {
   const portal = useTalentPortal();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q')?.trim() ?? '';
+  const workStatus = searchParams.get('status')?.trim() ?? '';
   const page = Math.max(Number(searchParams.get('page') || 1), 1);
   const [draft, setDraft] = useState(query);
   const resultsHeaderRef = useRef<HTMLDivElement>(null);
@@ -168,18 +173,29 @@ export const CompanyCvSearchPage: React.FC = () => {
 
   const searching = query.length >= MIN_QUERY;
   const searchQuery = useQuery({
-    queryKey: ['talent', 'search', poolKey, query, page],
-    queryFn: () => portal.search({ q: searching ? query : '', page, limit: PAGE_SIZE }),
+    queryKey: ['talent', 'search', poolKey, query, workStatus, page],
+    queryFn: () =>
+      portal.search({
+        q: searching ? query : '',
+        availabilityStatus: workStatus || undefined,
+        page,
+        limit: PAGE_SIZE,
+      }),
     enabled: portal.canQuery,
     placeholderData: keepPreviousData,
   });
 
-  const applySearch = (value: string, nextPage = 1) => {
+  const applySearch = (value: string, nextPage = 1, status = workStatus) => {
     const term = value.trim();
-              const next = new URLSearchParams();
-              if (term.length >= MIN_QUERY) next.set('q', term);
+    const next = new URLSearchParams();
+    if (term.length >= MIN_QUERY) next.set('q', term);
+    if (status) next.set('status', status);
     if (nextPage > 1) next.set('page', String(nextPage));
-              setSearchParams(next);
+    setSearchParams(next);
+  };
+
+  const applyWorkStatus = (status: string) => {
+    applySearch(draft, 1, status);
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -304,6 +320,24 @@ export const CompanyCvSearchPage: React.FC = () => {
                                       </button>
                                     </form>
 
+                                    <div className="jb-filters public-job-filters cv-status-filters" aria-label="Filter by work status">
+                                      <CustomDropdown
+                                        value={workStatus}
+                                        onChange={applyWorkStatus}
+                                        options={WORK_STATUS_FILTER_OPTIONS}
+                                        placeholder="Work status"
+                                      />
+                                      {workStatus ? (
+                                        <button
+                                          type="button"
+                                          className="btn-clear-filters"
+                                          onClick={() => applyWorkStatus('')}
+                                        >
+                                          Reset
+                                        </button>
+                                      ) : null}
+                                    </div>
+
                                     <div className="companies-industry-filters cv-role-filters" role="group" aria-label="Filter by role">
                                       <span className="companies-industry-label">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
@@ -339,20 +373,32 @@ export const CompanyCvSearchPage: React.FC = () => {
                                       </div>
                                     </div>
 
-                                    {searching && (
+                                    {(searching || workStatus) && (
                                       <div className="companies-active-filter">
                                         <span>
-                                          Showing <strong>{query}</strong> candidates
+                                          {searching ? (
+                                            <>
+                                              Showing <strong>{query}</strong> candidates
+                                            </>
+                                          ) : (
+                                            'Filtered candidates'
+                                          )}
+                                          {workStatus ? (
+                                            <>
+                                              {' '}
+                                              · <strong>{workStatusLabel(workStatus)}</strong>
+                                            </>
+                                          ) : null}
                                         </span>
                                         <button
                                           type="button"
                                           className="companies-clear-industry"
                                           onClick={() => {
                                             setDraft('');
-                                            applySearch('');
+                                            applySearch('', 1, '');
                                           }}
                                         >
-                                          Clear role
+                                          Clear filters
                                         </button>
                                       </div>
                                     )}
@@ -362,13 +408,15 @@ export const CompanyCvSearchPage: React.FC = () => {
                                   <div className="cv-results-header" ref={resultsHeaderRef}>
                                     <div>
                                       <h2 className="cv-results-title">
-                                        {searching ? `Matching candidates for “${query}”` : 'All professional talent'}
+                                        {searching
+                                          ? `Matching candidates for “${query}”`
+                                          : workStatus
+                                            ? workStatusLabel(workStatus)
+                                            : 'All professional talent'}
                                       </h2>
                                       <p className="cv-results-subtitle">
                                         {searchQuery.data
-                                          ? searching
-                                            ? `Showing ${results.length} of ${total} matching candidate profile${total === 1 ? '' : 's'}.`
-                                            : `Showing ${results.length} of ${total} candidate profile${total === 1 ? '' : 's'}.`
+                                          ? `Showing ${results.length} of ${total} candidate profile${total === 1 ? '' : 's'}.`
                                           : 'Loading candidate pool…'}
                                       </p>
                                     </div>

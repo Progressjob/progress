@@ -692,7 +692,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid-Senior Level',
       yearsExperience: 3.5,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'full_time',
       gender: 'Male',
       experiences: [
         {
@@ -747,7 +747,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid Level',
       yearsExperience: 2.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'part_time',
       gender: 'Male',
       experiences: [
         {
@@ -786,7 +786,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Entry Level',
       yearsExperience: 0.5,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'internship',
       gender: 'Female',
       experiences: [
         {
@@ -829,7 +829,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Senior Professional',
       yearsExperience: 5.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'contract',
       gender: 'Female',
       experiences: [
         {
@@ -882,7 +882,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Mid-Senior Level',
       yearsExperience: 4.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'remote',
       gender: 'Male',
       experiences: [
         {
@@ -921,7 +921,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Entry Level',
       yearsExperience: 0.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'full_time',
       gender: 'Female',
       experiences: [],
       educations: [
@@ -952,7 +952,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid-Senior Level',
       yearsExperience: 4.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'part_time',
       gender: 'Male',
       experiences: [
         {
@@ -992,7 +992,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid Level',
       yearsExperience: 2.5,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'internship',
       gender: 'Female',
       experiences: [
         {
@@ -1031,7 +1031,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Junior Level',
       yearsExperience: 1.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'contract',
       gender: 'Male',
       experiences: [
         {
@@ -1072,7 +1072,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Senior Professional',
       yearsExperience: 6.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'remote',
       gender: 'Female',
       experiences: [
         {
@@ -1111,7 +1111,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Sidama',
       careerLevel: 'Junior Level',
       yearsExperience: 1.5,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'full_time',
       gender: 'Male',
       experiences: [
         {
@@ -1152,7 +1152,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid Level',
       yearsExperience: 3.5,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'part_time',
       gender: 'Female',
       experiences: [
         {
@@ -1192,7 +1192,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid-Senior Level',
       yearsExperience: 4.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'internship',
       gender: 'Male',
       experiences: [
         {
@@ -1231,7 +1231,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Entry Level',
       yearsExperience: 0.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'contract',
       gender: 'Female',
       experiences: [],
       educations: [
@@ -1262,7 +1262,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Amhara',
       careerLevel: 'Mid Level',
       yearsExperience: 3.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'remote',
       gender: 'Male',
       experiences: [
         {
@@ -1301,7 +1301,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Junior Level',
       yearsExperience: 1.5,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'full_time',
       gender: 'Female',
       experiences: [
         {
@@ -1342,7 +1342,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Mid-Senior Level',
       yearsExperience: 4.5,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'part_time',
       gender: 'Male',
       experiences: [
         {
@@ -1381,7 +1381,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Addis Ababa',
       careerLevel: 'Mid Level',
       yearsExperience: 2.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'internship',
       gender: 'Female',
       experiences: [
         {
@@ -1422,7 +1422,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Senior Professional',
       yearsExperience: 5.0,
-      availabilityStatus: 'available_with_notice',
+      availabilityStatus: 'contract',
       gender: 'Male',
       experiences: [
         {
@@ -1464,7 +1464,7 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
       region: 'Oromia',
       careerLevel: 'Mid Level',
       yearsExperience: 3.0,
-      availabilityStatus: 'immediately_available',
+      availabilityStatus: 'full_time',
       gender: 'Female',
       experiences: [
         {

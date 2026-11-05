@@ -19,7 +19,7 @@ export class EmployerTalentController {
 
   @Get()
   search(@Query() query: TalentSearchQueryDto) {
-    return this.talent.search(query.q, query.page, query.limit);
+    return this.talent.search(query.q, query.page, query.limit, query.availabilityStatus);
   }
 
   @Get(':candidateId')
@@ -42,7 +42,7 @@ export class TalentBrowseController {
 
   @Get()
   search(@Query() query: TalentSearchQueryDto) {
-    return this.talent.search(query.q, query.page, query.limit);
+    return this.talent.search(query.q, query.page, query.limit, query.availabilityStatus);
   }
 }
 
@@ -61,7 +61,7 @@ export class AdminTalentController {
 
   @Get()
   search(@Query() query: TalentSearchQueryDto) {
-    return this.talent.search(query.q, query.page, query.limit);
+    return this.talent.search(query.q, query.page, query.limit, query.availabilityStatus);
   }
 
   @Get(':candidateId')

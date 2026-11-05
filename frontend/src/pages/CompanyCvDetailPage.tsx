@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { publicFileUrl } from '../api/files';
 import { apiDownloadFile, apiOpenFile } from '../api/client';
 import type { TalentDetail } from '../types/api';
-import { hasNoExperienceFlag, websiteHref } from '../utils/candidateProfile';
+import { hasNoExperienceFlag, websiteHref, workStatusLabel } from '../utils/candidateProfile';
 import { useTalentPortal } from '../utils/talentPortal';
 
 function talentLocation(profile: TalentDetail): string {
@@ -40,10 +40,6 @@ function yearFromDate(value?: string | null): string {
     return `${profile.firstName[0] ?? ''}${profile.lastName[0] ?? ''}`.toUpperCase() || 'CV';
   }
 
-  function formatAvailability(status?: string | null): string {
-    if (!status) return 'Available for hire';
-    return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
 
   export const CompanyCvDetailPage: React.FC = () => {
     const portal = useTalentPortal();
@@ -101,7 +97,7 @@ function yearFromDate(value?: string | null): string {
           const profession = profile.currentTitle || profile.headline || 'Professional Candidate';
           const website = profile.websiteUrl?.trim();
           const location = talentLocation(profile);
-          const availability = formatAvailability(profile.availabilityStatus);
+          const availability = workStatusLabel(profile.availabilityStatus, 'Work status not set');
 
   const openResume = async () => {
     if (!resume) return;

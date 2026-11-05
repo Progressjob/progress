@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -35,7 +36,10 @@ export class UpdateProfileDto {
   @IsOptional() @IsNumber() @Min(0) currentSalary?: number;
   @IsOptional() @IsString() salaryCurrency?: string;
   @IsOptional() @IsNumber() @Min(0) expectedSalary?: number;
-  @IsOptional() @IsString() availabilityStatus?: string;
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @IsIn(['full_time', 'part_time', 'internship', 'contract', 'remote', 'not_looking'])
+  availabilityStatus?: string | null;
   @IsOptional() @IsEnum(ProfileVisibility) profileVisibility?: ProfileVisibility;
   @IsOptional() @IsString() firstName?: string;
   @IsOptional() @IsString() lastName?: string;

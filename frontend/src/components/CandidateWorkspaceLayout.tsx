@@ -6,10 +6,11 @@ import { filesApi, publicFileUrl } from '../api/files';
 import {
   displayOrFallback,
   experienceStageLabel,
-  isOpenToOpportunities,
   locationLine,
   profileStrength,
   websiteHref,
+  workStatusLabel,
+  workStatusSelectValue,
 } from '../utils/candidateProfile';
 
 const TABS = [
@@ -79,21 +80,14 @@ export const CandidateWorkspaceLayout: React.FC = () => {
     },
   });
 
-  const availabilityMutation = useMutation({
-    mutationFn: (open: boolean) =>
-      candidateApi.updateProfile({ availabilityStatus: open ? 'open' : 'not_looking' }),
-    onSuccess: () => {
-      void invalidate();
-    },
-  });
-
   const profile = profileQuery.data;
   const percent = profile ? profileStrength(profile) : 0;
   const photoUrl = profile?.photoFileId ? publicFileUrl(profile.photoFileId) : null;
   const locationText = profile ? locationLine(profile) : '';
   const website = profile?.websiteUrl?.trim();
   const websiteLink = websiteHref(website);
-  const openToWork = profile ? isOpenToOpportunities(profile) : true;
+  const workStatus = profile ? workStatusSelectValue(profile) : '';
+  const workStatusActive = Boolean(workStatus && workStatus !== 'not_looking');
   const fullName = profile
     ? `${profile.user?.firstName ?? ''} ${profile.user?.lastName ?? ''}`.trim() || 'Your name'
     : 'Your profile';
@@ -232,19 +226,16 @@ export const CandidateWorkspaceLayout: React.FC = () => {
             <div className="cw-banner-foot">
               <button
                 type="button"
-                className={`cw-open-badge${openToWork ? ' is-on' : ''}`}
-                disabled={availabilityMutation.isPending || !profile}
-                onClick={() => availabilityMutation.mutate(!openToWork)}
+                className={`cw-work-status${workStatusActive ? ' is-on' : ''}`}
+                onClick={openEdit}
+                title="Edit work status"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                   <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeWidth="2" />
                   <rect x="4" y="7" width="16" height="13" rx="2" strokeWidth="2" />
                 </svg>
-                <span className="cw-open-full">
-                  {openToWork ? 'Open to New Opportunities' : 'Not currently looking'}
-                </span>
-                <span className="cw-open-short">
-                  {openToWork ? 'Open to work' : 'Not looking'}
+                <span className="cw-work-status-text">
+                  {workStatusLabel(workStatus || null, 'Set your work status')}
                 </span>
               </button>
             </div>
