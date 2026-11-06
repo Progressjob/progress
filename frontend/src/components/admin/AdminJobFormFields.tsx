@@ -458,17 +458,28 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
             </svg>
           </div>
           <div className="profile-section-title-wrap">
-            <h2 className="profile-section-title">Application Channel & Deadline</h2>
+            <h2 className="profile-section-title">Additional Contact & Deadline</h2>
             <p className="profile-section-desc">
-              Configure how candidates should reach out and set the final closing date.
+              Candidates always apply through Progress. Optionally show extra contact details, and set the closing date.
             </p>
           </div>
         </div>
 
         <div className="profile-form-grid">
+          <div className="job-form-info-callout" style={{ gridColumn: '1 / -1' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px', color: '#0b57d0' }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <div>
+              In-system applications are always on. Use the options below only for optional How to apply contact shown on the job page.
+            </div>
+          </div>
+
           <div className="profile-field-wrap">
             <label style={{ marginBottom: '0.25rem' }}>
-              How candidates apply <span className="profile-field-req">*</span>
+              Optional contact channel <span className="profile-field-req">*</span>
             </label>
             <div className="job-form-radio-grid">
               <label
@@ -482,9 +493,9 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                   onChange={() => set({ applicationMethod: 'email' })}
                 />
                 <div className="job-form-radio-content">
-                  <span className="job-form-radio-title">Direct Company Contact</span>
+                  <span className="job-form-radio-title">Company Contact</span>
                   <span className="job-form-radio-desc">
-                    Candidates contact you directly via phone, Telegram, email, or walk-in.
+                    Also show your phone, Telegram, email, or walk-in details on the job page.
                   </span>
                 </div>
               </label>
@@ -506,9 +517,9 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                   }
                 />
                 <div className="job-form-radio-content">
-                  <span className="job-form-radio-title">Progress Manpower Assisted</span>
+                  <span className="job-form-radio-title">Progress Manpower Contact</span>
                   <span className="job-form-radio-desc">
-                    Applications are coordinated and screened through Progress Manpower staff.
+                    Also show Progress Manpower contact so staff can assist with outreach.
                   </span>
                 </div>
               </label>
@@ -518,7 +529,7 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
           {value.applicationMethod === 'email' && (
             <div className="profile-field-wrap">
               <label htmlFor={`${idPrefix}-hire-contact`}>
-                Contact Channels & Application Instructions <span className="profile-field-req">*</span>
+                Contact Channels & Instructions <span className="profile-field-req">*</span>
               </label>
               <textarea
                 id={`${idPrefix}-hire-contact`}
@@ -527,10 +538,10 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                 required
                 value={hireBoxDisplay(value.applicationEmail, value.applicationInstructions)}
                 onChange={(e) => set(parseHireBox(e.target.value))}
-                placeholder="Phone number, Telegram (@username), email, WhatsApp, or office walk-in address for applications..."
+                placeholder="Phone number, Telegram (@username), email, WhatsApp, or office walk-in address..."
               />
               <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                Write whatever candidates should use to submit their CV or get in touch.
+                Shown as extra contact on the job page. Candidates still apply through Progress.
               </p>
             </div>
           )}
@@ -543,8 +554,8 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <div>
-                Candidates will be directed to submit applications through Progress Manpower staff at{' '}
-                <strong>{PROGRESS_HIRE_EMAIL}</strong>. Progress will assist in reviewing and shortlisting candidates for you.
+                The job page will also show Progress Manpower contact at{' '}
+                <strong>{PROGRESS_HIRE_EMAIL}</strong>. Candidates still submit applications in Progress.
               </div>
             </div>
           )}

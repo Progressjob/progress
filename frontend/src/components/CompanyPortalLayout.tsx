@@ -9,6 +9,7 @@ import {
   isCompanyEditJob,
   isCompanyJobsList,
   isCompanyPostJob,
+  isCompanyReviewCandidates,
   isExactPath,
   navActive,
 } from '../auth/nav';
@@ -39,6 +40,7 @@ export const CompanyPortalLayout: React.FC = () => {
     queryKey: ['company', 'jobs', companyId],
     queryFn: () => employerApi.listJobs(companyId!),
     enabled: Boolean(companyId),
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
@@ -48,6 +50,10 @@ export const CompanyPortalLayout: React.FC = () => {
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
   const jobs = jobsQuery.data ?? [];
+  const applicantCount = useMemo(
+    () => jobs.reduce((sum, job) => sum + (job._count?.applications ?? 0), 0),
+    [jobs],
+  );
 
   const showAdminContact = useMemo(() => {
     if (companiesQuery.isLoading) return false;
@@ -138,6 +144,17 @@ export const CompanyPortalLayout: React.FC = () => {
                   className={() => navActive(isCompanyPostJob(location.pathname, companyId))}
                 >
                   Post a job
+                </NavLink>
+                <NavLink
+                  to={`/company/${companyId}/candidates`}
+                  className={() => navActive(isCompanyReviewCandidates(location.pathname, companyId))}
+                >
+                  Review candidates
+                  {applicantCount > 0 && (
+                    <span className="nav-count-badge" aria-label={`${applicantCount} applicants`}>
+                      {applicantCount > 99 ? '99+' : applicantCount}
+                    </span>
+                  )}
                 </NavLink>
               </>
             ) : (

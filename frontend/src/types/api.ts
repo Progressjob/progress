@@ -315,6 +315,29 @@ export interface SavedJob {
   job?: Job;
 }
 
+export type InterviewType = 'in_person' | 'phone' | 'video';
+export type InterviewStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface ApplicationEvent {
+  id: string;
+  applicationId: string;
+  changedBy: string;
+  oldStatus?: ApplicationStatus | null;
+  newStatus: ApplicationStatus;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface ApplicationInterview {
+  id: string;
+  applicationId: string;
+  interviewType: InterviewType;
+  scheduledAt: string;
+  locationOrLink?: string | null;
+  status: InterviewStatus;
+  feedback?: string | null;
+}
+
 export interface Application {
   id: string;
   jobId: string;
@@ -323,6 +346,8 @@ export interface Application {
   coverLetter?: string | null;
   status: ApplicationStatus;
   appliedAt: string;
+  updatedAt?: string;
+  withdrawnAt?: string | null;
   job?: Job;
   candidate?: {
     id: string;
@@ -333,6 +358,9 @@ export interface Application {
       email: string;
       phone?: string | null;
     };
+    educations?: CandidateEducation[];
+    experiences?: CandidateExperience[];
+    skills?: CandidateSkillLink[];
   };
   resume?: CandidateResume | null;
   answers?: Array<{
@@ -341,6 +369,8 @@ export interface Application {
     answerText: string;
     question?: ScreeningQuestion;
   }>;
+  events?: ApplicationEvent[];
+  interviews?: ApplicationInterview[];
 }
 
 export interface AdminDashboard {

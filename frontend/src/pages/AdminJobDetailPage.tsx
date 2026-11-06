@@ -237,6 +237,14 @@ export const AdminJobDetailPage: React.FC = () => {
           {isReopening && <span className="admin-status-pill is-edited">Reopening</span>}
         </div>
         <div className="admin-jobs-actions">
+          {!editing && (
+            <Link
+              to={`/admin/companies/${job.companyId}/jobs/${job.id}/applications`}
+              className="admin-jobs-action"
+            >
+              View applications
+            </Link>
+          )}
           {canEdit && !editing && (
             <Link to={`/admin/jobs/${job.id}?edit=1`} className="admin-jobs-action is-primary">
               Edit

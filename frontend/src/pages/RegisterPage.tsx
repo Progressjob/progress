@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { EthiopianPhoneInput } from '../components/EthiopianPhoneInput';
 import { GoogleContinueButton } from '../components/GoogleContinueButton';
 import { ProgressLogo } from '../components/ProgressLogo';
+import { isValidEthiopianMobile, toEthiopianE164 } from '../utils/ethiopianPhone';
 
 export const RegisterPage: React.FC = () => {
   const { register, loginWithGoogle } = useAuth();
@@ -20,13 +22,9 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const cleanPhone = phone.trim();
-    if (!cleanPhone) {
-      setError('Phone number is strictly required.');
-      return;
-    }
-    if (cleanPhone.length < 9) {
-      setError('Phone number must be at least 9 characters.');
+    const cleanPhone = toEthiopianE164(phone);
+    if (!cleanPhone || !isValidEthiopianMobile(phone)) {
+      setError('Enter a valid Ethiopian mobile number (9 digits starting with 7 or 9).');
       return;
     }
     setSubmitting(true);
@@ -128,21 +126,12 @@ export const RegisterPage: React.FC = () => {
 
           <div className="form-input-group">
             <label htmlFor="reg-phone">Mobile Phone *</label>
-            <div className="auth-input-wrapper">
-              <svg className="auth-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path
-                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-                  strokeWidth="2"
-                />
-              </svg>
-              <input
+            <div className="auth-input-wrapper" style={{ padding: 0, overflow: 'hidden' }}>
+              <EthiopianPhoneInput
                 id="reg-phone"
-                type="tel"
-                required
-                minLength={9}
-                placeholder="+251 9... (Strictly required)"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={setPhone}
+                required
               />
             </div>
           </div>

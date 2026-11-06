@@ -24,6 +24,7 @@ import {
   ApplyDto,
   ChangeApplicationStatusDto,
   CreateInterviewDto,
+  SendApplicationMessageDto,
   UpdateInterviewDto,
 } from './applications.dto';
 import { ApplicationsService } from './applications.service';
@@ -69,7 +70,7 @@ export class CandidateApplicationsController {
 @ApiBearerAuth()
 @Controller('employer/companies/:companyId')
 @UseGuards(JwtAuthGuard, RolesGuard, CompanyMemberGuard)
-@Roles('employer')
+@Roles('employer', 'admin', 'moderator')
 export class EmployerApplicationsController {
   constructor(private readonly applications: ApplicationsService) {}
 
@@ -82,7 +83,7 @@ export class EmployerApplicationsController {
     status?: ApplicationStatus,
     @Query('search') search?: string,
   ) {
-    return this.applications.employerList(user.id, companyId, jobId, status, search);
+    return this.applications.employerList(user.id, companyId, jobId, status, search, user.roles);
   }
 
   @Get('applications/:id')
@@ -91,7 +92,7 @@ export class EmployerApplicationsController {
     @Param('companyId') companyId: string,
     @Param('id') id: string,
   ) {
-    return this.applications.employerDetail(user.id, companyId, id);
+    return this.applications.employerDetail(user.id, companyId, id, user.roles);
   }
 
   @Patch('applications/:id/status')
@@ -101,7 +102,18 @@ export class EmployerApplicationsController {
     @Param('id') id: string,
     @Body() dto: ChangeApplicationStatusDto,
   ) {
-    return this.applications.changeStatus(user.id, companyId, id, dto);
+    return this.applications.changeStatus(user.id, companyId, id, dto, user.roles);
+  }
+
+  @Post('applications/:id/messages')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  message(
+    @CurrentUser() user: AuthUser,
+    @Param('companyId') companyId: string,
+    @Param('id') id: string,
+    @Body() dto: SendApplicationMessageDto,
+  ) {
+    return this.applications.sendMessage(user.id, companyId, id, dto, user.roles);
   }
 
   @Post('applications/:id/interviews')
@@ -111,7 +123,7 @@ export class EmployerApplicationsController {
     @Param('id') id: string,
     @Body() dto: CreateInterviewDto,
   ) {
-    return this.applications.createInterview(user.id, companyId, id, dto);
+    return this.applications.createInterview(user.id, companyId, id, dto, user.roles);
   }
 
   @Patch('interviews/:id')
@@ -121,6 +133,6 @@ export class EmployerApplicationsController {
     @Param('id') id: string,
     @Body() dto: UpdateInterviewDto,
   ) {
-    return this.applications.updateInterview(user.id, companyId, id, dto);
+    return this.applications.updateInterview(user.id, companyId, id, dto, user.roles);
   }
 }

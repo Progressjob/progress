@@ -5,6 +5,8 @@ import type { CompanyPayload } from '../../api/admin';
 import { filesApi, publicFileUrl } from '../../api/files';
 import { taxonomyApi } from '../../api/taxonomy';
 import { COMPANY_SIZE_OPTIONS } from '../../constants/companySize';
+import { EthiopianPhoneInput } from '../EthiopianPhoneInput';
+import { toEthiopianE164 } from '../../utils/ethiopianPhone';
 
 export interface CompanyFormFieldsProps {
   value: CompanyPayload;
@@ -333,11 +335,13 @@ export const CompanyFormFields: React.FC<CompanyFormFieldsProps> = ({
             </div>
             <div className="profile-field-wrap">
               <label htmlFor={`${idPrefix}-phone`}>Phone</label>
-              <input
+              <EthiopianPhoneInput
                 id={`${idPrefix}-phone`}
                 value={value.phone ?? ''}
-                onChange={(e) => set({ phone: e.target.value || undefined })}
-                placeholder="e.g. +251 91 100 0000"
+                onChange={(next) => {
+                  const e164 = toEthiopianE164(next);
+                  set({ phone: e164 ?? (next || undefined) });
+                }}
               />
             </div>
           </div>

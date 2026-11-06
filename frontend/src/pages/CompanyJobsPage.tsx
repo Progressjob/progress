@@ -300,55 +300,44 @@ export const CompanyJobsPage: React.FC = () => {
     <div className="jobs-list-container employer-postings">
       {companyQuery.data && <CompanyVerificationNotice company={companyQuery.data} />}
 
-      {/* Header */}
-      <div className="board-header" style={{ textAlign: 'left', marginBottom: '2.15rem' }}>
-        <div className="company-portal-header-row">
-          <div>
-            <span className="section-eyebrow"><span className="employer-desktop-label">Employer Portal</span><span className="employer-mobile-label">{companyQuery.data?.name ?? "Employer Portal"}</span></span>
-            <h1 className="board-title" style={{ margin: '0.25rem 0' }}>
-              <span className="employer-desktop-label">{companyQuery.data?.name ?? 'Company'} — </span>Job Postings
-            </h1>
-            <p className="board-subtitle" style={{ margin: 0, textAlign: 'left' }}>
-              {companyQuery.data?.verificationStatus !== 'verified'
-                ? 'Business licence approval is required before creating vacancies.'
-                : companyQuery.data?.canSelfPublishJobs && companyQuery.data.verificationStatus === 'verified'
-                  ? 'Your organization is verified to publish vacancies directly to the board.'
-                  : 'New vacancies wait for an administrator to review and post them.'}
-            </p>
-          </div>
-
-          <div className="company-portal-actions">
-            {companies.length > 1 && (
-              <select
-                value={companyId}
-                onChange={(e) => navigate(`/company/${e.target.value}/jobs`)}
-                className="select-company-switcher"
-                aria-label="Switch company"
-              >
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {companyQuery.data?.verificationStatus === 'verified' && (
-              <Link to={`/company/${companyId}/jobs/new`} className="btn-nav-register">
-                + Post New Opportunity
-              </Link>
-            )}
-          </div>
+      <header className="emp-page-header">
+        <div className="emp-page-header-copy">
+          <p className="emp-page-kicker">{companyQuery.data?.name ?? 'Company'}</p>
+          <h1>Job postings</h1>
+          <p>
+            {companyQuery.data?.verificationStatus !== 'verified'
+              ? 'Business licence approval is required before creating vacancies.'
+              : 'Create, edit, and manage your vacancies. Review applicants from Review candidates.'}
+          </p>
         </div>
-      </div>
+        <div className="emp-page-header-actions">
+          {companies.length > 1 && (
+            <select
+              value={companyId}
+              onChange={(e) => navigate(`/company/${e.target.value}/jobs`)}
+              className="select-company-switcher"
+              aria-label="Switch company"
+            >
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {companyQuery.data?.verificationStatus === 'verified' && (
+            <Link to={`/company/${companyId}/jobs/new`} className="btn">
+              Post a job
+            </Link>
+          )}
+        </div>
+      </header>
 
       {jobsQuery.isSuccess && rawJobs.length > 0 && (
-        <section className="employer-posting-totals" aria-labelledby="posting-totals-heading">
-          <h2 id="posting-totals-heading">Posting totals</h2>
-          <dl>
-            <div><dt>Live</dt><dd>{totals.live}</dd></div>
-            <div><dt>Under review</dt><dd>{totals.review}</dd></div>
-            <div><dt>Past jobs</dt><dd>{totals.past}</dd></div>
-          </dl>
+        <section className="emp-summary-strip" aria-label="Posting totals">
+          <div><span>{totals.live}</span><small>Live</small></div>
+          <div><span>{totals.review}</span><small>Under review</small></div>
+          <div><span>{totals.past}</span><small>Past</small></div>
         </section>
       )}
 
@@ -393,47 +382,34 @@ export const CompanyJobsPage: React.FC = () => {
           {/* Search, Filter & Sort Toolbar for Many Jobs */}
           <div className="employer-management-bar">
             <div className="employer-search-wrap">
-              <span className="employer-search-icon">🔍</span>
               <input
-                type="text"
+                type="search"
                 className="employer-search-input"
-                placeholder="Search jobs by title, department, or keyword..."
+                placeholder="Search jobs…"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
+                aria-label="Search jobs"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="employer-search-clear"
-                  onClick={() => setSearchQuery('')}
-                  title="Clear search"
-                >
-                  ✕
-                </button>
-              )}
             </div>
 
             <div className="employer-status-filter" role="group" aria-label="Show jobs">
-              <span className="employer-job-filter-label">Show jobs</span>
+              <span className="employer-job-filter-label">Show</span>
               <div className="employer-status-chips">
                 {[
-                  ['open', 'Open jobs'],
-                  ['all', 'All jobs'],
-                  ['history', 'History'],
+                  ['open', 'Open'],
                   ['published', 'Live'],
-                  ['pending_review', 'Under review'],
+                  ['pending_review', 'Review'],
                   ['draft', 'Drafts'],
-                  ['expired', 'Expired'],
-                  ['closed', 'Closed'],
-                  ['rejected', 'Rejected'],
+                  ['history', 'History'],
+                  ['all', 'All'],
                 ].map(([value, label]) => (
                   <button
                     key={value}
                     type="button"
-                    className="home-find-chip"
+                    className={`emp-filter-chip${statusFilter === value ? ' is-active' : ''}`}
                     aria-pressed={statusFilter === value}
                     onClick={() => {
                       setStatusFilter(value);
@@ -514,10 +490,6 @@ export const CompanyJobsPage: React.FC = () => {
                         </p>
 
                         <div className="emp-job-metrics">
-                          <div className="emp-job-metric">
-                            <span className="emp-job-metric-value">{job._count?.applications ?? 0}</span>
-                            <span className="emp-job-metric-label">Apps</span>
-                          </div>
                           {typeof job._count?.views === 'number' && (
                             <div className="emp-job-metric employer-desktop-label">
                               <span className="emp-job-metric-value">{job._count.views}</span>

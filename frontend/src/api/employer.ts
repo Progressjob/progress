@@ -91,6 +91,48 @@ export const employerApi = {
         body: payload,
       },
     ),
+  sendApplicationMessage: (
+    companyId: string,
+    applicationId: string,
+    payload: { body: string },
+  ) =>
+    apiFetch(
+      `/employer/companies/${companyId}/applications/${applicationId}/messages`,
+      {
+        method: 'POST',
+        body: payload,
+      },
+    ),
+  createInterview: (
+    companyId: string,
+    applicationId: string,
+    payload: {
+      interviewType: 'in_person' | 'phone' | 'video';
+      scheduledAt: string;
+      locationOrLink?: string;
+    },
+  ) =>
+    apiFetch(
+      `/employer/companies/${companyId}/applications/${applicationId}/interviews`,
+      {
+        method: 'POST',
+        body: payload,
+      },
+    ),
+  updateInterview: (
+    companyId: string,
+    interviewId: string,
+    payload: {
+      scheduledAt?: string;
+      locationOrLink?: string;
+      status?: 'scheduled' | 'completed' | 'cancelled';
+      feedback?: string;
+    },
+  ) =>
+    apiFetch(`/employer/companies/${companyId}/interviews/${interviewId}`, {
+      method: 'PATCH',
+      body: payload,
+    }),
   talentSpotlight: (companyId: string) =>
     apiFetch<TalentSpotlightResponse>(`/employer/companies/${companyId}/talent/spotlight`),
   searchTalent: (

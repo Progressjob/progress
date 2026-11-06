@@ -26,7 +26,7 @@ function hireContact(job: Job): { viaProgress: boolean; email?: string; instruct
   if (job.applicationMethod === 'external_url' && job.applicationUrl?.trim()) {
     return { viaProgress: false, url: job.applicationUrl.trim() };
   }
-  const viaProgress = job.applicationMethod === 'admin' || job.applicationMethod === 'internal';
+  const viaProgress = job.applicationMethod === 'admin';
   const instructions = job.applicationInstructions?.trim() || undefined;
   const email =
     job.applicationEmail?.trim() ||
@@ -94,17 +94,8 @@ function uniqueText(...values: Array<string | null | undefined>): string[] {
   return out;
 }
 
-function applyTarget(
-  job: Job,
-  contact: ReturnType<typeof hireContact>,
-): { href: string; external?: boolean } {
-  if (contact.url) return { href: contact.url, external: true };
-  const via = applyViaParts(contact);
-  if (via.href?.startsWith('mailto:')) {
-    return { href: `${via.href}?subject=${encodeURIComponent(job.title.trim())}` };
-  }
-  if (via.href) return { href: via.href, external: true };
-  return { href: '#how-to-apply' };
+function applyTarget(job: Job): { href: string; external?: boolean } {
+  return { href: `/jobs/${job.slug}/apply` };
 }
 
 const SAVED_KEY = 'progress_saved_jobs';
@@ -160,7 +151,7 @@ export const JobDetailContent: React.FC<{
   }, [job.id]);
 
   const contact = hireContact(job);
-  const apply = applyTarget(job, contact);
+  const apply = applyTarget(job);
   const deadline = deadlineMeta(job.applicationDeadline);
   const experience = experienceLabel(job);
   const ownsJob = Boolean(
@@ -240,18 +231,24 @@ export const JobDetailContent: React.FC<{
 
   const proceedApply = () => {
     setApplyTipOpen(false);
-    if (apply.href.startsWith('#')) {
-      document.querySelector(apply.href)?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (apply.external) {
-      window.open(apply.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    window.location.href = apply.href;
+    navigate(apply.href);
   };
 
   const onApplyClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (applicationsBlocked) {
+      event.preventDefault();
+      return;
+    }
+    if (!user) {
+      event.preventDefault();
+      navigate('/login', { state: { from: apply.href } });
+      return;
+    }
+    if (!hasRole('candidate')) {
+      event.preventDefault();
+      navigate(apply.href);
+      return;
+    }
     if (!thinProfile) return;
     event.preventDefault();
     setApplyTipOpen(true);
@@ -507,13 +504,27 @@ export const JobDetailContent: React.FC<{
               </div>
 
               <p className="jd-how-text">
-                Interested and qualified applicants who meet the requirements are invited to submit
-                their application, updated CV, and credentials:
+                Apply through Progress using the Apply Now button. Optional contact details for this
+                role are listed below if the employer provided them.
               </p>
+
+              <div className="jd-how-cta-box" style={{ marginBottom: '1rem' }}>
+                <a className="jd-how-link-btn" href={apply.href} onClick={onApplyClick}>
+                  <span>Apply through Progress</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path
+                      d="M5 12h14M12 5l7 7-7 7"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </a>
+              </div>
 
               {applyVia.via ? (
                 <div className="jd-how-cta-box">
-                  <span className="jd-how-channel-label">Direct Application Channel:</span>
+                  <span className="jd-how-channel-label">Additional contact:</span>
                   {applyVia.href ? (
                     <a
                       className="jd-how-link-btn"
@@ -554,7 +565,7 @@ export const JobDetailContent: React.FC<{
                   )}
                 </div>
               ) : (
-                <p className="muted">Direct contact channel handled via Progress Manpower HQ.</p>
+                <p className="muted">No additional contact was provided for this listing.</p>
               )}
 
               {applyVia.href?.startsWith('mailto:') && (

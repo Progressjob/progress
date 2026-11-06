@@ -22,11 +22,15 @@ import { EmployerSetupPage } from './pages/EmployerSetupPage';
 import { CandidateWorkspaceLayout } from './components/CandidateWorkspaceLayout';
 import { CandidateProfilePage } from './pages/CandidateProfilePage';
 import { CandidateApplicationsPage } from './pages/CandidateApplicationsPage';
+import { CandidateApplicationDetailPage } from './pages/CandidateApplicationDetailPage';
 import { CandidateSavedJobsPage } from './pages/CandidateSavedJobsPage';
 import { ApplyJobPage } from './pages/ApplyJobPage';
 import { CompanyHomePage } from './pages/CompanyHomePage';
 import { CompanyProfilePage } from './pages/CompanyProfilePage';
 import { CompanyJobsPage } from './pages/CompanyJobsPage';
+import { CompanyJobApplicationsPage } from './pages/CompanyJobApplicationsPage';
+import { CompanyApplicationDetailPage } from './pages/CompanyApplicationDetailPage';
+import { CompanyReviewCandidatesPage } from './pages/CompanyReviewCandidatesPage';
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
 import { CompanyCvSearchPage } from './pages/CompanyCvSearchPage';
 import { CompanyCvDetailPage } from './pages/CompanyCvDetailPage';
@@ -107,6 +111,10 @@ export function App(): React.ReactElement {
               >
                 <Route path="/candidate/profile" element={<CandidateProfilePage />} />
                 <Route path="/candidate/applications" element={<CandidateApplicationsPage />} />
+                <Route
+                  path="/candidate/applications/:id"
+                  element={<CandidateApplicationDetailPage />}
+                />
                 <Route path="/candidate/saved-jobs" element={<CandidateSavedJobsPage />} />
               </Route>
               <Route path="/candidate/resumes" element={<Navigate to="/candidate/profile" replace />} />
@@ -128,6 +136,14 @@ export function App(): React.ReactElement {
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
               <Route path="/admin/jobs" element={<AdminJobsPage />} />
               <Route path="/admin/jobs/:jobId" element={<AdminJobDetailPage />} />
+              <Route
+                path="/admin/companies/:companyId/jobs/:jobId/applications"
+                element={<CompanyJobApplicationsPage />}
+              />
+              <Route
+                path="/admin/companies/:companyId/applications/:applicationId"
+                element={<CompanyApplicationDetailPage />}
+              />
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
               <Route path="/admin/taxonomy" element={<AdminTaxonomyPage />} />
               <Route path="/admin/cv-search" element={<CompanyCvSearchPage />} />
@@ -147,6 +163,18 @@ export function App(): React.ReactElement {
               <Route path="/company/:companyId/jobs" element={<CompanyJobsPage />} />
               <Route path="/company/:companyId/jobs/new" element={<CompanyPostJobPage />} />
               <Route path="/company/:companyId/jobs/:jobId/edit" element={<CompanyPostJobPage />} />
+              <Route
+                path="/company/:companyId/candidates"
+                element={<CompanyReviewCandidatesPage />}
+              />
+              <Route
+                path="/company/:companyId/jobs/:jobId/applications"
+                element={<CompanyJobApplicationsPage />}
+              />
+              <Route
+                path="/company/:companyId/applications/:applicationId"
+                element={<CompanyApplicationDetailPage />}
+              />
               <Route path="/company/:companyId/cv-search" element={<CompanyCvSearchPage />} />
               <Route
                 path="/company/:companyId/cv-search/:candidateId"

@@ -177,8 +177,17 @@ export function NotificationsPage() {
       return `/admin/support?message=${n.referenceId}`;
     if (admin && n.referenceType === "report")
       return `/admin/support/reports/${n.referenceId}`;
-    if (!admin && n.referenceType === "application" && hasRole("candidate"))
-      return "/candidate/applications";
+    if (n.referenceType === "application" && n.referenceId && hasRole("candidate"))
+      return `/candidate/applications/${n.referenceId}`;
+    if (n.referenceType === "candidates" && n.referenceId && hasRole("employer"))
+      return `/company/${n.referenceId}/candidates`;
+    if (n.referenceType === "job" && n.referenceId && hasRole("employer")) {
+      const memberships = user?.companyMemberships ?? [];
+      if (memberships.length === 1) {
+        return `/company/${memberships[0].companyId}/jobs/${n.referenceId}/applications`;
+      }
+      return "/company";
+    }
     if (admin && n.referenceType === "job")
       return `/admin/jobs/${n.referenceId}`;
     return null;
