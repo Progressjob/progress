@@ -171,7 +171,7 @@ export const CompanyPortalLayout: React.FC = () => {
 
       <footer className="site-footer" style={{ padding: '1rem 2rem' }}>
         <p style={{ margin: 0, textAlign: 'center', opacity: 0.85 }}>
-          © {new Date().getFullYear()} Progress Manpower — Employer
+          © {new Date().getFullYear()} Progress Jobs — Employer
         </p>
       </footer>
     </div>

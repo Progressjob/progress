@@ -152,6 +152,7 @@ export const JobsListPage: React.FC = () => {
     { value: 'contract', label: 'Contract' },
     { value: 'internship', label: 'Internship' },
     { value: 'temporary', label: 'Temporary' },
+    { value: 'casual_worker', label: 'Casual worker' },
   ];
 
   const patchParams = (updates: Record<string, string>) => {
@@ -210,7 +211,7 @@ export const JobsListPage: React.FC = () => {
 
   return (
     <div className="jobs-list-container jb-page">
-      <section className="jb-hero">
+      <section className="jb-hero public-jobs-hero">
         <div className="jb-hero-inner">
           <BackButton fallback="/" />
           <h1 className="jb-hero-title">

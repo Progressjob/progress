@@ -53,6 +53,7 @@ enum EmploymentType {
   internship
   temporary
   volunteer
+  casual_worker
 }
 
 enum WorkplaceType {
@@ -746,6 +747,7 @@ model ContactMessage {
   userId     String?  @map("user_id") @db.Uuid
   name       String   @db.VarChar(200)
   email      String   @db.VarChar(255)
+  category   String?  @db.VarChar(32)
   subject    String   @db.VarChar(255)
   message    String
   status     String   @default("new") @db.VarChar(20)

@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { supportApi } from '../api/support';
+import { contactCategories, supportApi, type ContactCategory } from '../api/support';
 import { ApiError } from '../api/client';
 import { PROGRESS_HIRE_EMAIL } from '../constants/progressContact';
 
 export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [category, setCategory] = useState<ContactCategory | ''>('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: () => supportApi.contact({ name, email, subject, message }),
+    mutationFn: (selectedCategory: ContactCategory) =>
+      supportApi.contact({ name, email, category: selectedCategory, subject, message }),
     onSuccess: () => {
       setSubmitted(true);
       setName('');
       setEmail('');
+      setCategory('');
       setSubject('');
       setMessage('');
     },
@@ -25,7 +28,7 @@ export const ContactPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(false);
-    mutation.mutate();
+    if (category) mutation.mutate(category);
   };
 
   const err = mutation.error as ApiError | null;
@@ -35,9 +38,9 @@ export const ContactPage: React.FC = () => {
       {/* Header */}
       <div className="board-header">
         <span className="section-eyebrow">Direct Inquiries</span>
-        <h1 className="board-title">Connect with Progress Manpower PLC</h1>
+        <h1 className="board-title">Connect with Progress Jobs</h1>
         <p className="board-subtitle">
-          Whether you need certified technical workforce, executive recruitment, corporate training, or candidate support, our Dukem team is ready to assist.
+          Whether you need certified technical workforce, executive recruitment, corporate training, or candidate support, our Bishoftu team is ready to assist.
         </p>
       </div>
 
@@ -49,6 +52,9 @@ export const ContactPage: React.FC = () => {
             <p>Direct communication lines for employers, institutions, and candidates.</p>
           </div>
 
+          <img className="contact-adviser-photo" src="/images/contact-adviser.webp"
+            alt="A recruitment adviser speaking on a phone" width="900" height="600" />
+
           <div className="contact-details-list">
             <div className="contact-detail-row">
               <div className="contact-icon-bubble">
@@ -59,7 +65,7 @@ export const ContactPage: React.FC = () => {
               </div>
               <div className="contact-text-wrap">
                 <strong>Corporate Headquarters</strong>
-                <span>Dukem, Oromia Region, Ethiopia</span>
+                <span>Bishoftu, Oromia Region, Ethiopia</span>
                 <small>Serving the Adama & Bishoftu industrial corridor</small>
               </div>
             </div>
@@ -75,7 +81,6 @@ export const ContactPage: React.FC = () => {
               </div>
               <div className="contact-text-wrap">
                 <strong>Telephone & Hotline</strong>
-                <span>Office: +251 11 887 9710</span>
                 <span>Mobile: +251 949 811 818 / +251 994 251 515</span>
               </div>
             </div>
@@ -157,6 +162,17 @@ export const ContactPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+            </div>
+
+            <div className="form-input-group">
+              <label htmlFor="contact-category">Category *</label>
+              <select id="contact-category" required value={category}
+                onChange={(e) => setCategory(e.target.value as ContactCategory | '')}>
+                <option value="">Choose a category</option>
+                {Object.entries(contactCategories).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-input-group">

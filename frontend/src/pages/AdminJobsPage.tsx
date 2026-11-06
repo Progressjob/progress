@@ -49,6 +49,7 @@ const EMPLOYMENT_OPTIONS: Array<{ value: EmploymentType | ''; label: string }> =
   { value: 'internship', label: 'Internship' },
   { value: 'temporary', label: 'Temporary' },
   { value: 'volunteer', label: 'Volunteer' },
+  { value: 'casual_worker', label: 'Casual worker' },
 ];
 
 const WORKPLACE_OPTIONS: Array<{ value: WorkplaceType | ''; label: string }> = [

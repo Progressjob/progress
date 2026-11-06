@@ -60,7 +60,7 @@ export const LandingPage: React.FC = () => {
           <div className="hero-badge animate-fade-in">
             <span className="badge-dot" />
             <ShinyText
-              text="Progress Manpower Supply & Training PLC • Licensed & Certified"
+              text="Progress Jobs • Licensed & Certified"
               speed={4}
             />
           </div>
@@ -75,8 +75,8 @@ export const LandingPage: React.FC = () => {
 
           <p className="hero-subtitle">
             We understand that talent drives your business strategy, and we make it our business to
-            find that talent. Headquartered in Dukem, Oromia, empowering businesses and careers across
-            Adama and Bishoftu.
+            find that talent. Headquartered in Bishoftu, Oromia, empowering businesses and careers across
+            Adama and the surrounding region.
           </p>
 
           <form className="home-find" onSubmit={handleSearch}>
@@ -339,7 +339,41 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. FEATURED JOBS SECTION */}
+      <section className="categories-section">
+        <div className="section-header">
+          <span className="section-eyebrow">Explore Sectors</span>
+          <h2 className="section-title">Browse By Job Category</h2>
+          <p className="section-subtitle">Discover vacancies tailored to your specialized domain</p>
+        </div>
+
+        <div className="mobile-category-picker">
+          <div className="mobile-category-shortcuts" aria-label="Explore job categories">
+            {categoriesQuery.data?.slice(0, 10).map((category) => (
+              <Link key={category.id} to={`/jobs?category=${encodeURIComponent(category.slug)}`}>
+                {category.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="categories-grid">
+          {categoriesQuery.data?.slice(0, 10).map((cat) => (
+            <Link key={cat.id} to={`/jobs?category=${cat.slug}`} className="category-tile">
+              <div className="cat-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
+                </svg>
+              </div>
+              <div className="cat-info">
+                <span className="cat-name">{cat.name}</span>
+                <span className="cat-explore">Explore Openings →</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="featured-jobs-section">
         <div className="section-header-row">
           <div>
@@ -426,42 +460,6 @@ export const LandingPage: React.FC = () => {
             </Link>
           </div>
         )}
-      </section>
-
-      {/* 5. POPULAR CATEGORIES SECTION */}
-      <section className="categories-section">
-        <div className="section-header">
-          <span className="section-eyebrow">Explore Sectors</span>
-          <h2 className="section-title">Browse By Job Category</h2>
-          <p className="section-subtitle">Discover vacancies tailored to your specialized domain</p>
-        </div>
-
-        <div className="mobile-category-picker">
-          <div className="mobile-category-shortcuts" aria-label="Explore job categories">
-            {categoriesQuery.data?.slice(0, 10).map((category) => (
-              <Link key={category.id} to={`/jobs?category=${encodeURIComponent(category.slug)}`}>
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="categories-grid">
-          {categoriesQuery.data?.slice(0, 10).map((cat) => (
-            <Link key={cat.id} to={`/jobs?category=${cat.slug}`} className="category-tile">
-              <div className="cat-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
-                </svg>
-              </div>
-              <div className="cat-info">
-                <span className="cat-name">{cat.name}</span>
-                <span className="cat-explore">Explore Openings →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
       </section>
 
       {!user && (

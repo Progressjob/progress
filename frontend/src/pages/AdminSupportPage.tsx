@@ -1,3 +1,4 @@
+import { contactCategories, type ContactCategory } from '../api/support';
 import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ interface Message {
   id: string;
   name: string;
   email: string;
+  category?: ContactCategory | null;
   subject: string;
   message: string;
   status: string;
@@ -27,6 +29,7 @@ const JOB_TYPE_OPTIONS = [
   { value: 'internship', label: 'Internship' },
   { value: 'temporary', label: 'Temporary' },
   { value: 'volunteer', label: 'Volunteer' },
+  { value: 'casual_worker', label: 'Casual worker' },
 ];
 const DATE_OPTIONS = [
   { value: 'all', label: 'Any time' },
@@ -72,7 +75,7 @@ export function AdminSupportPage() {
   const messageRows = (messages.data ?? []).filter(
     (m) =>
       (statusFilter === 'all' || m.status === statusFilter) &&
-      `${m.name} ${m.subject} ${m.email} ${m.message}`.toLowerCase().includes(term),
+      `${m.name} ${m.category ? contactCategories[m.category] : ''} ${m.subject} ${m.email} ${m.message}`.toLowerCase().includes(term),
   );
   const reportRows = (reportQuery.data ?? []).filter(
     (r) =>
@@ -221,6 +224,7 @@ export function AdminSupportPage() {
             <article className="admin-inbox-card">
               <div>
                 <h2>{selectedMessage.subject}</h2>
+                {selectedMessage.category && <span className="status-badge">{contactCategories[selectedMessage.category]}</span>}
                 <small>
                   {selectedMessage.name} {selectedMessage.email && `· ${selectedMessage.email}`} ·{' '}
                   {new Date(selectedMessage.createdAt).toLocaleString()}
@@ -272,7 +276,7 @@ export function AdminSupportPage() {
               <span>
                 <h2>{m.subject}</h2>
                 <small>
-                  {m.name} {m.email && `· ${m.email}`} · {new Date(m.createdAt).toLocaleString()}
+                  {m.category && `${contactCategories[m.category]} · `}{m.name} {m.email && `· ${m.email}`} · {new Date(m.createdAt).toLocaleString()}
                 </small>
               </span>
               <span className="status-badge">{m.status.replaceAll('_', ' ')}</span>

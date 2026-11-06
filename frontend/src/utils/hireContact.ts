@@ -48,7 +48,7 @@ export function applyViaParts(opts: {
 
   return {
     who: opts.viaProgress ? 'Progress' : 'the employer',
-    via: email || fullInstructions || (opts.viaProgress ? 'Progress Manpower HQ' : 'Contact employer directly'),
+    via: email || fullInstructions || (opts.viaProgress ? 'Progress Jobs HQ' : 'Contact employer directly'),
     extra: fullInstructions && email && fullInstructions !== email ? fullInstructions : undefined,
     fullInstructions,
     href,

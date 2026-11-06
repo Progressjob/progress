@@ -223,6 +223,7 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                 <option value="internship">Internship</option>
                 <option value="temporary">Temporary</option>
                 <option value="volunteer">Volunteer</option>
+                <option value="casual_worker">Casual worker</option>
               </select>
             </div>
           </div>
@@ -506,9 +507,9 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                   }
                 />
                 <div className="job-form-radio-content">
-                  <span className="job-form-radio-title">Progress Manpower Assisted</span>
+                  <span className="job-form-radio-title">Progress Jobs Assisted</span>
                   <span className="job-form-radio-desc">
-                    Applications are coordinated and screened through Progress Manpower staff.
+                    Applications are coordinated and screened through Progress Jobs staff.
                   </span>
                 </div>
               </label>
@@ -543,7 +544,7 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <div>
-                Candidates will be directed to submit applications through Progress Manpower staff at{' '}
+                Candidates will be directed to submit applications through Progress Jobs staff at{' '}
                 <strong>{PROGRESS_HIRE_EMAIL}</strong>. Progress will assist in reviewing and shortlisting candidates for you.
               </div>
             </div>

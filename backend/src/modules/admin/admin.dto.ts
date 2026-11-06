@@ -4,6 +4,10 @@ import { IsBoolean, IsIn, IsEmail, IsEnum, IsOptional, IsString, IsUUID } from '
 export class ContactMessageDto {
   @IsString() name!: string;
   @IsEmail() email!: string;
+  @IsOptional()
+  @IsIn(['billing', 'partnership', 'technical_support'])
+  category?: string;
+
   @IsString() subject!: string;
   @IsString() message!: string;
 }

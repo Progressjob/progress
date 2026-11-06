@@ -43,7 +43,7 @@ export const CompanyDirectoryCard: React.FC<{ company: Company }> = ({ company }
         <p className="company-desc-snippet">{company.description}</p>
       ) : (
         <p className="company-desc-snippet muted">
-          Verified partner enterprise recruiting qualified workforce through Progress Manpower PLC.
+          Verified partner enterprise recruiting qualified workforce through Progress Jobs.
         </p>
       )}
 

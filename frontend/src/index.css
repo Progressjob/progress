@@ -14257,3 +14257,45 @@ a.admin-metric:hover {
   color: #0b57d0 !important;
   border-color: #93c5fd !important;
 }
+
+.public-jobs-hero.jb-hero {
+  background:
+    radial-gradient(circle at 100% 10%, #ffffff24 0 13%, transparent 13.2%),
+    radial-gradient(circle at 100% 10%, #ffffff14 0 28%, transparent 28.2%),
+    linear-gradient(110deg, #07549e, #08766e);
+}
+
+.public-jobs-hero :is(.jb-hero-title, .jb-hero-title span, .jb-hero-copy, .jb-filters-label, .jb-results-count, .mobile-job-filter-bar > span) {
+  color: #fff;
+}
+
+.public-jobs-hero .jb-filters .btn-clear-filters {
+  background: #fff;
+  color: #164a74;
+}
+
+.contact-adviser-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 420px) {
+  .split-site-nav .progress-logo-container > div > span:first-child {
+    font-size: clamp(.68rem, 3.5vw, 1rem) !important;
+    letter-spacing: .03em !important;
+  }
+}
+
+.public-jobs-hero.jb-hero .guest-job-note,
+.public-jobs-hero.jb-hero .guest-job-note a {
+  color: #fff;
+}
+
+.public-jobs-hero .guest-job-note a {
+  text-decoration: underline;
+}

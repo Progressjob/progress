@@ -81,7 +81,7 @@ export const CompaniesListPage: React.FC = () => {
         <h1 className="board-title">Verified Employer Directory</h1>
         <p className="board-subtitle companies-board-subtitle">
           Leading enterprises, industrial manufacturers, logistics hubs, and corporate organizations in
-          Ethiopia partnering with Progress Manpower Supply & Training PLC for specialized recruitment.
+          Ethiopia partnering with Progress Jobs for specialized recruitment.
         </p>
       </div>
 

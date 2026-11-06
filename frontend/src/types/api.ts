@@ -102,7 +102,8 @@ export type EmploymentType =
   | 'contract'
   | 'internship'
   | 'temporary'
-  | 'volunteer';
+  | 'volunteer'
+  | 'casual_worker';
 
 export type WorkplaceType = 'on_site' | 'hybrid' | 'remote';
 export type ApplicationMethod = 'internal' | 'external_url' | 'email' | 'admin';

@@ -214,7 +214,7 @@ export const Layout: React.FC = () => {
                 <Link to="/companies">Partner Employers</Link>
               </li>
               <li>
-                <Link to="/contact">Contact Dukem HQ</Link>
+                <Link to="/contact">Contact Bishoftu HQ</Link>
               </li>
             </ul>
           </div>
@@ -249,10 +249,7 @@ export const Layout: React.FC = () => {
           <div className="footer-contact-col">
             <h4>Headquarters & Contact</h4>
             <div className="contact-item">
-              <strong>Location:</strong> Dukem, Oromia Region, Ethiopia
-            </div>
-            <div className="contact-item">
-              <strong>Telephone:</strong> +251 11 887 9710
+              <strong>Location:</strong> Bishoftu, Oromia Region, Ethiopia
             </div>
             <div className="contact-item">
               <strong>Mobile / Hotline:</strong> +251 949 811 818 / +251 994 251 515
@@ -282,7 +279,7 @@ export const Layout: React.FC = () => {
             <div className="mobile-footer-col">
               <h4 className="mobile-footer-title">Contact HQ</h4>
               <div className="mobile-footer-contact">
-                <span className="mobile-footer-loc">Dukem, Oromia</span>
+                <span className="mobile-footer-loc">Bishoftu, Oromia</span>
                 <a href="tel:+251949811818">+251 949 811 818</a>
                 <a href="mailto:progressjobs8@gmail.com" className="mobile-footer-email">progressjobs8@gmail.com</a>
                 <Link to="/contact" className="mobile-footer-more-contact">All details →</Link>
@@ -292,7 +289,7 @@ export const Layout: React.FC = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} Progress Manpower Supply & Training PLC. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Progress Jobs. All rights reserved.</p>
           <div className="footer-legal-links">
             <Link to="/contact">Privacy Policy</Link>
             <span>•</span>

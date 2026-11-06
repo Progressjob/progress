@@ -36,7 +36,7 @@ export const CompanyHomePage: React.FC = () => {
             <h2>{suspended ? 'Employer Portal Access Suspended' : 'Could Not Load Organizations'}</h2>
             <p>
               {suspended
-                ? 'Your organization’s portal access has been suspended. Please contact Progress Manpower administration at Dukem HQ to restore access.'
+                ? 'Your organization’s portal access has been suspended. Please contact Progress Jobs administration at Bishoftu HQ to restore access.'
                 : msg}
             </p>
           </div>

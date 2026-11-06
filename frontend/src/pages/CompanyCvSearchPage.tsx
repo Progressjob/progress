@@ -281,7 +281,7 @@ export const CompanyCvSearchPage: React.FC = () => {
                                     <strong className="cv-stat-number" style={{ fontSize: '1.15rem' }}>
                                       <a href="tel:+251949811818" className="cv-hotline-link">+251 949 811 818</a>
                                     </strong>
-                                    <span className="cv-stat-sub">Progress Dukem Headquarters</span>
+                                    <span className="cv-stat-sub">Progress Bishoftu Headquarters</span>
                                   </div>
                               </div>
 

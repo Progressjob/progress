@@ -190,7 +190,7 @@ function yearFromDate(value?: string | null): string {
           ) : null}
 
           {profile.email && (
-            <a href={`mailto:${profile.email}?subject=Job Opportunity Inquiry via Progress Manpower`} className="btn-cv-email">
+            <a href={`mailto:${profile.email}?subject=Job Opportunity Inquiry via Progress Jobs`} className="btn-cv-email">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" strokeWidth="2" />
                 <polyline points="22,6 12,13 2,6" strokeWidth="2" />
@@ -455,7 +455,7 @@ function yearFromDate(value?: string | null): string {
           {/* Recruitment Advisory Card */}
           <div className="cv-side-card cv-support-card">
             <span className="support-badge">Direct Recruiter Support</span>
-            <p>Ready to interview or hire this candidate? Progress Manpower Dukem HQ coordinates candidate screenings, interviews, and compliance.</p>
+            <p>Ready to interview or hire this candidate? Progress Jobs Bishoftu HQ coordinates candidate screenings, interviews, and compliance.</p>
             <div className="support-phone">+251 949 811 818</div>
             <div className="support-email">progressjobs8@gmail.com</div>
           </div>

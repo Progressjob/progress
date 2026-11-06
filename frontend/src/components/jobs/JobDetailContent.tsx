@@ -554,7 +554,7 @@ export const JobDetailContent: React.FC<{
                   )}
                 </div>
               ) : (
-                <p className="muted">Direct contact channel handled via Progress Manpower HQ.</p>
+                <p className="muted">Direct contact channel handled via Progress Jobs HQ.</p>
               )}
 
               {applyVia.href?.startsWith('mailto:') && (
@@ -633,7 +633,7 @@ export const JobDetailContent: React.FC<{
                 <p className="jd-company-desc">
                   {job.company?.description
                     ? `${job.company.description.slice(0, 160)}…`
-                    : 'Verified enterprise partner recruiting through Progress Manpower Supply & Training PLC.'}
+                    : 'Verified enterprise partner recruiting through Progress Jobs.'}
                 </p>
                 {job.company && (
                   <Link to={`/companies/${job.company.slug}`} className="jd-view-company-link">
@@ -751,10 +751,10 @@ export const JobDetailContent: React.FC<{
                 <span className="support-badge">Need Assistance?</span>
                 <h3 className="jd-side-title jd-side-title-mobile">Support</h3>
                 <p className="jd-support-desktop-copy">
-                  Contact Progress Manpower Supply Dukem Headquarters:
+                  Contact Progress Jobs Bishoftu headquarters:
                 </p>
                 <p className="jd-support-blurb">
-                  Contact Progress Manpower HQ if you need help with this vacancy.
+                  Contact Progress Jobs HQ if you need help with this vacancy.
                 </p>
                 <div className="jd-support-links">
                   <a className="support-phone" href="tel:+251949811818">

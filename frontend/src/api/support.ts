@@ -1,6 +1,15 @@
 import { apiFetch } from './client';
 
+export const contactCategories = {
+  billing: 'Billing',
+  partnership: 'Partnership',
+  technical_support: 'Technical Support',
+} as const;
+
+export type ContactCategory = keyof typeof contactCategories;
+
 export interface ContactPayload {
+  category: ContactCategory;
   name: string;
   email: string;
   subject: string;
