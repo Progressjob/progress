@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   UnprocessableEntityException,
@@ -30,6 +31,7 @@ function createPrismaMock() {
       update: vi.fn(),
       findMany: vi.fn(),
     },
+    applicationAnswer: { deleteMany: vi.fn() },
     applicationEvent: { create: vi.fn() },
     notification: { create: vi.fn(), createMany: vi.fn() },
     companyMember: { findFirst: vi.fn(), findMany: vi.fn() },
@@ -107,11 +109,86 @@ describe('ApplicationsService.apply', () => {
       company: { members: [] },
       screeningQuestions: [],
     });
-    prisma.application.findUnique.mockResolvedValue({ id: 'app-existing' });
+    prisma.application.findUnique.mockResolvedValue({
+      id: 'app-existing',
+      status: 'submitted',
+    });
 
     const service = new ApplicationsService(prisma as unknown as PrismaService);
     await expect(service.apply('user-1', 'job-1', { answers: [] })).rejects.toBeInstanceOf(
       ConflictException,
+    );
+  });
+
+  it('allows reapply after rejection and sets resubmittedAt', async () => {
+    const prisma = createPrismaMock();
+    prisma.candidateProfile.findUnique.mockResolvedValue({
+      id: 'cand-1',
+      userId: 'user-1',
+      applicationsBlocked: false,
+    });
+    prisma.job.findUnique.mockResolvedValue({
+      id: 'job-1',
+      title: 'Nurse',
+      status: 'published',
+      companyId: 'co-1',
+      applicationDeadline: futureDeadline(),
+      company: { members: [{ userId: 'owner-1' }] },
+      screeningQuestions: [],
+    });
+    prisma.application.findUnique.mockResolvedValue({
+      id: 'app-1',
+      status: 'rejected',
+      candidateId: 'cand-1',
+      jobId: 'job-1',
+    });
+    prisma.application.update.mockResolvedValue({
+      id: 'app-1',
+      jobId: 'job-1',
+      candidateId: 'cand-1',
+      status: 'submitted',
+      resubmittedAt: new Date(),
+    });
+    prisma.user.findUnique.mockResolvedValue({ firstName: 'Sura', lastName: 'Nega' });
+    prisma.companyMember.findMany.mockResolvedValue([{ userId: 'owner-1' }]);
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    const result = await service.apply('user-1', 'job-1', {
+      resumeId: undefined,
+      answers: [],
+    });
+
+    expect(result.id).toBe('app-1');
+    expect(prisma.applicationAnswer.deleteMany).toHaveBeenCalledWith({
+      where: { applicationId: 'app-1' },
+    });
+    expect(prisma.application.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'app-1' },
+        data: expect.objectContaining({
+          status: 'submitted',
+          resubmittedAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(prisma.applicationEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          oldStatus: 'rejected',
+          newStatus: 'submitted',
+          note: 'Application resubmitted',
+        }),
+      }),
+    );
+    expect(prisma.notification.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            title: 'Application resubmitted',
+            referenceType: 'candidates',
+          }),
+        ],
+      }),
     );
   });
 
@@ -190,6 +267,78 @@ describe('ApplicationsService.sendMessage', () => {
         data: expect.objectContaining({
           userId: 'cand-user',
           type: 'application_update',
+          referenceType: 'application',
+          referenceId: 'app-1',
+        }),
+      }),
+    );
+  });
+});
+
+describe('ApplicationsService.changeStatus', () => {
+  it('requires a rejection reason', async () => {
+    const prisma = createPrismaMock();
+    prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });
+    prisma.application.findFirst.mockResolvedValue({
+      id: 'app-1',
+      status: 'reviewing',
+      candidateId: 'cand-1',
+      job: { title: 'Nurse', companyId: 'co-1' },
+      candidate: { userId: 'cand-user', user: { firstName: 'Sura', lastName: 'Nega' } },
+      events: [],
+      interviews: [],
+      answers: [],
+      resume: null,
+    });
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await expect(
+      service.changeStatus('owner-1', 'co-1', 'app-1', { status: 'rejected' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects with a reason and notifies the candidate', async () => {
+    const prisma = createPrismaMock();
+    prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });
+    prisma.application.findFirst.mockResolvedValue({
+      id: 'app-1',
+      status: 'reviewing',
+      candidateId: 'cand-1',
+      job: { title: 'Nurse', companyId: 'co-1' },
+      candidate: { userId: 'cand-user', user: { firstName: 'Sura', lastName: 'Nega' } },
+      events: [],
+      interviews: [],
+      answers: [],
+      resume: null,
+    });
+    prisma.application.update.mockResolvedValue({
+      id: 'app-1',
+      status: 'rejected',
+      candidate: { userId: 'cand-user' },
+      job: { title: 'Nurse' },
+    });
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await service.changeStatus('owner-1', 'co-1', 'app-1', {
+      status: 'rejected',
+      note: 'Missing warehouse experience',
+    });
+
+    expect(prisma.applicationEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          oldStatus: 'reviewing',
+          newStatus: 'rejected',
+          note: 'Missing warehouse experience',
+        }),
+      }),
+    );
+    expect(prisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 'cand-user',
+          title: 'Application rejected',
+          message: expect.stringContaining('Rejection reason: Missing warehouse experience'),
           referenceType: 'application',
           referenceId: 'app-1',
         }),

@@ -199,12 +199,40 @@ export class NotificationsService {
     );
   }
 
-  unreadCount(userId: string) {
-    return this.prisma.notification.count({ where: { userId, readAt: null } });
+  unreadCount(
+    userId: string,
+    filters?: { referenceType?: string; referenceId?: string },
+  ) {
+    return this.prisma.notification.count({
+      where: {
+        userId,
+        readAt: null,
+        ...(filters?.referenceType
+          ? { referenceType: filters.referenceType }
+          : {}),
+        ...(filters?.referenceId ? { referenceId: filters.referenceId } : {}),
+      },
+    });
   }
   markAllRead(userId: string) {
     return this.prisma.notification.updateMany({
       where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+  }
+
+  markReadByReference(
+    userId: string,
+    referenceType: string,
+    referenceId: string,
+  ) {
+    return this.prisma.notification.updateMany({
+      where: {
+        userId,
+        readAt: null,
+        referenceType,
+        referenceId,
+      },
       data: { readAt: new Date() },
     });
   }

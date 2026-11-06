@@ -19,9 +19,11 @@ import {
 } from '../../common/auth';
 import {
   ListNotificationsQueryDto,
+  MarkNotificationsByReferenceDto,
   NotificationAudienceDto,
   SendNotificationDto,
   NotificationPreferenceDto,
+  UnreadCountQueryDto,
 } from './notifications.dto';
 import { NotificationsService } from './notifications.service';
 
@@ -69,13 +71,31 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
-  unreadCount(@CurrentUser() user: AuthUser) {
-    return this.notifications.unreadCount(user.id);
+  unreadCount(
+    @CurrentUser() user: AuthUser,
+    @Query() query: UnreadCountQueryDto,
+  ) {
+    return this.notifications.unreadCount(user.id, {
+      referenceType: query.referenceType,
+      referenceId: query.referenceId,
+    });
   }
 
   @Patch('read-all')
   markAllRead(@CurrentUser() user: AuthUser) {
     return this.notifications.markAllRead(user.id);
+  }
+
+  @Patch('read-by-reference')
+  markReadByReference(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: MarkNotificationsByReferenceDto,
+  ) {
+    return this.notifications.markReadByReference(
+      user.id,
+      dto.referenceType,
+      dto.referenceId,
+    );
   }
 
   @Patch(':id/read')

@@ -51,11 +51,31 @@ function toQuery(params: NotificationListQuery = {}): string {
   return qs ? `?${qs}` : "";
 }
 
+export interface UnreadCountParams {
+  referenceType?: string;
+  referenceId?: string;
+}
+
+function unreadQuery(params?: UnreadCountParams): string {
+  if (!params?.referenceType && !params?.referenceId) return "";
+  const search = new URLSearchParams();
+  if (params.referenceType) search.set("referenceType", params.referenceType);
+  if (params.referenceId) search.set("referenceId", params.referenceId);
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export const notificationsApi = {
   list: (params?: NotificationListQuery) =>
     apiFetch<NotificationListResponse>(`/notifications${toQuery(params)}`),
-  unread: () => apiFetch<number>("/notifications/unread-count"),
+  unread: (params?: UnreadCountParams) =>
+    apiFetch<number>(`/notifications/unread-count${unreadQuery(params)}`),
   read: (id: string) =>
     apiFetch(`/notifications/${id}/read`, { method: "PATCH" }),
   readAll: () => apiFetch("/notifications/read-all", { method: "PATCH" }),
+  readByReference: (payload: { referenceType: string; referenceId: string }) =>
+    apiFetch<{ count: number }>("/notifications/read-by-reference", {
+      method: "PATCH",
+      body: payload,
+    }),
 };

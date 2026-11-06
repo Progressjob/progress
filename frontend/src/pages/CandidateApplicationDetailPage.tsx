@@ -5,12 +5,51 @@ import { candidateApi } from '../api/candidate';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import {
   TERMINAL_APPLICATION_STATUSES,
+  applicationStatusBadgeClassFor,
+  applicationStatusLabel,
   formatApplicationStatus,
 } from '../utils/applicationStatus';
 
 function prettyEnum(value?: string | null): string | null {
   if (!value) return null;
   return value.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function latestRejectionReason(
+  events?: Array<{ newStatus: string; note?: string | null }>,
+): string | null {
+  if (!events?.length) return null;
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i];
+    if (event.newStatus === 'rejected' && event.note?.trim()) {
+      return event.note.trim();
+    }
+  }
+  return null;
+}
+
+function shortWhen(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function timelineLabel(event: {
+  oldStatus?: string | null;
+  newStatus: string;
+  note?: string | null;
+}): string {
+  const isMessage =
+    event.oldStatus === event.newStatus && Boolean(event.note?.trim());
+  if (isMessage) return 'Message from employer';
+
+  const next = formatApplicationStatus(event.newStatus);
+  if (!event.oldStatus) return next;
+  if (event.oldStatus === event.newStatus) return next;
+  return `${formatApplicationStatus(event.oldStatus)} → ${next}`;
 }
 
 export const CandidateApplicationDetailPage: React.FC = () => {
@@ -53,9 +92,12 @@ export const CandidateApplicationDetailPage: React.FC = () => {
   const category = app.job?.category?.name;
   const vacancyMeta = [location, employment, workplace, category].filter(Boolean);
   const logoId = app.job?.company?.logo?.id ?? app.job?.company?.logoFileId ?? null;
+  const rejectionReason = latestRejectionReason(app.events);
+  const canReapply = app.status === 'rejected' && Boolean(app.job?.slug);
+  const reapplyHref = canReapply ? `/jobs/${app.job!.slug}/apply` : null;
 
   return (
-    <div className="cw-page-stack">
+    <div className="cw-page-stack app-detail-compact">
       <p className="muted" style={{ margin: 0 }}>
         <Link to="/candidate/applications">← All applications</Link>
       </p>
@@ -90,26 +132,11 @@ export const CandidateApplicationDetailPage: React.FC = () => {
                     ))}
                   </p>
                 )}
-                {app.job?.applicationDeadline && (
-                  <p className="muted" style={{ margin: '0.45rem 0 0' }}>
-                    Deadline{' '}
-                    {new Date(app.job.applicationDeadline).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                )}
               </div>
               <div className="apps-card-side apps-card-side--detail">
                 {app.job?.slug && (
                   <Link to={`/jobs/${app.job.slug}`} className="btn btn-sm btn-secondary">
                     View vacancy
-                  </Link>
-                )}
-                {app.job?.company?.slug && (
-                  <Link to={`/companies/${app.job.company.slug}`} className="apps-text-link">
-                    Company page
                   </Link>
                 )}
               </div>
@@ -118,25 +145,28 @@ export const CandidateApplicationDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="pb-card">
-        <div className="apps-card-top" style={{ alignItems: 'flex-start' }}>
-          <div className="apps-card-copy">
+      <div className="pb-card app-status-panel">
+        <div className="app-status-row">
+          <div>
             <p className="apps-vacancy-label">Your application</p>
-            <h3 style={{ margin: '0.15rem 0 0.35rem', fontSize: '1.05rem' }}>
-              Status & activity
-            </h3>
-            <p style={{ margin: 0 }}>
+            <p className="app-status-applied">
               Applied{' '}
               {new Date(app.appliedAt).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}
-              {app.job?.company?.name ? ` to ${app.job.company.name}` : ''}
             </p>
           </div>
-          <div className="apps-card-side">
-            <span className="badge badge-info">{formatApplicationStatus(app.status)}</span>
+          <div className="app-status-actions">
+            <span className={applicationStatusBadgeClassFor(app.status, app.resubmittedAt)}>
+              {applicationStatusLabel(app.status, app.resubmittedAt)}
+            </span>
+            {reapplyHref && (
+              <Link to={reapplyHref} className="btn btn-sm app-reapply-btn">
+                Reapply again
+              </Link>
+            )}
             {!terminal && (
               <button
                 type="button"
@@ -153,8 +183,40 @@ export const CandidateApplicationDetailPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {app.status === 'rejected' && (
+          <div className="app-reject-strip">
+            {rejectionReason ? (
+              <p>
+                <strong>Reason:</strong> {rejectionReason}
+              </p>
+            ) : (
+              <p className="muted">The employer rejected this application.</p>
+            )}
+            <p className="muted app-reject-hint">
+              Update your CV or profile, then reapply if the vacancy is still open.
+              {reapplyHref && (
+                <>
+                  {' '}
+                  <Link to={reapplyHref}>Reapply again →</Link>
+                </>
+              )}
+            </p>
+            <div className="app-reject-actions">
+              <Link to="/candidate/profile?edit=1" className="btn btn-sm btn-secondary">
+                Update profile
+              </Link>
+              {reapplyHref && (
+                <Link to={reapplyHref} className="btn btn-sm app-reapply-btn">
+                  Reapply again
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {withdrawMutation.isError && (
-          <div className="alert-error" style={{ marginTop: '0.75rem' }}>
+          <div className="alert-error" style={{ marginTop: '0.65rem' }}>
             {(withdrawMutation.error as Error).message}
           </div>
         )}
@@ -170,11 +232,11 @@ export const CandidateApplicationDetailPage: React.FC = () => {
       {app.answers && app.answers.length > 0 && (
         <div className="pb-card">
           <h3 className="pb-card-title">Screening answers</h3>
-          <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+          <ul className="app-answers-list">
             {app.answers.map((answer) => (
-              <li key={answer.id} style={{ marginBottom: '0.75rem' }}>
+              <li key={answer.id}>
                 <strong>{answer.question?.questionText ?? 'Question'}</strong>
-                <p style={{ margin: '0.25rem 0 0', whiteSpace: 'pre-wrap' }}>{answer.answerText}</p>
+                <p>{answer.answerText}</p>
               </li>
             ))}
           </ul>
@@ -184,19 +246,14 @@ export const CandidateApplicationDetailPage: React.FC = () => {
       {app.interviews && app.interviews.length > 0 && (
         <div className="pb-card">
           <h3 className="pb-card-title">Interviews</h3>
-          <ul className="stack" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul className="app-interview-list">
             {app.interviews.map((interview) => (
-              <li key={interview.id} className="apps-card" style={{ marginBottom: '0.5rem' }}>
+              <li key={interview.id}>
                 <strong>{interview.interviewType.replace(/_/g, ' ')}</strong>
                 <span className="apps-card-sep">·</span>
-                {new Date(interview.scheduledAt).toLocaleString()}
+                {shortWhen(interview.scheduledAt)}
                 <span className="apps-card-sep">·</span>
                 <span className="badge">{interview.status}</span>
-                {interview.locationOrLink && (
-                  <p className="muted" style={{ margin: '0.35rem 0 0' }}>
-                    {interview.locationOrLink}
-                  </p>
-                )}
               </li>
             ))}
           </ul>
@@ -210,29 +267,24 @@ export const CandidateApplicationDetailPage: React.FC = () => {
             No updates yet.
           </p>
         ) : (
-          <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
+          <ul className="app-timeline">
             {app.events.map((event) => {
               const isMessage =
                 event.oldStatus === event.newStatus && Boolean(event.note?.trim());
               return (
-                <li key={event.id} style={{ marginBottom: '0.75rem' }}>
-                  <div>
-                    <strong>
-                      {isMessage
-                        ? 'Message from employer'
-                        : formatApplicationStatus(event.newStatus)}
-                    </strong>
-                    <span className="muted" style={{ marginLeft: '0.5rem' }}>
-                      {new Date(event.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  {event.note && (
-                    <p style={{ margin: '0.25rem 0 0', whiteSpace: 'pre-wrap' }}>{event.note}</p>
+                <li key={event.id} className="app-timeline-row">
+                  <span className="app-timeline-label">{timelineLabel(event)}</span>
+                  <span className="app-timeline-when">{shortWhen(event.createdAt)}</span>
+                  {event.note && !isMessage && event.note !== 'Application submitted' && (
+                    <p className="app-timeline-note">{event.note}</p>
+                  )}
+                  {isMessage && event.note && (
+                    <p className="app-timeline-note">{event.note}</p>
                   )}
                 </li>
               );
             })}
-          </ol>
+          </ul>
         )}
       </div>
     </div>

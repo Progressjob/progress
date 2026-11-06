@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { employerApi } from '../api/employer';
+import { useMarkCandidateNotificationsSeen } from '../hooks/useMarkCandidateNotificationsSeen';
 import type { Job } from '../types/api';
 
 function isOpenJob(job: Job): boolean {
@@ -18,6 +19,7 @@ export const CompanyReviewCandidatesPage: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  useMarkCandidateNotificationsSeen(companyId);
 
   const companiesQuery = useQuery({
     queryKey: ['company', 'memberships'],

@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
-import { formatApplicationStatus } from '../utils/applicationStatus';
+import {
+  applicationStatusBadgeClassFor,
+  applicationStatusLabel,
+} from '../utils/applicationStatus';
 
 function prettyEnum(value?: string | null): string | null {
   if (!value) return null;
@@ -117,9 +120,17 @@ export const CandidateApplicationsPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="apps-card-side">
-                      <span className="badge badge-info">
-                        {formatApplicationStatus(app.status)}
+                      <span className={applicationStatusBadgeClassFor(app.status, app.resubmittedAt)}>
+                        {applicationStatusLabel(app.status, app.resubmittedAt)}
                       </span>
+                      {app.status === 'rejected' && app.job?.slug && (
+                        <Link
+                          to={`/jobs/${app.job.slug}/apply`}
+                          className="btn btn-sm app-reapply-btn"
+                        >
+                          Reapply again
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -130,6 +141,11 @@ export const CandidateApplicationsPage: React.FC = () => {
                   {app.job?.slug && (
                     <Link to={`/jobs/${app.job.slug}`} className="apps-text-link">
                       View vacancy
+                    </Link>
+                  )}
+                  {app.status === 'rejected' && app.job?.slug && (
+                    <Link to={`/jobs/${app.job.slug}/apply`} className="apps-reapply-link">
+                      Reapply again →
                     </Link>
                   )}
                 </div>

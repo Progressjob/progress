@@ -348,6 +348,7 @@ export interface Application {
   appliedAt: string;
   updatedAt?: string;
   withdrawnAt?: string | null;
+  resubmittedAt?: string | null;
   job?: Job;
   candidate?: {
     id: string;

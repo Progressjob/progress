@@ -3,8 +3,13 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api/admin';
 import { employerApi } from '../api/employer';
+import { useMarkCandidateNotificationsSeen } from '../hooks/useMarkCandidateNotificationsSeen';
 import type { ApplicationStatus } from '../types/api';
-import { formatApplicationStatus } from '../utils/applicationStatus';
+import {
+  applicationStatusLabel,
+  applicationStatusPillClass,
+  formatApplicationStatus,
+} from '../utils/applicationStatus';
 
 const PIPELINE_STATUSES: ApplicationStatus[] = [
   'submitted',
@@ -36,6 +41,7 @@ export const CompanyJobApplicationsPage: React.FC = () => {
   const [status, setStatus] = useState<ApplicationStatus | ''>('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  useMarkCandidateNotificationsSeen(isAdminPath ? undefined : companyId);
 
   const jobQuery = useQuery({
     queryKey: [isAdminPath ? 'admin' : 'employer', 'job', companyId, jobId],
@@ -199,8 +205,8 @@ export const CompanyJobApplicationsPage: React.FC = () => {
                         </time>
                       </span>
                     </span>
-                    <span className={`emp-inbox-pill emp-inbox-pill--${app.status}`}>
-                      {formatApplicationStatus(app.status)}
+                    <span className={applicationStatusPillClass(app.status, app.resubmittedAt)}>
+                      {applicationStatusLabel(app.status, app.resubmittedAt)}
                     </span>
                     <span className="emp-inbox-row-cta">Review</span>
                   </Link>

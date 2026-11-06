@@ -56,12 +56,45 @@ export const ApplyJobPage: React.FC = () => {
     enabled: Boolean(user && hasRole('candidate')),
   });
 
+  const applicationsQuery = useQuery({
+    queryKey: ['candidate', 'applications'],
+    queryFn: () => candidateApi.listApplications(),
+    enabled: Boolean(user && hasRole('candidate')),
+  });
+
+  const existingForJob = useMemo(() => {
+    const jobId = jobQuery.data?.id;
+    if (!jobId) return null;
+    return applicationsQuery.data?.find((a) => a.jobId === jobId) ?? null;
+  }, [applicationsQuery.data, jobQuery.data?.id]);
+
+  const existingDetailQuery = useQuery({
+    queryKey: ['candidate', 'applications', existingForJob?.id],
+    queryFn: () => candidateApi.getApplication(existingForJob!.id),
+    enabled: Boolean(existingForJob?.id && existingForJob.status === 'rejected'),
+  });
+
   const resumes = resumesQuery.data ?? [];
   /** Apply form only offers the current profile CV (default), not upload history. */
   const profileResume = useMemo(
     () => resumes.find((r) => r.isDefault) ?? resumes[0] ?? null,
     [resumes],
   );
+
+  const isReapply = existingForJob?.status === 'rejected';
+  const activeApplication =
+    existingForJob && existingForJob.status !== 'rejected' ? existingForJob : null;
+  const rejectionReason = useMemo(() => {
+    const events = existingDetailQuery.data?.events;
+    if (!events?.length) return null;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const event = events[i];
+      if (event.newStatus === 'rejected' && event.note?.trim()) {
+        return event.note.trim();
+      }
+    }
+    return null;
+  }, [existingDetailQuery.data?.events]);
 
   useEffect(() => {
     if (!resumeId && profileResume) setResumeId(profileResume.id);
@@ -181,7 +214,7 @@ export const ApplyJobPage: React.FC = () => {
     );
   }
 
-  if (jobQuery.isLoading || profileQuery.isLoading) {
+  if (jobQuery.isLoading || profileQuery.isLoading || applicationsQuery.isLoading) {
     return (
       <div className="job-detail-page">
         <div className="job-detail-container">
@@ -198,6 +231,29 @@ export const ApplyJobPage: React.FC = () => {
           <BackButton fallback="/jobs" />
           <div className="pb-card alert-error">
             {(jobQuery.error as Error)?.message ?? 'Job not found'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeApplication) {
+    return (
+      <div className="job-detail-page">
+        <div className="job-detail-container" style={{ maxWidth: 720 }}>
+          <BackButton fallback={`/jobs/${slug}`} />
+          <div className="pb-card stack">
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Already applied</h1>
+            <p style={{ margin: 0 }}>
+              You already have an application for this vacancy
+              {activeApplication.status
+                ? ` (status: ${activeApplication.status.replace(/_/g, ' ')})`
+                : ''}
+              .
+            </p>
+            <Link to={`/candidate/applications/${activeApplication.id}`} className="btn btn-sm">
+              View application
+            </Link>
           </div>
         </div>
       </div>
@@ -221,11 +277,37 @@ export const ApplyJobPage: React.FC = () => {
           <p className="muted" style={{ margin: '0 0 0.35rem' }}>
             {job.company?.name ?? 'Employer'}
           </p>
-          <h1 style={{ margin: 0, fontSize: '1.75rem' }}>Start your application</h1>
+          <h1 style={{ margin: 0, fontSize: '1.75rem' }}>
+            {isReapply ? 'Reapply for this role' : 'Start your application'}
+          </h1>
           <p className="muted" style={{ marginTop: '0.35rem' }}>
-            Applying for <strong>{job.title}</strong>
+            {isReapply ? 'Resubmitting for' : 'Applying for'} <strong>{job.title}</strong>
           </p>
         </header>
+
+        {isReapply && (
+          <div className="pb-card stack" style={{ marginBottom: '1rem' }}>
+            <h3 className="pb-card-title" style={{ margin: 0 }}>
+              Previously rejected
+            </h3>
+            {rejectionReason ? (
+              <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+                <strong>Reason:</strong> {rejectionReason}
+              </p>
+            ) : (
+              <p className="muted" style={{ margin: 0 }}>
+                The employer rejected your earlier application for this vacancy.
+              </p>
+            )}
+            <p style={{ margin: 0 }}>
+              Update your CV or cover letter if needed, then resubmit so the employer can review
+              again.
+            </p>
+            <Link to="/candidate/profile?edit=1" className="apps-text-link">
+              Update profile
+            </Link>
+          </div>
+        )}
 
         <form
           className="pb-card stack"
@@ -378,7 +460,13 @@ export const ApplyJobPage: React.FC = () => {
             disabled={applyMutation.isPending || uploadMutation.isPending || !canSubmit}
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            {applyMutation.isPending ? 'Submitting…' : 'Submit Application'}
+            {applyMutation.isPending
+              ? isReapply
+                ? 'Resubmitting…'
+                : 'Submitting…'
+              : isReapply
+                ? 'Resubmit application'
+                : 'Submit Application'}
           </button>
         </form>
       </div>

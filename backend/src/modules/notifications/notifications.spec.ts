@@ -32,6 +32,42 @@ describe('notifications', () => {
       data: { readAt: expect.any(Date) },
     });
   });
+
+  it('marks unread notifications for a reference as read', async () => {
+    const updateMany = vi.fn();
+    const service = new NotificationsService({
+      notification: { updateMany },
+    } as unknown as PrismaService);
+    await service.markReadByReference('user-a', 'candidates', 'co-1');
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-a',
+        readAt: null,
+        referenceType: 'candidates',
+        referenceId: 'co-1',
+      },
+      data: { readAt: expect.any(Date) },
+    });
+  });
+
+  it('counts unread notifications filtered by reference', async () => {
+    const count = vi.fn().mockResolvedValue(2);
+    const service = new NotificationsService({
+      notification: { count },
+    } as unknown as PrismaService);
+    await service.unreadCount('user-a', {
+      referenceType: 'candidates',
+      referenceId: 'co-1',
+    });
+    expect(count).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-a',
+        readAt: null,
+        referenceType: 'candidates',
+        referenceId: 'co-1',
+      },
+    });
+  });
   it('routes review events only to active administrators and moderators', async () => {
     const tx = {
       user: { findMany: vi.fn().mockResolvedValue([{ id: 'admin' }]) },

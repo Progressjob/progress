@@ -15,6 +15,7 @@ import {
 } from '../auth/nav';
 import { employerHomeDestination, employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
+import { notificationsApi } from '../api/notifications';
 import { AdminContactCard } from './AdminContactCard';
 import { WorkspaceSwitch } from './WorkspaceSwitch';
 
@@ -43,6 +44,17 @@ export const CompanyPortalLayout: React.FC = () => {
     refetchInterval: 30_000,
   });
 
+  const reviewUnreadQuery = useQuery({
+    queryKey: ['notifications', user?.id, 'unread', 'candidates', companyId],
+    queryFn: () =>
+      notificationsApi.unread({
+        referenceType: 'candidates',
+        referenceId: companyId!,
+      }),
+    enabled: Boolean(user && companyId),
+    refetchInterval: 30_000,
+  });
+
   useEffect(() => {
     setWorkspace('employer');
   }, [setWorkspace]);
@@ -50,10 +62,7 @@ export const CompanyPortalLayout: React.FC = () => {
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
   const jobs = jobsQuery.data ?? [];
-  const applicantCount = useMemo(
-    () => jobs.reduce((sum, job) => sum + (job._count?.applications ?? 0), 0),
-    [jobs],
-  );
+  const reviewUnreadCount = reviewUnreadQuery.data ?? 0;
 
   const showAdminContact = useMemo(() => {
     if (companiesQuery.isLoading) return false;
@@ -150,9 +159,12 @@ export const CompanyPortalLayout: React.FC = () => {
                   className={() => navActive(isCompanyReviewCandidates(location.pathname, companyId))}
                 >
                   Review candidates
-                  {applicantCount > 0 && (
-                    <span className="nav-count-badge" aria-label={`${applicantCount} applicants`}>
-                      {applicantCount > 99 ? '99+' : applicantCount}
+                  {reviewUnreadCount > 0 && (
+                    <span
+                      className="nav-count-badge"
+                      aria-label={`${reviewUnreadCount} new applicant notifications`}
+                    >
+                      {reviewUnreadCount > 99 ? '99+' : reviewUnreadCount}
                     </span>
                   )}
                 </NavLink>

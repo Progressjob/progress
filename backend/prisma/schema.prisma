@@ -592,10 +592,11 @@ model Application {
   resumeId    String?             @map("resume_id") @db.Uuid
   coverLetter String?             @map("cover_letter")
   status      ApplicationStatus   @default(submitted)
-  appliedAt   DateTime            @default(now()) @map("applied_at") @db.Timestamptz
-  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz
-  withdrawnAt DateTime?           @map("withdrawn_at") @db.Timestamptz
-  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  appliedAt     DateTime            @default(now()) @map("applied_at") @db.Timestamptz
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  withdrawnAt   DateTime?           @map("withdrawn_at") @db.Timestamptz
+  resubmittedAt DateTime?           @map("resubmitted_at") @db.Timestamptz
+  job           Job                 @relation(fields: [jobId], references: [id], onDelete: Restrict)
   candidate   CandidateProfile    @relation(fields: [candidateId], references: [id], onDelete: Restrict)
   resume      CandidateResume?    @relation(fields: [resumeId], references: [id], onDelete: Restrict)
   answers     ApplicationAnswer[]

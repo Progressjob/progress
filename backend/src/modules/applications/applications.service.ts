@@ -100,10 +100,68 @@ export class ApplicationsService {
     const existing = await this.prisma.application.findUnique({
       where: { jobId_candidateId: { jobId, candidateId: candidate.id } },
     });
-    if (existing) throw new ConflictException('You have already applied to this job');
+    if (existing && existing.status !== 'rejected') {
+      throw new ConflictException('You have already applied to this job');
+    }
+
+    const include = {
+      job: { include: { company: true } },
+      resume: { include: { file: true } },
+      answers: { include: { question: true } },
+    } as const;
+
+    const answerCreates = answers.map((a) => ({
+      questionId: a.questionId,
+      answerText: a.answerText.trim(),
+    }));
 
     try {
       return await this.prisma.$transaction(async (tx) => {
+        const candidateName = await tx.user.findUnique({
+          where: { id: userId },
+          select: { firstName: true, lastName: true },
+        });
+        const who =
+          [candidateName?.firstName, candidateName?.lastName].filter(Boolean).join(' ') ||
+          'A candidate';
+
+        if (existing?.status === 'rejected') {
+          await tx.applicationAnswer.deleteMany({ where: { applicationId: existing.id } });
+          const application = await tx.application.update({
+            where: { id: existing.id },
+            data: {
+              resumeId: dto.resumeId ?? null,
+              coverLetter: dto.coverLetter?.trim() || null,
+              status: 'submitted',
+              appliedAt: new Date(),
+              resubmittedAt: new Date(),
+              withdrawnAt: null,
+              answers: answerCreates.length ? { create: answerCreates } : undefined,
+            },
+            include,
+          });
+
+          await tx.applicationEvent.create({
+            data: {
+              applicationId: application.id,
+              changedBy: userId,
+              oldStatus: 'rejected',
+              newStatus: 'submitted',
+              note: 'Application resubmitted',
+            },
+          });
+
+          await notifyCompanyMembers(tx, job.companyId, {
+            title: 'Application resubmitted',
+            message: `${who} resubmitted their application for ${job.title} after rejection. Open Review candidates to respond.`,
+            type: 'application_update',
+            referenceType: 'candidates',
+            referenceId: job.companyId,
+          });
+
+          return application;
+        }
+
         const application = await tx.application.create({
           data: {
             jobId,
@@ -111,20 +169,9 @@ export class ApplicationsService {
             resumeId: dto.resumeId,
             coverLetter: dto.coverLetter?.trim() || null,
             status: 'submitted',
-            answers: answers.length
-              ? {
-                  create: answers.map((a) => ({
-                    questionId: a.questionId,
-                    answerText: a.answerText.trim(),
-                  })),
-                }
-              : undefined,
+            answers: answerCreates.length ? { create: answerCreates } : undefined,
           },
-          include: {
-            job: { include: { company: true } },
-            resume: { include: { file: true } },
-            answers: { include: { question: true } },
-          },
+          include,
         });
 
         await tx.applicationEvent.create({
@@ -136,12 +183,6 @@ export class ApplicationsService {
             note: 'Application submitted',
           },
         });
-
-        const candidateName = await tx.user.findUnique({
-          where: { id: userId },
-          select: { firstName: true, lastName: true },
-        });
-        const who = [candidateName?.firstName, candidateName?.lastName].filter(Boolean).join(' ') || 'A candidate';
 
         await notifyCompanyMembers(tx, job.companyId, {
           title: 'New application',
@@ -401,6 +442,11 @@ export class ApplicationsService {
     },
   ) {
     assertApplicationTransition(oldStatus, newStatus);
+    const trimmedNote = note?.trim() || undefined;
+    if (newStatus === 'rejected' && !trimmedNote) {
+      throw new BadRequestException('A rejection reason is required');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const application = await tx.application.update({
         where: { id },
@@ -414,15 +460,32 @@ export class ApplicationsService {
         },
       });
       await tx.applicationEvent.create({
-        data: { applicationId: id, changedBy, oldStatus, newStatus, note },
+        data: {
+          applicationId: id,
+          changedBy,
+          oldStatus,
+          newStatus,
+          note: trimmedNote,
+        },
       });
 
       const jobTitle = opts?.jobTitle ?? application.job.title;
-      const noteSuffix = note?.trim() ? ` Note: ${note.trim().slice(0, 160)}` : '';
 
       if (newStatus === 'withdrawn' && changedBy === application.candidate.userId) {
         // Candidate withdrew — notify company, skip self-notify noise
+      } else if (newStatus === 'rejected') {
+        await tx.notification.create({
+          data: {
+            userId: application.candidate.userId,
+            title: 'Application rejected',
+            message: `Your application for ${jobTitle} was rejected. Rejection reason: ${trimmedNote!.slice(0, 160)}`,
+            type: 'application_update',
+            referenceType: 'application',
+            referenceId: id,
+          },
+        });
       } else {
+        const noteSuffix = trimmedNote ? ` Note: ${trimmedNote.slice(0, 160)}` : '';
         await tx.notification.create({
           data: {
             userId: application.candidate.userId,

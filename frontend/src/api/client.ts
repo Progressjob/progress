@@ -224,7 +224,7 @@ export async function apiFetch<T = unknown>(
   return JSON.parse(text) as T;
 }
 
-export async function apiDownloadFile(fileId: string, filename = 'download'): Promise<void> {
+async function fetchFileBlob(fileId: string): Promise<Blob> {
   const { accessToken } = getStoredTokens();
   const url = `${BASE_URL}/files/${fileId}/download`;
   let res = await fetch(url, {
@@ -244,7 +244,11 @@ export async function apiDownloadFile(fileId: string, filename = 'download'): Pr
     throw await parseErrorResponse(res);
   }
 
-  const blob = await res.blob();
+  return res.blob();
+}
+
+export async function apiDownloadFile(fileId: string, filename = 'download'): Promise<void> {
+  const blob = await fetchFileBlob(fileId);
   const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = objectUrl;
@@ -256,26 +260,31 @@ export async function apiDownloadFile(fileId: string, filename = 'download'): Pr
 }
 
 export async function apiOpenFile(fileId: string): Promise<void> {
-  const { accessToken } = getStoredTokens();
-  const url = `${BASE_URL}/files/${fileId}/download`;
-  let res = await fetch(url, {
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-  });
-
-  if (res.status === 401) {
-    const newAccess = await refreshAccessTokenSingleFlight();
-    if (newAccess) {
-      res = await fetch(url, {
-        headers: { Authorization: `Bearer ${newAccess}` },
-      });
-    }
-  }
-
-  if (!res.ok) {
-    throw await parseErrorResponse(res);
-  }
-
-  const blob = await res.blob();
+  const blob = await fetchFileBlob(fileId);
   const objectUrl = URL.createObjectURL(blob);
   window.open(objectUrl, '_blank', 'noopener,noreferrer');
+}
+
+/** Opens the file and triggers the browser print dialog for physical review. */
+export async function apiPrintFile(fileId: string): Promise<void> {
+  const blob = await fetchFileBlob(fileId);
+  const objectUrl = URL.createObjectURL(blob);
+  const printWindow = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  if (!printWindow) {
+    URL.revokeObjectURL(objectUrl);
+    throw new Error('Allow pop-ups to print this CV');
+  }
+
+  const tryPrint = () => {
+    try {
+      printWindow.focus();
+      printWindow.print();
+    } catch {
+      // Browser PDF viewers may block scripted print; file is still open for manual print.
+    }
+  };
+
+  printWindow.addEventListener('load', tryPrint);
+  // PDF plugins often skip the load event — fall back after a short delay.
+  window.setTimeout(tryPrint, 700);
 }
