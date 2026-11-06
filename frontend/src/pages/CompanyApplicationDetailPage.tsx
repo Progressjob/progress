@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { employerApi } from '../api/employer';
 import { apiDownloadFile, apiOpenFile, apiPrintFile } from '../api/client';
 import type { ApplicationStatus, InterviewType } from '../types/api';
+import { ApplicationTimeline } from '../components/ApplicationTimeline';
 import { useMarkCandidateNotificationsSeen } from '../hooks/useMarkCandidateNotificationsSeen';
 import {
   APPLICATION_TRANSITIONS,
@@ -464,34 +465,11 @@ export const CompanyApplicationDetailPage: React.FC = () => {
         </div>
       )}
 
-      <div className="pb-card">
-        <h3 className="pb-card-title">Timeline</h3>
-        {!app.events?.length ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No events yet.
-          </p>
-        ) : (
-          <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
-            {app.events.map((event) => {
-              const isMessage =
-                event.oldStatus === event.newStatus && Boolean(event.note?.trim());
-              return (
-                <li key={event.id} style={{ marginBottom: '0.75rem' }}>
-                  <strong>
-                    {isMessage ? 'Message' : formatApplicationStatus(event.newStatus)}
-                  </strong>
-                  <span className="muted" style={{ marginLeft: '0.5rem' }}>
-                    {new Date(event.createdAt).toLocaleString()}
-                  </span>
-                  {event.note && (
-                    <p style={{ margin: '0.25rem 0 0', whiteSpace: 'pre-wrap' }}>{event.note}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </div>
+      <ApplicationTimeline
+        events={app.events}
+        messageTitle="Message"
+        emptyText="No events yet."
+      />
     </div>
   );
 };

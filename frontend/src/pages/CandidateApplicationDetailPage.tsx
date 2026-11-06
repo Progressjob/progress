@@ -2,12 +2,12 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
+import { ApplicationTimeline } from '../components/ApplicationTimeline';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import {
   TERMINAL_APPLICATION_STATUSES,
   applicationStatusBadgeClassFor,
   applicationStatusLabel,
-  formatApplicationStatus,
 } from '../utils/applicationStatus';
 
 function prettyEnum(value?: string | null): string | null {
@@ -35,21 +35,6 @@ function shortWhen(iso: string): string {
     hour: 'numeric',
     minute: '2-digit',
   });
-}
-
-function timelineLabel(event: {
-  oldStatus?: string | null;
-  newStatus: string;
-  note?: string | null;
-}): string {
-  const isMessage =
-    event.oldStatus === event.newStatus && Boolean(event.note?.trim());
-  if (isMessage) return 'Message from employer';
-
-  const next = formatApplicationStatus(event.newStatus);
-  if (!event.oldStatus) return next;
-  if (event.oldStatus === event.newStatus) return next;
-  return `${formatApplicationStatus(event.oldStatus)} → ${next}`;
 }
 
 export const CandidateApplicationDetailPage: React.FC = () => {
@@ -260,33 +245,11 @@ export const CandidateApplicationDetailPage: React.FC = () => {
         </div>
       )}
 
-      <div className="pb-card">
-        <h3 className="pb-card-title">Timeline</h3>
-        {!app.events?.length ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No updates yet.
-          </p>
-        ) : (
-          <ul className="app-timeline">
-            {app.events.map((event) => {
-              const isMessage =
-                event.oldStatus === event.newStatus && Boolean(event.note?.trim());
-              return (
-                <li key={event.id} className="app-timeline-row">
-                  <span className="app-timeline-label">{timelineLabel(event)}</span>
-                  <span className="app-timeline-when">{shortWhen(event.createdAt)}</span>
-                  {event.note && !isMessage && event.note !== 'Application submitted' && (
-                    <p className="app-timeline-note">{event.note}</p>
-                  )}
-                  {isMessage && event.note && (
-                    <p className="app-timeline-note">{event.note}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <ApplicationTimeline
+        events={app.events}
+        messageTitle="Message from employer"
+        emptyText="No updates yet."
+      />
     </div>
   );
 };
