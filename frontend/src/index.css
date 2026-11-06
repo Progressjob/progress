@@ -5728,6 +5728,89 @@ hr {
   text-decoration: underline;
 }
 
+.app-messages-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.app-messages-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 22rem;
+  overflow-y: auto;
+  padding: 0.65rem;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+
+.app-messages-empty {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+}
+
+.app-message-bubble {
+  max-width: min(92%, 34rem);
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.app-message-bubble.is-mine {
+  align-self: flex-end;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.app-message-bubble.is-theirs {
+  align-self: flex-start;
+}
+
+.app-message-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.app-message-meta strong {
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.app-message-bubble p {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #0f172a;
+}
+
+.app-messages-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app-messages-compose textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
 @media (max-width: 960px) {
   .profile-builder-grid {
     grid-template-columns: 1fr;

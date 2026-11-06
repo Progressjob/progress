@@ -177,8 +177,18 @@ export function NotificationsPage() {
       return `/admin/support?message=${n.referenceId}`;
     if (admin && n.referenceType === "report")
       return `/admin/support/reports/${n.referenceId}`;
-    if (n.referenceType === "application" && n.referenceId && hasRole("candidate"))
-      return `/candidate/applications/${n.referenceId}`;
+    if (n.referenceType === "application" && n.referenceId) {
+      if (hasRole("candidate")) {
+        return `/candidate/applications/${n.referenceId}#messages`;
+      }
+      if (hasRole("employer")) {
+        const memberships = user?.companyMemberships ?? [];
+        const companyId = memberships[0]?.companyId;
+        if (companyId) {
+          return `/company/${companyId}/applications/${n.referenceId}#messages`;
+        }
+      }
+    }
     if (n.referenceType === "candidates" && n.referenceId && hasRole("employer"))
       return `/company/${n.referenceId}/candidates`;
     if (n.referenceType === "job" && n.referenceId && hasRole("employer")) {

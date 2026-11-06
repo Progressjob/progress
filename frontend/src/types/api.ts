@@ -352,6 +352,7 @@ export interface Application {
   job?: Job;
   candidate?: {
     id: string;
+    userId?: string;
     headline?: string | null;
     user: {
       firstName: string;

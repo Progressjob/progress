@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { employerApi } from '../api/employer';
 import { apiDownloadFile, apiOpenFile, apiPrintFile } from '../api/client';
 import type { ApplicationStatus, InterviewType } from '../types/api';
+import { ApplicationMessages } from '../components/ApplicationMessages';
 import { ApplicationTimeline } from '../components/ApplicationTimeline';
+import { useAuth } from '../auth/AuthContext';
 import { useMarkCandidateNotificationsSeen } from '../hooks/useMarkCandidateNotificationsSeen';
 import {
   APPLICATION_TRANSITIONS,
@@ -53,6 +55,7 @@ export const CompanyApplicationDetailPage: React.FC = () => {
   }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isAdmin = location.pathname.startsWith('/admin');
   const companyBase = isAdmin
     ? `/admin/companies/${companyId}`
@@ -60,15 +63,24 @@ export const CompanyApplicationDetailPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   const [statusNote, setStatusNote] = useState('');
-  const [message, setMessage] = useState('');
   const [interviewType, setInterviewType] = useState<InterviewType>('video');
   const [interviewAt, setInterviewAt] = useState('');
   const [interviewLink, setInterviewLink] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [resumeBusy, setResumeBusy] = useState<'view' | 'print' | 'download' | null>(null);
+  const [schedulingInterview, setSchedulingInterview] = useState(false);
   useMarkCandidateNotificationsSeen(isAdmin ? undefined : companyId);
 
+  useEffect(() => {
+    if (!schedulingInterview) return;
+    document.getElementById('schedule-interview')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    });
+  }, [schedulingInterview]);
+
   const detailQuery = useQuery({
+
     queryKey: ['employer', 'application', companyId, applicationId],
     queryFn: () => employerApi.getApplication(companyId!, applicationId!),
     enabled: Boolean(companyId && applicationId),
@@ -105,12 +117,9 @@ export const CompanyApplicationDetailPage: React.FC = () => {
   });
 
   const messageMutation = useMutation({
-    mutationFn: () =>
-      employerApi.sendApplicationMessage(companyId!, applicationId!, {
-        body: message.trim(),
-      }),
+    mutationFn: (body: string) =>
+      employerApi.sendApplicationMessage(companyId!, applicationId!, { body }),
     onSuccess: () => {
-      setMessage('');
       setActionError(null);
       invalidate();
     },
@@ -127,6 +136,7 @@ export const CompanyApplicationDetailPage: React.FC = () => {
     onSuccess: () => {
       setInterviewAt('');
       setInterviewLink('');
+      setSchedulingInterview(false);
       setActionError(null);
       invalidate();
     },
@@ -138,9 +148,17 @@ export const CompanyApplicationDetailPage: React.FC = () => {
     if (!app) return [] as ApplicationStatus[];
     return APPLICATION_TRANSITIONS[app.status].filter((s) => s !== 'withdrawn');
   }, [app]);
+  const canEnterInterview = Boolean(
+    app && APPLICATION_TRANSITIONS[app.status].includes('interview'),
+  );
+  /** Schedule UI only after employer chooses Mark interview, or when already in interview. */
+  const showSchedulePanel = Boolean(
+    app && (schedulingInterview || app.status === 'interview'),
+  );
   const terminal = app ? TERMINAL_APPLICATION_STATUSES.has(app.status) : false;
   const rejectionReason = latestRejectionReason(app?.events);
   const canReject = Boolean(statusNote.trim());
+  const canSubmitInterview = Boolean(interviewAt.trim()) && Boolean(interviewType);
 
   if (!companyId || !applicationId) {
     return <div className="pb-card alert-error">Missing application context.</div>;
@@ -346,20 +364,35 @@ export const CompanyApplicationDetailPage: React.FC = () => {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {nextStatuses.map((status) => {
               const isReject = status === 'rejected';
+              const isInterview = status === 'interview';
               const disabled =
-                statusMutation.isPending || (isReject && !canReject);
+                statusMutation.isPending ||
+                interviewMutation.isPending ||
+                (isReject && !canReject);
               return (
                 <button
                   key={status}
                   type="button"
-                  className={`btn btn-sm ${isReject ? 'btn-danger' : ''}`}
+                  className={`btn btn-sm ${isReject ? 'btn-danger' : ''} ${
+                    isInterview && schedulingInterview ? 'btn-secondary' : ''
+                  }`}
                   disabled={disabled}
                   title={
                     isReject && !canReject
                       ? 'Enter a rejection reason first'
-                      : undefined
+                      : isInterview
+                        ? 'Fill the interview schedule to continue'
+                        : undefined
                   }
-                  onClick={() => statusMutation.mutate(status)}
+                  onClick={() => {
+                    if (isInterview) {
+                      setSchedulingInterview(true);
+                      setActionError(null);
+                      return;
+                    }
+                    setSchedulingInterview(false);
+                    statusMutation.mutate(status);
+                  }}
                 >
                   Mark {formatApplicationStatus(status)}
                 </button>
@@ -371,78 +404,109 @@ export const CompanyApplicationDetailPage: React.FC = () => {
               A rejection reason is required before marking rejected.
             </p>
           )}
+          {schedulingInterview && canEnterInterview && (
+            <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+              Fill the interview schedule below. The candidate will be notified with
+              the time and location/link.
+            </p>
+          )}
         </div>
       )}
 
-      {!terminal && (
-        <>
-          <div className="pb-card stack">
-            <h3 className="pb-card-title">Schedule interview</h3>
-            <div className="grid-two">
-              <div className="profile-field-wrap">
-                <label htmlFor="interview-type">Type</label>
-                <select
-                  id="interview-type"
-                  value={interviewType}
-                  onChange={(e) => setInterviewType(e.target.value as InterviewType)}
-                >
-                  <option value="video">Video</option>
-                  <option value="phone">Phone</option>
-                  <option value="in_person">In person</option>
-                </select>
-              </div>
-              <div className="profile-field-wrap">
-                <label htmlFor="interview-at">When</label>
-                <input
-                  id="interview-at"
-                  type="datetime-local"
-                  value={interviewAt}
-                  onChange={(e) => setInterviewAt(e.target.value)}
-                  required
-                />
-              </div>
+      {!terminal && showSchedulePanel && (
+        <div className="pb-card stack" id="schedule-interview">
+          <h3 className="pb-card-title">
+            {canEnterInterview ? 'Interview schedule required' : 'Schedule another interview'}
+          </h3>
+          {canEnterInterview && (
+            <p className="muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+              Type and date/time are required to move this application to interview.
+              The candidate gets a schedule notice automatically.
+            </p>
+          )}
+          <div className="grid-two">
+            <div className="profile-field-wrap">
+              <label htmlFor="interview-type">
+                Type <span className="profile-field-req">*</span>
+              </label>
+              <select
+                id="interview-type"
+                value={interviewType}
+                onChange={(e) => setInterviewType(e.target.value as InterviewType)}
+                required
+              >
+                <option value="video">Video</option>
+                <option value="phone">Phone</option>
+                <option value="in_person">In person</option>
+              </select>
             </div>
             <div className="profile-field-wrap">
-              <label htmlFor="interview-link">Location or link</label>
+              <label htmlFor="interview-at">
+                When <span className="profile-field-req">*</span>
+              </label>
               <input
-                id="interview-link"
-                value={interviewLink}
-                onChange={(e) => setInterviewLink(e.target.value)}
-                placeholder="Office address or meeting URL"
+                id="interview-at"
+                type="datetime-local"
+                value={interviewAt}
+                onChange={(e) => setInterviewAt(e.target.value)}
+                required
               />
             </div>
+          </div>
+          <div className="profile-field-wrap">
+            <label htmlFor="interview-link">Location or link</label>
+            <input
+              id="interview-link"
+              value={interviewLink}
+              onChange={(e) => setInterviewLink(e.target.value)}
+              placeholder="Office address or meeting URL"
+            />
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               type="button"
               className="btn btn-sm"
-              disabled={interviewMutation.isPending || !interviewAt}
+              disabled={interviewMutation.isPending || !canSubmitInterview}
+              title={
+                !canSubmitInterview
+                  ? 'Choose interview type and date/time first'
+                  : undefined
+              }
               onClick={() => interviewMutation.mutate()}
             >
-              {interviewMutation.isPending ? 'Scheduling…' : 'Schedule interview'}
+              {interviewMutation.isPending
+                ? 'Scheduling…'
+                : canEnterInterview
+                  ? 'Confirm schedule & set interview'
+                  : 'Schedule interview'}
             </button>
+            {schedulingInterview && canEnterInterview && (
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                disabled={interviewMutation.isPending}
+                onClick={() => setSchedulingInterview(false)}
+              >
+                Cancel
+              </button>
+            )}
           </div>
+        </div>
+      )}
 
-          <div className="pb-card stack">
-            <h3 className="pb-card-title">Message candidate</h3>
-            <div className="profile-field-wrap">
-              <label htmlFor="app-message">Message</label>
-              <textarea
-                id="app-message"
-                rows={4}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Send an update about this application…"
-              />
-            </div>
-            <button
-              type="button"
-              className="btn btn-sm"
-              disabled={messageMutation.isPending || !message.trim()}
-              onClick={() => messageMutation.mutate()}
-            >
-              {messageMutation.isPending ? 'Sending…' : 'Send message'}
-            </button>
-          </div>
-        </>
+      {user?.id && (
+        <ApplicationMessages
+          events={app.events}
+          viewerUserId={user.id}
+          counterpartUserId={app.candidate?.userId}
+          counterpartLabel={name || 'Candidate'}
+          canSend={app.status !== 'hired' && app.status !== 'withdrawn'}
+          sending={messageMutation.isPending}
+          placeholder="Send a message about this application…"
+          onSend={async (body) => {
+            await messageMutation.mutateAsync(body);
+          }}
+        />
       )}
 
       {app.interviews && app.interviews.length > 0 && (
@@ -465,11 +529,7 @@ export const CompanyApplicationDetailPage: React.FC = () => {
         </div>
       )}
 
-      <ApplicationTimeline
-        events={app.events}
-        messageTitle="Message"
-        emptyText="No events yet."
-      />
+      <ApplicationTimeline events={app.events} emptyText="No events yet." />
     </div>
   );
 };

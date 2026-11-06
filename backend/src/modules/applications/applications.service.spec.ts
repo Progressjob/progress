@@ -297,6 +297,27 @@ describe('ApplicationsService.changeStatus', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('blocks marking interview without scheduling', async () => {
+    const prisma = createPrismaMock();
+    prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });
+    prisma.application.findFirst.mockResolvedValue({
+      id: 'app-1',
+      status: 'reviewing',
+      candidateId: 'cand-1',
+      job: { title: 'Nurse', companyId: 'co-1' },
+      candidate: { userId: 'cand-user', user: { firstName: 'Sura', lastName: 'Nega' } },
+      events: [],
+      interviews: [],
+      answers: [],
+      resume: null,
+    });
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await expect(
+      service.changeStatus('owner-1', 'co-1', 'app-1', { status: 'interview' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('rejects with a reason and notifies the candidate', async () => {
     const prisma = createPrismaMock();
     prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });

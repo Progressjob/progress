@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { candidateApi } from '../api/candidate';
+import { useAuth } from '../auth/AuthContext';
+import { ApplicationMessages } from '../components/ApplicationMessages';
 import { ApplicationTimeline } from '../components/ApplicationTimeline';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import {
@@ -39,6 +41,7 @@ function shortWhen(iso: string): string {
 
 export const CandidateApplicationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const detailQuery = useQuery({
@@ -245,11 +248,16 @@ export const CandidateApplicationDetailPage: React.FC = () => {
         </div>
       )}
 
-      <ApplicationTimeline
-        events={app.events}
-        messageTitle="Message from employer"
-        emptyText="No updates yet."
-      />
+      {user?.id && (
+        <ApplicationMessages
+          events={app.events}
+          viewerUserId={user.id}
+          counterpartLabel={company}
+          canSend={false}
+        />
+      )}
+
+      <ApplicationTimeline events={app.events} emptyText="No updates yet." />
     </div>
   );
 };

@@ -314,6 +314,11 @@ export class ApplicationsService {
   ) {
     const application = await this.employerDetail(userId, companyId, id, roles);
     if (dto.status === 'withdrawn') throw new ForbiddenException('Only candidates can withdraw');
+    if (dto.status === 'interview') {
+      throw new BadRequestException(
+        'Schedule an interview with a date and time to move this application to interview',
+      );
+    }
     return this.changeStatusRecord(
       id,
       application.status,
@@ -367,18 +372,37 @@ export class ApplicationsService {
     roles?: string[],
   ) {
     const application = await this.employerDetail(userId, companyId, applicationId, roles);
+    const scheduledAt = new Date(dto.scheduledAt);
+    if (Number.isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('A valid interview date and time is required');
+    }
+    if (scheduledAt.getTime() < Date.now() - 60_000) {
+      throw new BadRequestException('Interview time must be in the future');
+    }
+    const canEnterInterview =
+      APPLICATION_TRANSITIONS[application.status].includes('interview');
+    const alreadyInInterview = application.status === 'interview';
+    if (!canEnterInterview && !alreadyInInterview) {
+      throw new BadRequestException(
+        `Cannot schedule an interview while the application is ${application.status}`,
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const interview = await tx.interview.create({
         data: {
           applicationId,
           scheduledBy: userId,
           interviewType: dto.interviewType,
-          scheduledAt: new Date(dto.scheduledAt),
-          locationOrLink: dto.locationOrLink,
+          scheduledAt,
+          locationOrLink: dto.locationOrLink?.trim() || null,
         },
       });
-      if (APPLICATION_TRANSITIONS[application.status].includes('interview')) {
-        await tx.application.update({ where: { id: applicationId }, data: { status: 'interview' } });
+      if (canEnterInterview) {
+        await tx.application.update({
+          where: { id: applicationId },
+          data: { status: 'interview' },
+        });
         await tx.applicationEvent.create({
           data: {
             applicationId,
@@ -389,12 +413,15 @@ export class ApplicationsService {
           },
         });
       }
-      const when = new Date(dto.scheduledAt).toLocaleString();
+      const when = scheduledAt.toLocaleString();
+      const typeLabel = dto.interviewType.replace(/_/g, ' ');
+      const place = dto.locationOrLink?.trim();
+      const placeSuffix = place ? ` Location/link: ${place.slice(0, 120)}` : '';
       await tx.notification.create({
         data: {
           userId: application.candidate.userId,
           title: 'Interview scheduled',
-          message: `Interview for ${application.job.title} is scheduled for ${when}`,
+          message: `Your interview for ${application.job.title} (${typeLabel}) is scheduled for ${when}.${placeSuffix}`,
           type: 'application_update',
           referenceType: 'application',
           referenceId: applicationId,
