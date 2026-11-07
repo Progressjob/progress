@@ -123,6 +123,7 @@ export const employerApi = {
     companyId: string,
     interviewId: string,
     payload: {
+      interviewType?: 'in_person' | 'phone' | 'video';
       scheduledAt?: string;
       locationOrLink?: string;
       status?: 'scheduled' | 'completed' | 'cancelled';

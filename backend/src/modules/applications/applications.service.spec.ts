@@ -86,7 +86,7 @@ describe('ApplicationsService.apply', () => {
             userId: 'owner-1',
             type: 'application_update',
             referenceType: 'candidates',
-            referenceId: 'co-1',
+            referenceId: 'co-1:app-1',
           }),
         ],
       }),
@@ -186,6 +186,7 @@ describe('ApplicationsService.apply', () => {
           expect.objectContaining({
             title: 'Application resubmitted',
             referenceType: 'candidates',
+            referenceId: 'co-1:app-1',
           }),
         ],
       }),

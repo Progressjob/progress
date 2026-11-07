@@ -44,7 +44,10 @@ describe('notifications', () => {
         userId: 'user-a',
         readAt: null,
         referenceType: 'candidates',
-        referenceId: 'co-1',
+        OR: [
+          { referenceId: 'co-1' },
+          { referenceId: { startsWith: 'co-1:' } },
+        ],
       },
       data: { readAt: expect.any(Date) },
     });
@@ -64,7 +67,10 @@ describe('notifications', () => {
         userId: 'user-a',
         readAt: null,
         referenceType: 'candidates',
-        referenceId: 'co-1',
+        OR: [
+          { referenceId: 'co-1' },
+          { referenceId: { startsWith: 'co-1:' } },
+        ],
       },
     });
   });

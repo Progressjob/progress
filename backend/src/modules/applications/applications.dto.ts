@@ -69,6 +69,10 @@ export class CreateInterviewDto {
 
 export class UpdateInterviewDto {
   @IsOptional()
+  @IsEnum(InterviewType)
+  interviewType?: InterviewType;
+
+  @IsOptional()
   @IsDateString()
   scheduledAt?: string;
 

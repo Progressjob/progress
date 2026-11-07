@@ -63,3 +63,19 @@ export const EMPLOYER_STATUS_ACTIONS: ApplicationStatus[] = [
   'hired',
   'rejected',
 ];
+
+/** Forward hiring pipeline — UI advances one step at a time. */
+export const APPLICATION_ADVANCE_PIPELINE: ApplicationStatus[] = [
+  'reviewing',
+  'shortlisted',
+  'interview',
+  'offered',
+  'hired',
+];
+
+/** Next single advance status from allowed transitions (skips are not offered in UI). */
+export function getNextAdvanceStatus(
+  allowed: ApplicationStatus[],
+): ApplicationStatus | null {
+  return APPLICATION_ADVANCE_PIPELINE.find((status) => allowed.includes(status)) ?? null;
+}

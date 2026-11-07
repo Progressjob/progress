@@ -156,7 +156,8 @@ export class ApplicationsService {
             message: `${who} resubmitted their application for ${job.title} after rejection. Open Review candidates to respond.`,
             type: 'application_update',
             referenceType: 'candidates',
-            referenceId: job.companyId,
+            // companyId:applicationId — badge scopes by company; Open details deep-links to the application
+            referenceId: `${job.companyId}:${application.id}`,
           });
 
           return application;
@@ -189,7 +190,8 @@ export class ApplicationsService {
           message: `${who} applied for ${job.title}. Open Review candidates to respond.`,
           type: 'application_update',
           referenceType: 'candidates',
-          referenceId: job.companyId,
+          // companyId:applicationId — badge scopes by company; Open details deep-links to the application
+          referenceId: `${job.companyId}:${application.id}`,
         });
 
         return application;
@@ -446,11 +448,26 @@ export class ApplicationsService {
       },
     });
     if (!interview) throw new NotFoundException();
+    const scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : undefined;
+    if (scheduledAt) {
+      if (Number.isNaN(scheduledAt.getTime())) {
+        throw new BadRequestException('A valid interview date and time is required');
+      }
+      if (scheduledAt.getTime() < Date.now() - 60_000) {
+        throw new BadRequestException('Interview time must be in the future');
+      }
+    }
     return this.prisma.interview.update({
       where: { id },
       data: {
-        ...dto,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+        interviewType: dto.interviewType,
+        locationOrLink:
+          dto.locationOrLink === undefined
+            ? undefined
+            : dto.locationOrLink.trim() || null,
+        status: dto.status,
+        feedback: dto.feedback,
+        scheduledAt,
       },
     });
   }

@@ -685,7 +685,8 @@ model Notification {
   message       String
   type          String    @db.VarChar(50)
   referenceType String?   @map("reference_type") @db.VarChar(50)
-  referenceId   String?   @map("reference_id") @db.Uuid
+  /// UUID, or `companyId:applicationId` for candidate-review deep links
+  referenceId   String?   @map("reference_id") @db.VarChar(100)
   readAt        DateTime? @map("read_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)

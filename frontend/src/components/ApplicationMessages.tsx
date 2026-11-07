@@ -53,14 +53,6 @@ export const ApplicationMessages: React.FC<ApplicationMessagesProps> = ({
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  useEffect(() => {
-    if (window.location.hash !== '#messages') return;
-    document.getElementById('application-messages')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
-  }, []);
-
   const submit = async () => {
     const body = draft.trim();
     if (!body || sending || !onSend) return;

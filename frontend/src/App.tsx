@@ -57,11 +57,24 @@ function EmployerLegacyRedirect(): React.ReactElement {
 }
 
 function ScrollToTop(): null {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    // Notification links used to append #messages, which left users in the footer.
+    // Always land at the top of the page for route changes.
     window.scrollTo(0, 0);
-  }, [pathname]);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (hash === '#messages') {
+      window.history.replaceState(null, '', pathname + window.location.search);
+    }
+  }, [pathname, hash]);
 
   return null;
 }

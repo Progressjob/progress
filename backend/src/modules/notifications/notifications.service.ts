@@ -207,10 +207,7 @@ export class NotificationsService {
       where: {
         userId,
         readAt: null,
-        ...(filters?.referenceType
-          ? { referenceType: filters.referenceType }
-          : {}),
-        ...(filters?.referenceId ? { referenceId: filters.referenceId } : {}),
+        ...this.referenceFilter(filters?.referenceType, filters?.referenceId),
       },
     });
   }
@@ -230,11 +227,34 @@ export class NotificationsService {
       where: {
         userId,
         readAt: null,
-        referenceType,
-        referenceId,
+        ...this.referenceFilter(referenceType, referenceId),
       },
       data: { readAt: new Date() },
     });
+  }
+
+  /**
+   * Candidate-review alerts use `companyId` or `companyId:applicationId`.
+   * Scope by company so badges / mark-read cover both shapes.
+   */
+  private referenceFilter(
+    referenceType?: string,
+    referenceId?: string,
+  ): Prisma.NotificationWhereInput {
+    if (!referenceType && !referenceId) return {};
+    if (referenceType === 'candidates' && referenceId) {
+      return {
+        referenceType,
+        OR: [
+          { referenceId },
+          { referenceId: { startsWith: `${referenceId}:` } },
+        ],
+      };
+    }
+    return {
+      ...(referenceType ? { referenceType } : {}),
+      ...(referenceId ? { referenceId } : {}),
+    };
   }
 
   private categoryWhere(
