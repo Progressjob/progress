@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CreateAdminJobPayload } from '../../api/admin';
 import { taxonomyApi } from '../../api/taxonomy';
@@ -72,6 +72,14 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
   hideDeadline,
   idPrefix = 'adm',
 }) => {
+  const [vacanciesDraft, setVacanciesDraft] = useState(() =>
+    String(Math.max(1, Number(value.vacanciesCount) || 1)),
+  );
+
+  useEffect(() => {
+    setVacanciesDraft(String(Math.max(1, Number(value.vacanciesCount) || 1)));
+  }, [value.vacanciesCount]);
+
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
     queryFn: () => taxonomyApi.categories(),
@@ -339,12 +347,33 @@ export const AdminJobFormFields: React.FC<AdminJobFormFieldsProps> = ({
               </label>
               <input
                 id={`${idPrefix}-vac`}
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
+                pattern="[1-9][0-9]*"
+                autoComplete="off"
                 required
-                value={value.vacanciesCount}
-                onChange={(e) => set({ vacanciesCount: Math.max(1, Number(e.target.value) || 1) })}
+                aria-describedby={`${idPrefix}-vac-hint`}
+                value={vacanciesDraft}
+                onChange={(e) => {
+                  // Digits only — block letters, decimals, signs, and leading zeros / 0
+                  const digits = e.target.value.replace(/\D/g, '');
+                  const cleaned = digits.replace(/^0+/, '');
+                  const nextDraft =
+                    cleaned === '' ? '' : String(Math.min(Number.parseInt(cleaned, 10), 10000));
+                  setVacanciesDraft(nextDraft);
+                  if (nextDraft === '') return;
+                  set({ vacanciesCount: Number.parseInt(nextDraft, 10) });
+                }}
+                onBlur={() => {
+                  const n = Number.parseInt(vacanciesDraft, 10);
+                  const next = Number.isFinite(n) && n >= 1 ? Math.min(n, 10000) : 1;
+                  setVacanciesDraft(String(next));
+                  if (value.vacanciesCount !== next) set({ vacanciesCount: next });
+                }}
               />
+              <p id={`${idPrefix}-vac-hint`} className="muted" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem' }}>
+                Whole number, at least 1.
+              </p>
             </div>
           </div>
         </div>

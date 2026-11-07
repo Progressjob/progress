@@ -44,6 +44,17 @@ export function assertApplicationTransition(
   }
 }
 
+/** Rejected always; hired only after employer republish bumps postedAt past the hire. */
+export function canReapplyExistingApplication(
+  existing: { status: ApplicationStatus; updatedAt: Date },
+  job: { postedAt: Date | null },
+): boolean {
+  if (existing.status === 'rejected') return true;
+  if (existing.status !== 'hired') return false;
+  if (!job.postedAt) return false;
+  return job.postedAt.getTime() > existing.updatedAt.getTime();
+}
+
 function isStaff(roles?: string[]): boolean {
   return Boolean(roles?.some((role) => role === 'admin' || role === 'moderator'));
 }
@@ -100,7 +111,10 @@ export class ApplicationsService {
     const existing = await this.prisma.application.findUnique({
       where: { jobId_candidateId: { jobId, candidateId: candidate.id } },
     });
-    if (existing && existing.status !== 'rejected') {
+    const reapply = Boolean(
+      existing && canReapplyExistingApplication(existing, job),
+    );
+    if (existing && !reapply) {
       throw new ConflictException('You have already applied to this job');
     }
 
@@ -125,7 +139,7 @@ export class ApplicationsService {
           [candidateName?.firstName, candidateName?.lastName].filter(Boolean).join(' ') ||
           'A candidate';
 
-        if (existing?.status === 'rejected') {
+        if (existing && reapply) {
           await tx.applicationAnswer.deleteMany({ where: { applicationId: existing.id } });
           const application = await tx.application.update({
             where: { id: existing.id },
@@ -141,19 +155,24 @@ export class ApplicationsService {
             include,
           });
 
+          const afterHire = existing.status === 'hired';
           await tx.applicationEvent.create({
             data: {
               applicationId: application.id,
               changedBy: userId,
-              oldStatus: 'rejected',
+              oldStatus: existing.status,
               newStatus: 'submitted',
-              note: 'Application resubmitted',
+              note: afterHire
+                ? 'Application resubmitted after vacancy republish'
+                : 'Application resubmitted',
             },
           });
 
           await notifyCompanyMembers(tx, job.companyId, {
             title: 'Application resubmitted',
-            message: `${who} resubmitted their application for ${job.title} after rejection. Open Review candidates to respond.`,
+            message: afterHire
+              ? `${who} reapplied for ${job.title} after the vacancy was republished. Open Review candidates to respond.`
+              : `${who} resubmitted their application for ${job.title} after rejection. Open Review candidates to respond.`,
             type: 'application_update',
             referenceType: 'candidates',
             // companyId:applicationId — badge scopes by company; Open details deep-links to the application
@@ -550,6 +569,21 @@ export class ApplicationsService {
           referenceType: 'job',
           referenceId: opts.jobId,
         });
+      }
+
+      if (newStatus === 'hired') {
+        const hiredCount = await tx.application.count({
+          where: { jobId: application.jobId, status: 'hired' },
+        });
+        if (
+          hiredCount >= application.job.vacanciesCount &&
+          application.job.status === 'published'
+        ) {
+          await tx.job.update({
+            where: { id: application.jobId },
+            data: { status: 'closed' },
+          });
+        }
       }
 
       return application;

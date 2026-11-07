@@ -79,3 +79,17 @@ export function getNextAdvanceStatus(
 ): ApplicationStatus | null {
   return APPLICATION_ADVANCE_PIPELINE.find((status) => allowed.includes(status)) ?? null;
 }
+
+/**
+ * Rejected always; hired only after employer republish bumps postedAt past the hire.
+ * Matches backend `canReapplyExistingApplication`.
+ */
+export function canReapplyExistingApplication(
+  existing: { status: string; updatedAt?: string | null },
+  job: { postedAt?: string | null },
+): boolean {
+  if (existing.status === 'rejected') return true;
+  if (existing.status !== 'hired') return false;
+  if (!job.postedAt || !existing.updatedAt) return false;
+  return new Date(job.postedAt).getTime() > new Date(existing.updatedAt).getTime();
+}

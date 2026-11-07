@@ -9,6 +9,11 @@ import { CandidateApplicationsBlockedNotice } from '../components/CandidateAppli
 import { EthiopianPhoneInput } from '../components/EthiopianPhoneInput';
 import type { CandidateResume } from '../types/api';
 import {
+  applicationStatusBadgeClass,
+  applicationStatusLabel,
+  canReapplyExistingApplication,
+} from '../utils/applicationStatus';
+import {
   isValidEthiopianMobile,
   toEthiopianE164,
   toEthiopianLocalDigits,
@@ -68,6 +73,12 @@ export const ApplyJobPage: React.FC = () => {
     return applicationsQuery.data?.find((a) => a.jobId === jobId) ?? null;
   }, [applicationsQuery.data, jobQuery.data?.id]);
 
+  const isReapply = Boolean(
+    existingForJob &&
+      jobQuery.data &&
+      canReapplyExistingApplication(existingForJob, jobQuery.data),
+  );
+
   const existingDetailQuery = useQuery({
     queryKey: ['candidate', 'applications', existingForJob?.id],
     queryFn: () => candidateApi.getApplication(existingForJob!.id),
@@ -81,9 +92,8 @@ export const ApplyJobPage: React.FC = () => {
     [resumes],
   );
 
-  const isReapply = existingForJob?.status === 'rejected';
   const activeApplication =
-    existingForJob && existingForJob.status !== 'rejected' ? existingForJob : null;
+    existingForJob && !isReapply ? existingForJob : null;
   const rejectionReason = useMemo(() => {
     const events = existingDetailQuery.data?.events;
     if (!events?.length) return null;
@@ -238,18 +248,32 @@ export const ApplyJobPage: React.FC = () => {
   }
 
   if (activeApplication) {
+    const hired = activeApplication.status === 'hired';
     return (
       <div className="job-detail-page">
         <div className="job-detail-container" style={{ maxWidth: 720 }}>
           <BackButton fallback={`/jobs/${slug}`} />
           <div className="pb-card stack">
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Already applied</h1>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
+                {hired ? 'You were hired' : 'Already applied'}
+              </h1>
+              <span className={applicationStatusBadgeClass(activeApplication.status)}>
+                {applicationStatusLabel(activeApplication.status)}
+              </span>
+            </div>
             <p style={{ margin: 0 }}>
-              You already have an application for this vacancy
-              {activeApplication.status
-                ? ` (status: ${activeApplication.status.replace(/_/g, ' ')})`
-                : ''}
-              .
+              {hired
+                ? 'This vacancy already shows you as hired. If the employer republishes the role, you can apply again.'
+                : `You already have an application for this vacancy (status: ${applicationStatusLabel(activeApplication.status)}).`}
             </p>
             <Link to={`/candidate/applications/${activeApplication.id}`} className="btn btn-sm">
               View application
@@ -268,6 +292,25 @@ export const ApplyJobPage: React.FC = () => {
   const questions = job.screeningQuestions ?? [];
   const canSubmit = Boolean(resumeId) && isValidEthiopianMobile(phone);
 
+  if (job.status === 'closed') {
+    return (
+      <div className="job-detail-page">
+        <div className="job-detail-container" style={{ maxWidth: 720 }}>
+          <BackButton fallback={`/jobs/${slug}`} />
+          <div className="pb-card stack">
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Vacancy closed</h1>
+            <p style={{ margin: 0 }}>
+              This position is no longer accepting applications.
+            </p>
+            <Link to={`/jobs/${slug}`} className="btn btn-sm">
+              View vacancy
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="job-detail-page">
       <div className="job-detail-container" style={{ maxWidth: 720 }}>
@@ -285,7 +328,19 @@ export const ApplyJobPage: React.FC = () => {
           </p>
         </header>
 
-        {isReapply && (
+        {isReapply && existingForJob?.status === 'hired' && (
+          <div className="pb-card stack" style={{ marginBottom: '1rem' }}>
+            <h3 className="pb-card-title" style={{ margin: 0 }}>
+              Vacancy republished
+            </h3>
+            <p style={{ margin: 0 }}>
+              You were previously hired on an earlier posting of this role. The employer
+              republished it — submit a new application below.
+            </p>
+          </div>
+        )}
+
+        {isReapply && existingForJob?.status === 'rejected' && (
           <div className="pb-card stack" style={{ marginBottom: '1rem' }}>
             <h3 className="pb-card-title" style={{ margin: 0 }}>
               Previously rejected

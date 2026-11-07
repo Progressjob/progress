@@ -10,6 +10,7 @@ import {
   TERMINAL_APPLICATION_STATUSES,
   applicationStatusBadgeClassFor,
   applicationStatusLabel,
+  canReapplyExistingApplication,
 } from '../utils/applicationStatus';
 
 function prettyEnum(value?: string | null): string | null {
@@ -81,7 +82,10 @@ export const CandidateApplicationDetailPage: React.FC = () => {
   const vacancyMeta = [location, employment, workplace, category].filter(Boolean);
   const logoId = app.job?.company?.logo?.id ?? app.job?.company?.logoFileId ?? null;
   const rejectionReason = latestRejectionReason(app.events);
-  const canReapply = app.status === 'rejected' && Boolean(app.job?.slug);
+  const canReapply =
+    Boolean(app.job?.slug) &&
+    app.job?.status === 'published' &&
+    canReapplyExistingApplication(app, app.job);
   const reapplyHref = canReapply ? `/jobs/${app.job!.slug}/apply` : null;
 
   return (

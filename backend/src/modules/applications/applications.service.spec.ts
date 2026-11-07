@@ -4,7 +4,11 @@ import {
   ForbiddenException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ApplicationsService, assertApplicationTransition } from './applications.service';
+import {
+  ApplicationsService,
+  assertApplicationTransition,
+  canReapplyExistingApplication,
+} from './applications.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 function futureDeadline(): Date {
@@ -22,7 +26,7 @@ function pastDeadline(): Date {
 function createPrismaMock() {
   const prisma: any = {
     candidateProfile: { findUnique: vi.fn() },
-    job: { findUnique: vi.fn() },
+    job: { findUnique: vi.fn(), update: vi.fn() },
     candidateResume: { findFirst: vi.fn() },
     application: {
       findUnique: vi.fn(),
@@ -30,6 +34,7 @@ function createPrismaMock() {
       create: vi.fn(),
       update: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
     },
     applicationAnswer: { deleteMany: vi.fn() },
     applicationEvent: { create: vi.fn() },
@@ -377,5 +382,176 @@ describe('application transitions', () => {
 
   it('blocks terminal moves', () => {
     expect(() => assertApplicationTransition('hired', 'rejected')).toThrow();
+  });
+});
+
+describe('canReapplyExistingApplication', () => {
+  it('allows rejected always', () => {
+    expect(
+      canReapplyExistingApplication(
+        { status: 'rejected', updatedAt: new Date('2026-01-01') },
+        { postedAt: new Date('2025-01-01') },
+      ),
+    ).toBe(true);
+  });
+
+  it('allows hired only after republish bumps postedAt', () => {
+    expect(
+      canReapplyExistingApplication(
+        { status: 'hired', updatedAt: new Date('2026-01-10') },
+        { postedAt: new Date('2026-01-01') },
+      ),
+    ).toBe(false);
+    expect(
+      canReapplyExistingApplication(
+        { status: 'hired', updatedAt: new Date('2026-01-10') },
+        { postedAt: new Date('2026-02-01') },
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('ApplicationsService.changeStatus fill-close', () => {
+  it('closes the job when hired count reaches vacanciesCount', async () => {
+    const prisma = createPrismaMock();
+    prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });
+    prisma.application.findFirst.mockResolvedValue({
+      id: 'app-1',
+      status: 'offered',
+      candidateId: 'cand-1',
+      jobId: 'job-1',
+      job: { title: 'Nurse', companyId: 'co-1', vacanciesCount: 1, status: 'published' },
+      candidate: { userId: 'cand-user', user: { firstName: 'Sura', lastName: 'Nega' } },
+      events: [],
+      interviews: [],
+      answers: [],
+      resume: null,
+    });
+    prisma.application.update.mockResolvedValue({
+      id: 'app-1',
+      status: 'hired',
+      jobId: 'job-1',
+      candidate: { userId: 'cand-user' },
+      job: { title: 'Nurse', vacanciesCount: 1, status: 'published' },
+    });
+    prisma.application.count.mockResolvedValue(1);
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await service.changeStatus('owner-1', 'co-1', 'app-1', { status: 'hired' });
+
+    expect(prisma.application.count).toHaveBeenCalledWith({
+      where: { jobId: 'job-1', status: 'hired' },
+    });
+    expect(prisma.job.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'closed' },
+    });
+  });
+
+  it('leaves the job published when openings remain', async () => {
+    const prisma = createPrismaMock();
+    prisma.companyMember.findFirst.mockResolvedValue({ id: 'mem-1' });
+    prisma.application.findFirst.mockResolvedValue({
+      id: 'app-1',
+      status: 'offered',
+      candidateId: 'cand-1',
+      jobId: 'job-1',
+      job: { title: 'Nurse', companyId: 'co-1', vacanciesCount: 2, status: 'published' },
+      candidate: { userId: 'cand-user', user: { firstName: 'Sura', lastName: 'Nega' } },
+      events: [],
+      interviews: [],
+      answers: [],
+      resume: null,
+    });
+    prisma.application.update.mockResolvedValue({
+      id: 'app-1',
+      status: 'hired',
+      jobId: 'job-1',
+      candidate: { userId: 'cand-user' },
+      job: { title: 'Nurse', vacanciesCount: 2, status: 'published' },
+    });
+    prisma.application.count.mockResolvedValue(1);
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await service.changeStatus('owner-1', 'co-1', 'app-1', { status: 'hired' });
+
+    expect(prisma.job.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('ApplicationsService.apply hired reapply', () => {
+  it('blocks hired reapply before republish', async () => {
+    const prisma = createPrismaMock();
+    prisma.candidateProfile.findUnique.mockResolvedValue({
+      id: 'cand-1',
+      userId: 'user-1',
+      applicationsBlocked: false,
+    });
+    prisma.job.findUnique.mockResolvedValue({
+      id: 'job-1',
+      title: 'Nurse',
+      status: 'published',
+      companyId: 'co-1',
+      postedAt: new Date('2026-01-01'),
+      applicationDeadline: futureDeadline(),
+      company: { members: [] },
+      screeningQuestions: [],
+    });
+    prisma.application.findUnique.mockResolvedValue({
+      id: 'app-1',
+      status: 'hired',
+      updatedAt: new Date('2026-01-15'),
+    });
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    await expect(service.apply('user-1', 'job-1', { answers: [] })).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it('allows hired reapply after republish bumps postedAt', async () => {
+    const prisma = createPrismaMock();
+    prisma.candidateProfile.findUnique.mockResolvedValue({
+      id: 'cand-1',
+      userId: 'user-1',
+      applicationsBlocked: false,
+    });
+    prisma.job.findUnique.mockResolvedValue({
+      id: 'job-1',
+      title: 'Nurse',
+      status: 'published',
+      companyId: 'co-1',
+      postedAt: new Date('2026-02-01'),
+      applicationDeadline: futureDeadline(),
+      company: { members: [{ userId: 'owner-1' }] },
+      screeningQuestions: [],
+    });
+    prisma.application.findUnique.mockResolvedValue({
+      id: 'app-1',
+      status: 'hired',
+      updatedAt: new Date('2026-01-15'),
+    });
+    prisma.application.update.mockResolvedValue({
+      id: 'app-1',
+      jobId: 'job-1',
+      candidateId: 'cand-1',
+      status: 'submitted',
+    });
+    prisma.user.findUnique.mockResolvedValue({ firstName: 'Sura', lastName: 'Nega' });
+    prisma.companyMember.findMany.mockResolvedValue([{ userId: 'owner-1' }]);
+
+    const service = new ApplicationsService(prisma as unknown as PrismaService);
+    const result = await service.apply('user-1', 'job-1', { answers: [] });
+
+    expect(result.id).toBe('app-1');
+    expect(prisma.applicationEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          oldStatus: 'hired',
+          newStatus: 'submitted',
+          note: 'Application resubmitted after vacancy republish',
+        }),
+      }),
+    );
   });
 });
