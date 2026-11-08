@@ -1,0 +1,95 @@
+import type { ApplicationStatus } from '../types/api';
+
+export const APPLICATION_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
+  submitted: ['reviewing', 'shortlisted', 'rejected', 'withdrawn'],
+  reviewing: ['shortlisted', 'interview', 'rejected', 'withdrawn'],
+  shortlisted: ['interview', 'offered', 'rejected', 'withdrawn'],
+  interview: ['offered', 'rejected', 'withdrawn'],
+  offered: ['hired', 'rejected', 'withdrawn'],
+  hired: [],
+  rejected: [],
+  withdrawn: [],
+};
+
+export const TERMINAL_APPLICATION_STATUSES = new Set<ApplicationStatus>([
+  'hired',
+  'rejected',
+  'withdrawn',
+]);
+
+export function formatApplicationStatus(status: string): string {
+  return status.replace(/_/g, ' ');
+}
+
+export function applicationStatusBadgeClass(status: string): string {
+  if (status === 'rejected') return 'badge badge-danger';
+  if (status === 'hired') return 'badge badge-success';
+  if (status === 'withdrawn') return 'badge badge-outline';
+  return 'badge badge-info';
+}
+
+/** One badge only: first apply → status; resubmit while submitted → "Resubmitted". */
+export function applicationStatusLabel(
+  status: string,
+  resubmittedAt?: string | null,
+): string {
+  if (resubmittedAt && status === 'submitted') return 'Resubmitted';
+  return formatApplicationStatus(status);
+}
+
+export function applicationStatusBadgeClassFor(
+  status: string,
+  resubmittedAt?: string | null,
+): string {
+  if (resubmittedAt && status === 'submitted') return 'badge badge-outline';
+  return applicationStatusBadgeClass(status);
+}
+
+export function applicationStatusPillClass(
+  status: string,
+  resubmittedAt?: string | null,
+): string {
+  if (resubmittedAt && status === 'submitted') {
+    return 'emp-inbox-pill emp-inbox-pill--resubmitted';
+  }
+  return `emp-inbox-pill emp-inbox-pill--${status}`;
+}
+
+export const EMPLOYER_STATUS_ACTIONS: ApplicationStatus[] = [
+  'reviewing',
+  'shortlisted',
+  'interview',
+  'offered',
+  'hired',
+  'rejected',
+];
+
+/** Forward hiring pipeline — UI advances one step at a time. */
+export const APPLICATION_ADVANCE_PIPELINE: ApplicationStatus[] = [
+  'reviewing',
+  'shortlisted',
+  'interview',
+  'offered',
+  'hired',
+];
+
+/** Next single advance status from allowed transitions (skips are not offered in UI). */
+export function getNextAdvanceStatus(
+  allowed: ApplicationStatus[],
+): ApplicationStatus | null {
+  return APPLICATION_ADVANCE_PIPELINE.find((status) => allowed.includes(status)) ?? null;
+}
+
+/**
+ * Rejected always; hired only after employer republish bumps postedAt past the hire.
+ * Matches backend `canReapplyExistingApplication`.
+ */
+export function canReapplyExistingApplication(
+  existing: { status: string; updatedAt?: string | null },
+  job: { postedAt?: string | null },
+): boolean {
+  if (existing.status === 'rejected') return true;
+  if (existing.status !== 'hired') return false;
+  if (!job.postedAt || !existing.updatedAt) return false;
+  return new Date(job.postedAt).getTime() > new Date(existing.updatedAt).getTime();
+}

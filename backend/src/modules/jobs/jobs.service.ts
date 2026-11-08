@@ -372,7 +372,14 @@ export class JobsService {
 
   async publicDetail(slug: string, sessionId?: string, source?: string) {
     const job = await this.prisma.job.findFirst({
-      where: { slug, status: 'published', applicationDeadline: { gte: this.today() } },
+      where: {
+        slug,
+        OR: [
+          { status: 'published', applicationDeadline: { gte: this.today() } },
+          // Closed (filled or ended) still viewable via direct / View vacancy links
+          { status: 'closed' },
+        ],
+      },
       include: {
         company: { include: { logo: true, industry: true } },
         category: true,
@@ -382,7 +389,7 @@ export class JobsService {
       },
     });
     if (!job) throw new NotFoundException('Job not found');
-    if (sessionId) {
+    if (sessionId && job.status === 'published') {
       const since = new Date(Date.now() - 86_400_000);
       const exists = await this.prisma.jobView.findFirst({
         where: { jobId: job.id, sessionId, viewedAt: { gte: since } },

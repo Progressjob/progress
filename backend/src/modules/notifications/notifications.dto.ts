@@ -66,6 +66,26 @@ export class ListNotificationsQueryDto {
   limit?: number;
 }
 
+export class MarkNotificationsByReferenceDto {
+  @IsString()
+  @Length(1, 64)
+  referenceType!: string;
+
+  @IsUUID()
+  referenceId!: string;
+}
+
+export class UnreadCountQueryDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  referenceType?: string;
+
+  @IsOptional()
+  @IsUUID()
+  referenceId?: string;
+}
+
 export class NotificationPreferenceDto {
   @IsString()
   notificationType!: string;

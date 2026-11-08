@@ -33,6 +33,17 @@ export function isCompanyCvSearch(pathname: string, companyId?: string): boolean
   return /^\/company\/[^/]+\/cv-search(?:\/|$)/.test(pathname);
 }
 
+export function isCompanyReviewCandidates(pathname: string, companyId?: string): boolean {
+  if (!companyId) return /^\/company\/[^/]+\/candidates(?:\/|$)/.test(pathname)
+    || /^\/company\/[^/]+\/jobs\/[^/]+\/applications(?:\/|$)/.test(pathname)
+    || /^\/company\/[^/]+\/applications(?:\/|$)/.test(pathname);
+  return (
+    isSectionPath(pathname, `/company/${companyId}/candidates`) ||
+    new RegExp(`^/company/${companyId}/jobs/[^/]+/applications(?:/|$)`).test(pathname) ||
+    new RegExp(`^/company/${companyId}/applications(?:/|$)`).test(pathname)
+  );
+}
+
 export function isAdminCvSearch(pathname: string): boolean {
   return isSectionPath(pathname, '/admin/cv-search');
 }

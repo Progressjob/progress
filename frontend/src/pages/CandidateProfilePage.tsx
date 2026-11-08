@@ -11,11 +11,13 @@ import {
   WORK_STATUS_OPTIONS,
 } from '../constants/candidateProfile';
 import { EDUCATION_LEVELS } from '../constants/educationLevels';
+import { EthiopianPhoneInput } from '../components/EthiopianPhoneInput';
 import {
   experienceStageSelectValue,
   hasNoExperienceFlag,
   workStatusSelectValue,
 } from '../utils/candidateProfile';
+import { isValidEthiopianMobile, toEthiopianE164 } from '../utils/ethiopianPhone';
 import type {
   CandidateCertification,
   CandidateEducation,
@@ -226,8 +228,12 @@ export const CandidateProfilePage: React.FC = () => {
   };
 
   const saveProfile = useMutation({
-    mutationFn: () =>
-      candidateApi.updateProfile({
+    mutationFn: () => {
+      const normalizedPhone = phone.trim() ? toEthiopianE164(phone) : '';
+      if (phone.trim() && (!normalizedPhone || !isValidEthiopianMobile(phone))) {
+        throw new Error('Enter a valid Ethiopian mobile number (9 digits starting with 7 or 9).');
+      }
+      return candidateApi.updateProfile({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         gender: gender.trim() || null,
@@ -239,9 +245,10 @@ export const CandidateProfilePage: React.FC = () => {
         city: city.trim() || null,
         region: region.trim() || null,
         country: country.trim() || null,
-        phone: phone.trim(),
+        phone: normalizedPhone || '',
         availabilityStatus: workStatus || null,
-      }),
+      });
+    },
     onSuccess: async () => {
       setActionError(null);
       closePanel();
@@ -908,7 +915,7 @@ export const CandidateProfilePage: React.FC = () => {
               </div>
               <div className="field">
                 <label htmlFor="pb-phone">Phone</label>
-                <input id="pb-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <EthiopianPhoneInput id="pb-phone" value={phone} onChange={setPhone} />
               </div>
               <div className="field pb-span-2">
                 <label htmlFor="pb-headline">Profession</label>

@@ -8,9 +8,11 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -46,6 +48,13 @@ export class ChangeApplicationStatusDto {
   note?: string;
 }
 
+export class SendApplicationMessageDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4000)
+  body!: string;
+}
+
 export class CreateInterviewDto {
   @IsEnum(InterviewType)
   interviewType!: InterviewType;
@@ -59,6 +68,10 @@ export class CreateInterviewDto {
 }
 
 export class UpdateInterviewDto {
+  @IsOptional()
+  @IsEnum(InterviewType)
+  interviewType?: InterviewType;
+
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;

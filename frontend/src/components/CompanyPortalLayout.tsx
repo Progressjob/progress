@@ -9,11 +9,13 @@ import {
   isCompanyEditJob,
   isCompanyJobsList,
   isCompanyPostJob,
+  isCompanyReviewCandidates,
   isExactPath,
   navActive,
 } from '../auth/nav';
 import { employerHomeDestination, employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
+import { notificationsApi } from '../api/notifications';
 import { AdminContactCard } from './AdminContactCard';
 import { WorkspaceSwitch } from './WorkspaceSwitch';
 
@@ -39,6 +41,18 @@ export const CompanyPortalLayout: React.FC = () => {
     queryKey: ['company', 'jobs', companyId],
     queryFn: () => employerApi.listJobs(companyId!),
     enabled: Boolean(companyId),
+    refetchInterval: 30_000,
+  });
+
+  const reviewUnreadQuery = useQuery({
+    queryKey: ['notifications', user?.id, 'unread', 'candidates', companyId],
+    queryFn: () =>
+      notificationsApi.unread({
+        referenceType: 'candidates',
+        referenceId: companyId!,
+      }),
+    enabled: Boolean(user && companyId),
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
@@ -48,6 +62,7 @@ export const CompanyPortalLayout: React.FC = () => {
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
   const jobs = jobsQuery.data ?? [];
+  const reviewUnreadCount = reviewUnreadQuery.data ?? 0;
 
   const showAdminContact = useMemo(() => {
     if (companiesQuery.isLoading) return false;
@@ -138,6 +153,20 @@ export const CompanyPortalLayout: React.FC = () => {
                   className={() => navActive(isCompanyPostJob(location.pathname, companyId))}
                 >
                   Post a job
+                </NavLink>
+                <NavLink
+                  to={`/company/${companyId}/candidates`}
+                  className={() => navActive(isCompanyReviewCandidates(location.pathname, companyId))}
+                >
+                  Review candidates
+                  {reviewUnreadCount > 0 && (
+                    <span
+                      className="nav-count-badge"
+                      aria-label={`${reviewUnreadCount} new applicant notifications`}
+                    >
+                      {reviewUnreadCount > 99 ? '99+' : reviewUnreadCount}
+                    </span>
+                  )}
                 </NavLink>
               </>
             ) : (

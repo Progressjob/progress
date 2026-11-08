@@ -168,6 +168,7 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     throw new Error('Enter how candidates should contact you.');
   }
 
+  const vacancies = Math.floor(Number(form.vacanciesCount));
   return {
     ...form,
     description: responsibilities ?? '',
@@ -175,6 +176,8 @@ export function sanitizeJobPayload(form: CreateAdminJobPayload): CreateAdminJobP
     requirements: trim(form.requirements),
     educationRequirement: trim(normalizeEducationRequirement(form.educationRequirement)),
     locationId: form.locationId || undefined,
+    vacanciesCount:
+      Number.isFinite(vacancies) && vacancies >= 1 ? Math.min(vacancies, 10000) : 1,
     applicationMethod: form.applicationMethod,
     applicationEmail:
       form.applicationMethod === 'admin' ? PROGRESS_HIRE_EMAIL : applicationEmail,

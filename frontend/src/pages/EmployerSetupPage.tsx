@@ -7,8 +7,10 @@ import { destinationAfterHire } from '../auth/workspace';
 import { ApiError } from '../api/client';
 import { filesApi, publicFileUrl } from '../api/files';
 import { employerApi } from '../api/employer';
+import { EthiopianPhoneInput } from '../components/EthiopianPhoneInput';
 import { ProgressLogo } from '../components/ProgressLogo';
 import { COMPANY_SIZE_OPTIONS } from '../constants/companySize';
+import { isValidEthiopianMobile, toEthiopianE164 } from '../utils/ethiopianPhone';
 
 export const EmployerSetupPage: React.FC = () => {
   const { user, loading: authLoading, enableEmployer, setWorkspace } = useAuth();
@@ -73,9 +75,9 @@ export const EmployerSetupPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    const cleanPhone = phone.trim();
-    if (!cleanPhone || cleanPhone.length < 9) {
-      setError('A valid phone number (at least 9 digits) is strictly required.');
+    const cleanPhone = toEthiopianE164(phone);
+    if (!cleanPhone || !isValidEthiopianMobile(phone)) {
+      setError('Enter a valid Ethiopian mobile number (9 digits starting with 7 or 9).');
       return;
     }
     if (!logoFileId) {
@@ -238,14 +240,11 @@ export const EmployerSetupPage: React.FC = () => {
             </div>
             <div className="form-input-group">
               <label htmlFor="employer-phone">Phone *</label>
-              <input
+              <EthiopianPhoneInput
                 id="employer-phone"
-                type="tel"
-                required
-                minLength={9}
-                placeholder="+251 9... (Strictly required)"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={setPhone}
+                required
               />
             </div>
           </div>

@@ -6,7 +6,7 @@ export function NotificationBell() {
   const { user, hasRole } = useAuth();
   const query = useQuery({
     queryKey: ["notifications", user?.id, "unread"],
-    queryFn: notificationsApi.unread,
+    queryFn: () => notificationsApi.unread(),
     enabled: Boolean(user),
     refetchInterval: 30000,
   });

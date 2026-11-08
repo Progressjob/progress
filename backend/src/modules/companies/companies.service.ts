@@ -63,7 +63,17 @@ export class CompaniesService {
       take: Math.min(limit, 100),
       select: {
         ...this.publicCompanySelect,
-        _count: { select: { jobs: true } },
+        _count: {
+          select: {
+            // Match public open listings (exclude closed / expired / drafts)
+            jobs: {
+              where: {
+                status: 'published',
+                applicationDeadline: { gte: new Date() },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -76,6 +86,16 @@ export class CompaniesService {
         jobs: {
           where: { status: 'published', applicationDeadline: { gte: new Date() } },
           orderBy: { postedAt: 'desc' },
+        },
+        _count: {
+          select: {
+            jobs: {
+              where: {
+                status: 'published',
+                applicationDeadline: { gte: new Date() },
+              },
+            },
+          },
         },
       },
     });

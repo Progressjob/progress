@@ -10,7 +10,13 @@ import { JobProse, textHasHeadings } from '../JobProse';
 import { PROGRESS_HIRE_EMAIL } from '../../constants/progressContact';
 import { applyViaParts, extractEmail } from '../../utils/hireContact';
 import { profileStrength } from '../../utils/candidateProfile';
-import type { Job } from '../../types/api';
+import {
+  applicationStatusBadgeClass,
+  applicationStatusBadgeClassFor,
+  applicationStatusLabel,
+  canReapplyExistingApplication,
+} from '../../utils/applicationStatus';
+import type { Application, Job } from '../../types/api';
 
 function compensationLabel(job: Job): string {
   if (job.salaryVisibility && (job.salaryMin || job.salaryMax)) {
@@ -26,7 +32,7 @@ function hireContact(job: Job): { viaProgress: boolean; email?: string; instruct
   if (job.applicationMethod === 'external_url' && job.applicationUrl?.trim()) {
     return { viaProgress: false, url: job.applicationUrl.trim() };
   }
-  const viaProgress = job.applicationMethod === 'admin' || job.applicationMethod === 'internal';
+  const viaProgress = job.applicationMethod === 'admin';
   const instructions = job.applicationInstructions?.trim() || undefined;
   const email =
     job.applicationEmail?.trim() ||
@@ -94,17 +100,8 @@ function uniqueText(...values: Array<string | null | undefined>): string[] {
   return out;
 }
 
-function applyTarget(
-  job: Job,
-  contact: ReturnType<typeof hireContact>,
-): { href: string; external?: boolean } {
-  if (contact.url) return { href: contact.url, external: true };
-  const via = applyViaParts(contact);
-  if (via.href?.startsWith('mailto:')) {
-    return { href: `${via.href}?subject=${encodeURIComponent(job.title.trim())}` };
-  }
-  if (via.href) return { href: via.href, external: true };
-  return { href: '#how-to-apply' };
+function applyTarget(job: Job): { href: string; external?: boolean } {
+  return { href: `/jobs/${job.slug}/apply` };
 }
 
 const SAVED_KEY = 'progress_saved_jobs';
@@ -155,16 +152,37 @@ export const JobDetailContent: React.FC<{
     enabled: Boolean(user && hasRole('candidate') && !applicationsBlocked),
   });
 
+  const applicationsQuery = useQuery({
+    queryKey: ['candidate', 'applications'],
+    queryFn: () => candidateApi.listApplications(),
+    enabled: Boolean(user && hasRole('candidate') && !applicationsBlocked),
+  });
+
   useEffect(() => {
     setSaved(readLocalSaved().includes(job.id));
   }, [job.id]);
 
   const contact = hireContact(job);
-  const apply = applyTarget(job, contact);
+  const apply = applyTarget(job);
   const deadline = deadlineMeta(job.applicationDeadline);
   const experience = experienceLabel(job);
   const ownsJob = Boolean(
     job && user?.companyMemberships.some((membership) => membership.companyId === job.companyId),
+  );
+  const viewerApplication = useMemo((): Application | null => {
+    if (!applicationsQuery.data?.length) return null;
+    return applicationsQuery.data.find((a) => a.jobId === job.id) ?? null;
+  }, [applicationsQuery.data, job.id]);
+  const canReapply = Boolean(
+    viewerApplication && canReapplyExistingApplication(viewerApplication, job),
+  );
+  const jobClosed = job.status === 'closed';
+  const showApplyCta = !ownsJob && !jobClosed && (!viewerApplication || canReapply);
+  const showHiredBadge = Boolean(
+    viewerApplication?.status === 'hired' && !canReapply,
+  );
+  const showAlreadyApplied = Boolean(
+    viewerApplication && !canReapply && viewerApplication.status !== 'hired',
   );
 
   const bodyTexts = useMemo(() => {
@@ -240,18 +258,24 @@ export const JobDetailContent: React.FC<{
 
   const proceedApply = () => {
     setApplyTipOpen(false);
-    if (apply.href.startsWith('#')) {
-      document.querySelector(apply.href)?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (apply.external) {
-      window.open(apply.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    window.location.href = apply.href;
+    navigate(apply.href);
   };
 
   const onApplyClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (applicationsBlocked) {
+      event.preventDefault();
+      return;
+    }
+    if (!user) {
+      event.preventDefault();
+      navigate('/login', { state: { from: apply.href } });
+      return;
+    }
+    if (!hasRole('candidate')) {
+      event.preventDefault();
+      navigate(apply.href);
+      return;
+    }
     if (!thinProfile) return;
     event.preventDefault();
     setApplyTipOpen(true);
@@ -341,17 +365,56 @@ export const JobDetailContent: React.FC<{
               </div>
             ) : (
               <div className="jd-cta-group">
-                <a
-                  className="btn-jd-apply-main"
-                  href={apply.href}
-                  onClick={onApplyClick}
-                  {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
-                >
-                  <span>Apply Now</span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </a>
+                {showHiredBadge && viewerApplication && (
+                  <div className="role-note-card" style={{ gap: '0.5rem' }}>
+                    <span className={applicationStatusBadgeClass('hired')}>hired</span>
+                    <Link
+                      to={`/candidate/applications/${viewerApplication.id}`}
+                      className="btn btn-sm btn-secondary"
+                    >
+                      View application
+                    </Link>
+                  </div>
+                )}
+                {showAlreadyApplied && viewerApplication && (
+                  <div className="role-note-card" style={{ gap: '0.5rem' }}>
+                    <span
+                      className={applicationStatusBadgeClassFor(
+                        viewerApplication.status,
+                        viewerApplication.resubmittedAt,
+                      )}
+                    >
+                      {applicationStatusLabel(
+                        viewerApplication.status,
+                        viewerApplication.resubmittedAt,
+                      )}
+                    </span>
+                    <Link
+                      to={`/candidate/applications/${viewerApplication.id}`}
+                      className="btn btn-sm btn-secondary"
+                    >
+                      View application
+                    </Link>
+                  </div>
+                )}
+                {jobClosed && !showHiredBadge && !showAlreadyApplied && (
+                  <div className="role-note-card">
+                    <span className="badge badge-outline">Position filled / Closed</span>
+                  </div>
+                )}
+                {showApplyCta && (
+                  <a
+                    className="btn-jd-apply-main"
+                    href={apply.href}
+                    onClick={onApplyClick}
+                    {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                  >
+                    <span>{canReapply ? 'Apply again' : 'Apply Now'}</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </a>
+                )}
                 <button
                   type="button"
                   className={`btn-jd-save ${saved ? 'is-saved' : ''}`}
@@ -507,13 +570,57 @@ export const JobDetailContent: React.FC<{
               </div>
 
               <p className="jd-how-text">
-                Interested and qualified applicants who meet the requirements are invited to submit
-                their application, updated CV, and credentials:
+                {jobClosed
+                  ? 'This vacancy is closed. It no longer accepts new applications.'
+                  : showHiredBadge
+                    ? 'You were hired for this role. Open your application for details.'
+                    : showAlreadyApplied
+                      ? 'You already applied for this role. Open your application for status updates.'
+                      : 'Apply through Progress using the Apply Now button. Optional contact details for this role are listed below if the employer provided them.'}
               </p>
+
+              {showApplyCta && (
+                <div className="jd-how-cta-box" style={{ marginBottom: '1rem' }}>
+                  <a className="jd-how-link-btn" href={apply.href} onClick={onApplyClick}>
+                    <span>{canReapply ? 'Apply again through Progress' : 'Apply through Progress'}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path
+                        d="M5 12h14M12 5l7 7-7 7"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              )}
+              {(showHiredBadge || showAlreadyApplied) && viewerApplication && (
+                <div className="jd-how-cta-box" style={{ marginBottom: '1rem' }}>
+                  <Link
+                    className="jd-how-link-btn"
+                    to={`/candidate/applications/${viewerApplication.id}`}
+                  >
+                    <span>View your application</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path
+                        d="M5 12h14M12 5l7 7-7 7"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+              )}
+              {jobClosed && !showHiredBadge && !showAlreadyApplied && (
+                <div className="jd-how-cta-box" style={{ marginBottom: '1rem' }}>
+                  <span className="badge badge-outline">Position filled / Closed</span>
+                </div>
+              )}
 
               {applyVia.via ? (
                 <div className="jd-how-cta-box">
-                  <span className="jd-how-channel-label">Direct Application Channel:</span>
+                  <span className="jd-how-channel-label">Additional contact:</span>
                   {applyVia.href ? (
                     <a
                       className="jd-how-link-btn"
@@ -554,7 +661,7 @@ export const JobDetailContent: React.FC<{
                   )}
                 </div>
               ) : (
-                <p className="muted">Direct contact channel handled via Progress Jobs HQ.</p>
+                <p className="muted">No additional contact was provided for this listing.</p>
               )}
 
               {applyVia.href?.startsWith('mailto:') && (
@@ -819,14 +926,34 @@ export const JobDetailContent: React.FC<{
           >
             <ActionSave filled={saved} />
           </button>
-          <a
-            className="btn-mobile-apply"
-            href={apply.href}
-            onClick={onApplyClick}
-            {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
-          >
-            Apply Now
-          </a>
+          {showApplyCta ? (
+            <a
+              className="btn-mobile-apply"
+              href={apply.href}
+              onClick={onApplyClick}
+              {...(apply.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+            >
+              {canReapply ? 'Apply again' : 'Apply Now'}
+            </a>
+          ) : showHiredBadge && viewerApplication ? (
+            <Link
+              className="btn-mobile-apply"
+              to={`/candidate/applications/${viewerApplication.id}`}
+            >
+              Hired
+            </Link>
+          ) : showAlreadyApplied && viewerApplication ? (
+            <Link
+              className="btn-mobile-apply"
+              to={`/candidate/applications/${viewerApplication.id}`}
+            >
+              View application
+            </Link>
+          ) : jobClosed ? (
+            <span className="btn-mobile-apply" style={{ opacity: 0.85, pointerEvents: 'none' }}>
+              Closed
+            </span>
+          ) : null}
         </div>
       </div>
 

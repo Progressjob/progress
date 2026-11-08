@@ -199,14 +199,62 @@ export class NotificationsService {
     );
   }
 
-  unreadCount(userId: string) {
-    return this.prisma.notification.count({ where: { userId, readAt: null } });
+  unreadCount(
+    userId: string,
+    filters?: { referenceType?: string; referenceId?: string },
+  ) {
+    return this.prisma.notification.count({
+      where: {
+        userId,
+        readAt: null,
+        ...this.referenceFilter(filters?.referenceType, filters?.referenceId),
+      },
+    });
   }
   markAllRead(userId: string) {
     return this.prisma.notification.updateMany({
       where: { userId, readAt: null },
       data: { readAt: new Date() },
     });
+  }
+
+  markReadByReference(
+    userId: string,
+    referenceType: string,
+    referenceId: string,
+  ) {
+    return this.prisma.notification.updateMany({
+      where: {
+        userId,
+        readAt: null,
+        ...this.referenceFilter(referenceType, referenceId),
+      },
+      data: { readAt: new Date() },
+    });
+  }
+
+  /**
+   * Candidate-review alerts use `companyId` or `companyId:applicationId`.
+   * Scope by company so badges / mark-read cover both shapes.
+   */
+  private referenceFilter(
+    referenceType?: string,
+    referenceId?: string,
+  ): Prisma.NotificationWhereInput {
+    if (!referenceType && !referenceId) return {};
+    if (referenceType === 'candidates' && referenceId) {
+      return {
+        referenceType,
+        OR: [
+          { referenceId },
+          { referenceId: { startsWith: `${referenceId}:` } },
+        ],
+      };
+    }
+    return {
+      ...(referenceType ? { referenceType } : {}),
+      ...(referenceId ? { referenceId } : {}),
+    };
   }
 
   private categoryWhere(

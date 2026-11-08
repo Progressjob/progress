@@ -1713,6 +1713,63 @@ export async function seedDemoData(client: PrismaClient = prisma): Promise<void>
     console.log(`✓ Seeded candidate: ${cData.firstName} ${cData.lastName} (${email}) with CV: ${relativeKey}`);
   }
 
+  // 9. Seed a few in-system applications so employer/admin inboxes are demoable
+  console.log('Seeding demo in-system applications...');
+  const demoJob = await client.job.findFirst({
+    where: { status: 'published' },
+    orderBy: { postedAt: 'desc' },
+  });
+  const demoCandidates = await client.candidateProfile.findMany({
+    take: 3,
+    include: { resumes: { where: { isDefault: true }, take: 1 }, user: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (demoJob && demoCandidates.length) {
+    for (const [index, candidate] of demoCandidates.entries()) {
+      const status =
+        index === 0 ? 'submitted' : index === 1 ? 'reviewing' : 'shortlisted';
+      const existing = await client.application.findUnique({
+        where: {
+          jobId_candidateId: { jobId: demoJob.id, candidateId: candidate.id },
+        },
+      });
+      if (existing) continue;
+      const application = await client.application.create({
+        data: {
+          jobId: demoJob.id,
+          candidateId: candidate.id,
+          resumeId: candidate.resumes[0]?.id,
+          coverLetter: `I am interested in the ${demoJob.title} role and believe my background is a strong fit.`,
+          status,
+        },
+      });
+      await client.applicationEvent.create({
+        data: {
+          applicationId: application.id,
+          changedBy: candidate.userId,
+          oldStatus: null,
+          newStatus: 'submitted',
+          note: 'Application submitted',
+        },
+      });
+      if (status !== 'submitted') {
+        await client.applicationEvent.create({
+          data: {
+            applicationId: application.id,
+            changedBy: admin.id,
+            oldStatus: 'submitted',
+            newStatus: status,
+            note: 'Moved forward during demo seed',
+          },
+        });
+      }
+      console.log(
+        `✓ Seeded application: ${candidate.user.firstName} ${candidate.user.lastName} → ${demoJob.title} (${status})`,
+      );
+    }
+  }
+
   console.log('--- Successfully seeded 22 jobs and 20 candidate accounts with full profiles and CV files! ---');
 }
 

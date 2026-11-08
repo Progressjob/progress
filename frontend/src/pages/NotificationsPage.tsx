@@ -157,7 +157,7 @@ export function NotificationsPage() {
 
   const unreadQuery = useQuery({
     queryKey: ["notifications", user?.id, "unread"],
-    queryFn: notificationsApi.unread,
+    queryFn: () => notificationsApi.unread(),
     enabled: Boolean(user),
     refetchInterval: 30000,
   });
@@ -177,8 +177,34 @@ export function NotificationsPage() {
       return `/admin/support?message=${n.referenceId}`;
     if (admin && n.referenceType === "report")
       return `/admin/support/reports/${n.referenceId}`;
-    if (!admin && n.referenceType === "application" && hasRole("candidate"))
-      return "/candidate/applications";
+    if (n.referenceType === "application" && n.referenceId) {
+      // Always open at the top of the application (no #messages — that scrolls into the footer).
+      if (hasRole("candidate")) {
+        return `/candidate/applications/${n.referenceId}`;
+      }
+      if (hasRole("employer")) {
+        const memberships = user?.companyMemberships ?? [];
+        const companyId = memberships[0]?.companyId;
+        if (companyId) {
+          return `/company/${companyId}/applications/${n.referenceId}`;
+        }
+      }
+    }
+    if (n.referenceType === "candidates" && n.referenceId && hasRole("employer")) {
+      // New format: companyId:applicationId → open that application at the top
+      const [companyId, applicationId] = n.referenceId.split(":");
+      if (companyId && applicationId) {
+        return `/company/${companyId}/applications/${applicationId}`;
+      }
+      return `/company/${n.referenceId}/candidates`;
+    }
+    if (n.referenceType === "job" && n.referenceId && hasRole("employer")) {
+      const memberships = user?.companyMemberships ?? [];
+      if (memberships.length === 1) {
+        return `/company/${memberships[0].companyId}/jobs/${n.referenceId}/applications`;
+      }
+      return "/company";
+    }
     if (admin && n.referenceType === "job")
       return `/admin/jobs/${n.referenceId}`;
     return null;
@@ -371,6 +397,12 @@ export function NotificationsPage() {
                             to={href}
                             onClick={() => {
                               if (unread) mutation.mutate(n.id);
+                              // Ensure we land at the top of the destination (not leftover scroll / footer)
+                              window.requestAnimationFrame(() => {
+                                window.scrollTo(0, 0);
+                                document.documentElement.scrollTop = 0;
+                                document.body.scrollTop = 0;
+                              });
                             }}
                           >
                             Open details →
