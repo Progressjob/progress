@@ -1,3 +1,4 @@
+import { DialogViewport } from './components/DialogViewport';
 import { AdminVerificationPage } from './pages/AdminVerificationPage';
 import { AdminSupportPage } from './pages/AdminSupportPage';
 import { AdminReportDetailPage } from './pages/AdminReportDetailPage';
@@ -85,6 +86,7 @@ export function App(): React.ReactElement {
       <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
+          <DialogViewport />
           <Routes>
             {/* Public & candidate site */}
             <Route element={<Layout />}>

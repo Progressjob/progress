@@ -1,3 +1,4 @@
+import { MenuNotificationBadge } from './MenuNotificationBadge';
 import { SiteNavbar } from './SiteNavbar';
 import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useState } from 'react';
@@ -25,10 +26,10 @@ export const Layout: React.FC = () => {
   const showProfileEdit = Boolean(user && (showingEmployer || hasRole('candidate')));
 
   useEffect(() => {
-    if (user && workspace === 'employer' && !hasEmployerAccount) {
+    if (!restoringSession && user && workspace === 'employer' && !hasEmployerAccount) {
       setWorkspace('candidate');
     }
-  }, [user, workspace, hasEmployerAccount, setWorkspace]);
+  }, [user, workspace, hasEmployerAccount, setWorkspace, restoringSession]);
 
   const handleLogout = async () => {
     await logout();
@@ -96,7 +97,7 @@ export const Layout: React.FC = () => {
                       {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
                       {hasRole('candidate') && !showingEmployer && (
                         <>
-                          <NavLink to="/candidate/applications">My applications</NavLink>
+                          <NavLink to="/candidate/applications">My applications<MenuNotificationBadge references={['application']} /></NavLink>
                           <NavLink to="/candidate/saved-jobs">Saved jobs</NavLink>
                         </>
                       )}
@@ -104,10 +105,10 @@ export const Layout: React.FC = () => {
                         <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                       )}
                       {hasEmployerAccount && firstCompanyId && (
-                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Manage posted jobs</NavLink>
+                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace</NavLink>
                       )}
                       {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
-                      <Link className="mobile-nav-notifications" to="/notifications">Notifications</Link>
+                      <Link className="mobile-nav-notifications" to="/notifications">Notifications<MenuNotificationBadge /></Link>
                       <Link to="/contact">Contact support</Link>
                       <div className="nav-account-separator" />
                       <button type="button" disabled={switching}
@@ -145,6 +146,16 @@ export const Layout: React.FC = () => {
               </>
             )}
       </>}>
+            {showingEmployer ? (
+              <>
+                <NavLink to={`/company/${firstCompanyId}/jobs`}>Job postings<MenuNotificationBadge references={['job']} /></NavLink>
+                <NavLink to={`/company/${firstCompanyId}/jobs/new`}>Post a job</NavLink>
+                <NavLink to={`/company/${firstCompanyId}/candidates`}>Review candidates<MenuNotificationBadge references={['candidates']} /></NavLink>
+                <NavLink to={`/company/${firstCompanyId}/cv-search`}>CV search</NavLink>
+                <NavLink to="/">Home</NavLink>
+              </>
+            ) : (
+              <>
             <NavLink
               to="/"
               end
@@ -179,6 +190,9 @@ export const Layout: React.FC = () => {
               Contact
             </NavLink>
 
+
+              </>
+            )}
 
       </SiteNavbar>
 

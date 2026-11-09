@@ -38,6 +38,7 @@ export const ApplyJobPage: React.FC = () => {
   const [resumeId, setResumeId] = useState<string>('');
   const [uploadedLabel, setUploadedLabel] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [phoneReady, setPhoneReady] = useState(false);
 
@@ -290,7 +291,14 @@ export const ApplyJobPage: React.FC = () => {
   const lastName = user.lastName || profile?.user?.lastName || '';
   const email = user.email || profile?.user?.email || '';
   const questions = job.screeningQuestions ?? [];
-  const canSubmit = Boolean(resumeId) && isValidEthiopianMobile(phone);
+  const fieldErrors: Record<string, string> = {};
+  if (!isValidEthiopianMobile(phone)) fieldErrors['apply-phone'] = 'Enter 9 digits starting with 7 or 9.';
+  if (!resumeId) fieldErrors['apply-cv-upload'] = 'Upload or select your CV.';
+  for (const question of questions) {
+    if (question.isRequired && !(answers[question.id] ?? '').trim()) {
+      fieldErrors[`q-${question.id}`] = 'This answer is required.';
+    }
+  }
 
   if (job.status === 'closed') {
     return (
@@ -365,14 +373,25 @@ export const ApplyJobPage: React.FC = () => {
         )}
 
         <form
+          noValidate
           className="pb-card stack"
           onSubmit={(e) => {
             e.preventDefault();
+            setSubmitAttempted(true);
             setFormError(null);
+            const firstInvalid = Object.keys(fieldErrors)[0];
+            if (firstInvalid) {
+              document.getElementById(firstInvalid)?.focus();
+              document.getElementById(firstInvalid)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              return;
+            }
             applyMutation.mutate();
           }}
         >
-          {formError && <div className="alert-error">{formError}</div>}
+          {submitAttempted && Object.keys(fieldErrors).length > 0 && (
+            <div className="alert-error" role="alert">Please complete the highlighted fields below.</div>
+          )}
+          {formError && <div className="alert-error" role="alert">{formError}</div>}
 
           <div className="grid-two">
             <div className="profile-field-wrap">
@@ -395,7 +414,11 @@ export const ApplyJobPage: React.FC = () => {
                 value={phone}
                 onChange={setPhone}
                 required
+                inputClassName={submitAttempted && fieldErrors['apply-phone'] ? 'apply-field-invalid' : ''}
+                aria-invalid={submitAttempted && Boolean(fieldErrors['apply-phone'])}
+                aria-describedby={submitAttempted && fieldErrors['apply-phone'] ? 'apply-phone-error' : undefined}
               />
+              {submitAttempted && fieldErrors['apply-phone'] && <p id="apply-phone-error" className="apply-field-error">{fieldErrors['apply-phone']}</p>}
             </div>
             <div className="profile-field-wrap">
               <label htmlFor="apply-email">Email Address</label>
@@ -442,7 +465,10 @@ export const ApplyJobPage: React.FC = () => {
 
             <button
               type="button"
-              className="et-upload-zone apply-cv-upload"
+              id="apply-cv-upload"
+              aria-invalid={submitAttempted && Boolean(fieldErrors['apply-cv-upload'])}
+              aria-describedby={submitAttempted && fieldErrors['apply-cv-upload'] ? 'apply-cv-error' : undefined}
+              className={`et-upload-zone apply-cv-upload${submitAttempted && !resumeId ? ' apply-field-invalid' : ''}`}
               disabled={uploadMutation.isPending}
               onClick={() => fileInputRef.current?.click()}
             >
@@ -458,6 +484,7 @@ export const ApplyJobPage: React.FC = () => {
                 application.
               </span>
             </button>
+            {submitAttempted && !resumeId && <p id="apply-cv-error" className="apply-field-error">Upload or select your CV.</p>}
             {uploadedLabel && (
               <p className="apply-cv-success">Using new CV: {uploadedLabel}</p>
             )}
@@ -499,11 +526,15 @@ export const ApplyJobPage: React.FC = () => {
                     id={`q-${q.id}`}
                     rows={3}
                     required={q.isRequired}
+                    aria-invalid={submitAttempted && Boolean(fieldErrors[`q-${q.id}`])}
+                    aria-describedby={submitAttempted && fieldErrors[`q-${q.id}`] ? `q-error-${q.id}` : undefined}
+                    className={submitAttempted && fieldErrors[`q-${q.id}`] ? 'apply-field-invalid' : ''}
                     value={answers[q.id] ?? ''}
                     onChange={(e) =>
                       setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
                     }
                   />
+                  {submitAttempted && fieldErrors[`q-${q.id}`] && <p id={`q-error-${q.id}`} className="apply-field-error">This answer is required.</p>}
                 </div>
               ))}
             </div>
@@ -512,7 +543,7 @@ export const ApplyJobPage: React.FC = () => {
           <button
             type="submit"
             className="btn btn-jd-apply-main"
-            disabled={applyMutation.isPending || uploadMutation.isPending || !canSubmit}
+            disabled={applyMutation.isPending || uploadMutation.isPending}
             style={{ width: '100%', justifyContent: 'center' }}
           >
             {applyMutation.isPending

@@ -287,7 +287,7 @@ export const CompanyApplicationDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="cw-page-stack">
+    <div className="cw-page-stack employer-application-detail">
       <div className="pb-card">
         <p className="muted" style={{ margin: '0 0 0.35rem' }}>
           <Link to={`${companyBase}/jobs/${jobId}/applications`}>← Applications</Link>

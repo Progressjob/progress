@@ -13,6 +13,8 @@ export interface EthiopianPhoneInputProps {
   inputClassName?: string;
   placeholder?: string;
   'aria-label'?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
 }
 
 /**
@@ -31,6 +33,8 @@ export const EthiopianPhoneInput: React.FC<EthiopianPhoneInputProps> = ({
   inputClassName,
   placeholder = '9XX XXX XXX',
   'aria-label': ariaLabel,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
 }) => {
   const local = toEthiopianLocalDigits(value);
 
@@ -46,6 +50,8 @@ export const EthiopianPhoneInput: React.FC<EthiopianPhoneInputProps> = ({
         inputMode="numeric"
         autoComplete="tel-national"
         className={inputClassName}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
         aria-label={ariaLabel ?? 'Ethiopian mobile number'}
         placeholder={placeholder}
         required={required}

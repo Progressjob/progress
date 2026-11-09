@@ -180,6 +180,9 @@ export const CandidateWorkspaceLayout: React.FC = () => {
               <div className="cw-banner-main">
                 <h1>{profileQuery.isLoading ? 'Loading…' : fullName}</h1>
                 {profile?.gender ? <p className="cw-gender">{profile.gender}</p> : null}
+                <p className="cw-mobile-profile-summary">
+                  {profile?.headline || 'Complete your profile to introduce yourself'}
+                </p>
               </div>
 
               <ul className="cw-facts cw-facts-contact">

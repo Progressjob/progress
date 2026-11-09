@@ -1,3 +1,4 @@
+import { MenuNotificationBadge } from './MenuNotificationBadge';
 import { SiteNavbar } from './SiteNavbar';
 import { AccountDropdown } from './AccountDropdown';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -121,7 +122,7 @@ export const CompanyPortalLayout: React.FC = () => {
                     <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                   )}
                   <Link className="employer-account-duplicate" to="/">Homepage</Link>
-                  <Link className="mobile-nav-notifications" to="/notifications">Notifications</Link>
+                  <Link className="mobile-nav-notifications" to="/notifications">Notifications<MenuNotificationBadge /></Link>
                   <Link to="/contact">Contact support</Link>
                   <div className="nav-account-separator" />
                   <button type="button" onClick={() => void handleFindWork()} disabled={switching}>
@@ -158,7 +159,7 @@ export const CompanyPortalLayout: React.FC = () => {
                   to={`/company/${companyId}/candidates`}
                   className={() => navActive(isCompanyReviewCandidates(location.pathname, companyId))}
                 >
-                  Review candidates
+                  Review candidates<MenuNotificationBadge references={['candidates']} />
                   {reviewUnreadCount > 0 && (
                     <span
                       className="nav-count-badge"

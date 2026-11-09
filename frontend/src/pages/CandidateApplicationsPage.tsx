@@ -50,13 +50,12 @@ export const CandidateApplicationsPage: React.FC = () => {
   }
 
   return (
-    <div className="cw-page-stack">
+    <div className="cw-page-stack candidate-applications-list">
       <div className="pb-card apps-list-header">
         <div>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>My applications</h2>
           <p className="muted" style={{ margin: '0.35rem 0 0' }}>
-            {apps.length} compan{apps.length === 1 ? 'y vacancy' : 'y vacancies'} you applied to
-            through Progress. Open any card to track status and employer updates.
+            {apps.length} application{apps.length === 1 ? '' : 's'} · Track status and updates.
           </p>
         </div>
         <Link to="/jobs" className="btn btn-sm btn-secondary">

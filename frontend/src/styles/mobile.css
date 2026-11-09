@@ -3694,3 +3694,226 @@
   }
 }
 
+
+.cw-mobile-profile-summary { display: none; }
+
+@media screen and (max-width: 768px) {
+  .candidate-workspace:not(.is-list) .cw-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #0754bc, #2474dc);
+    box-shadow: 0 4px 12px #0b57d01a;
+  }
+  .candidate-workspace:not(.is-list) .cw-banner-top { margin: 0; }
+  .candidate-workspace:not(.is-list) .cw-edit {
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid #ffffff50;
+    border-radius: 10px;
+  }
+  .candidate-workspace:not(.is-list) .cw-banner-body { gap: 10px; }
+  .candidate-workspace:not(.is-list) .cw-mobile-profile-summary {
+    display: block;
+    margin: 4px 0 0;
+    color: #e4efff;
+    font-size: .8rem;
+    line-height: 1.4;
+  }
+  .candidate-workspace:not(.is-list) :is(.cw-facts-contact, .cw-facts-right, .cw-gender) { display: none; }
+  .candidate-workspace:not(.is-list) .cw-banner-foot { margin: 0; }
+  .candidate-workspace:not(.is-list) .cw-work-status {
+    width: auto;
+    min-height: 44px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: #ffffff18;
+    border: 1px solid #ffffff40;
+    color: #fff;
+    justify-content: flex-start;
+    font-size: .8rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .candidate-applications-list .apps-list-header {
+    padding: 12px;
+    gap: 8px;
+    box-shadow: none;
+  }
+  .candidate-applications-list .apps-list-header p { font-size: .8rem; line-height: 1.4; }
+  .candidate-applications-list .apps-list-header > .btn { width: auto; align-self: flex-start; min-height: 44px; }
+  .candidate-workspace :is(.apps-card, .apps-vacancy-card, .app-status-panel) {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .candidate-workspace .apps-card-main {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .candidate-workspace :is(.apps-card-logo, .apps-card-logo--lg) { width: 36px; height: 36px; padding: 3px; border-radius: 9px; }
+  .candidate-workspace :is(.apps-logo-img, .apps-logo-fallback) { width: 100%; height: 100%; }
+  .candidate-workspace .apps-card-body { min-width: 0; }
+  .candidate-workspace .apps-card-top { gap: 6px; }
+  .candidate-workspace .apps-vacancy-label { display: none; }
+  .candidate-workspace .apps-company-name { margin: 0 0 3px; color: #64748b; font-size: .78rem; }
+  .candidate-workspace .apps-card-copy h3,
+  .candidate-workspace .apps-vacancy-title { margin: 0; font-size: 1rem; line-height: 1.35; }
+  .candidate-workspace :is(.apps-card-meta, .apps-vacancy-meta) { font-size: .75rem; line-height: 1.4; margin-block: 5px; }
+  .candidate-workspace .apps-card-foot {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .candidate-workspace .apps-card-foot > .apps-view-btn { width: auto; min-height: 44px; padding: 6px 10px; font-size: .78rem; }
+  .candidate-workspace .apps-card-foot-links { order: 2; font-size: .78rem; }
+  .candidate-workspace .apps-card-side--detail .btn { min-height: 44px; font-size: .78rem; padding: 6px 10px; }
+  .candidate-workspace .app-status-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .candidate-workspace .app-status-applied { margin: 0; font-size: .8rem; }
+  .candidate-workspace .app-status-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .candidate-workspace .app-status-actions button { min-height: 44px; font-size: .78rem; }
+  .candidate-workspace .app-detail-compact .pb-card { padding: 12px; }
+  .candidate-workspace .app-detail-compact .pb-card > p { font-size: .85rem; line-height: 1.5; }
+  .candidate-workspace .app-messages-list:has(.app-messages-empty) { min-height: 0; padding: 0; background: transparent; }
+  .candidate-workspace .app-messages-empty { margin: 0; padding: 8px 0; font-size: .8rem; background: transparent; border: 0; }
+  .candidate-workspace .pb-card:has(.app-messages-empty) > p:last-child { display: none; }
+}
+
+.apply-field-invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px #dc262620 !important;
+}
+.apply-field-error { margin: 4px 0 0; color: #b91c1c; font-size: .82rem; }
+.menu-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+.nav-toggle, .nav-account-trigger { position: relative; }
+.nav-toggle > .menu-unread-badge, .nav-account-trigger > .menu-unread-badge {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  margin: 0;
+}
+
+@media screen and (max-width: 768px) {
+  :is(.emp-review-page, .emp-inbox-page, .employer-application-detail) {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+  }
+  :is(.emp-page-header, .emp-inbox-header) {
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #dbe8fb;
+    border-radius: 14px;
+    background: #eef5ff;
+  }
+  :is(.emp-page-header, .emp-inbox-header) h1 { font-size: 1.3rem; line-height: 1.3; margin: 4px 0; }
+  .emp-page-header-copy > p:last-child { display: none; }
+  .emp-page-kicker { font-size: .72rem; margin: 0; }
+  .emp-page-header-actions { margin-top: 8px; }
+  .emp-page-header-actions .btn { min-height: 44px; padding: 6px 10px; font-size: .8rem; }
+  .emp-summary-strip { gap: 4px; margin-bottom: 10px; }
+  .emp-summary-strip > div { min-width: 0; padding: 8px 3px; border-radius: 10px; }
+  .emp-summary-strip small { font-size: .7rem; }
+  .emp-review-panel, .emp-inbox-panel { padding: 10px; border-radius: 14px; }
+  .emp-review-card { padding: 10px; border-radius: 12px; }
+  .emp-review-card-copy h2 { font-size: 1rem; margin-block: 6px; }
+  .emp-review-card-copy p { font-size: .78rem; line-height: 1.4; }
+  .emp-review-cta { min-height: 44px; padding: 6px 10px; font-size: .8rem; }
+  .emp-inbox-status-strip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 6px; }
+  .emp-inbox-status-strip::-webkit-scrollbar { display: none; }
+  .emp-inbox-status-strip .emp-inbox-status {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .emp-inbox-status-count { width: auto; min-width: 20px; height: 20px; padding: 3px; }
+  .emp-inbox-search input { padding: 8px; border-radius: 10px; }
+  .emp-inbox-search-btn { min-height: 44px; padding: 6px 10px; font-size: .8rem; }
+  .emp-inbox-row { padding: 10px; border-radius: 12px; gap: 8px; }
+  .emp-inbox-row-copy h2, .emp-inbox-row-copy h3 { font-size: .95rem; }
+  .emp-inbox-row-copy p { font-size: .78rem; overflow-wrap: anywhere; }
+  .emp-inbox-row-cta { min-height: 44px; font-size: .8rem; padding: 6px 12px; }
+  .employer-application-detail .pb-card { padding: 12px; border-radius: 14px; }
+  .employer-application-detail .apps-card-top { flex-wrap: wrap; gap: 8px; }
+  .employer-application-detail .apps-card-copy { min-width: 0; overflow-wrap: anywhere; }
+  .employer-application-detail .apps-card-copy h1 { font-size: 1.15rem !important; }
+  .employer-application-detail .apps-card-copy p { font-size: .78rem; line-height: 1.4; }
+  .employer-application-detail .pb-card-title { font-size: .82rem; }
+  .employer-application-detail .app-resume-meta { gap: 8px; }
+  .employer-application-detail .app-resume-meta-copy { min-width: 0; overflow-wrap: anywhere; font-size: .8rem; }
+  .employer-application-detail .app-resume-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .employer-application-detail .btn { min-height: 44px; font-size: .78rem; padding: 6px 8px; }
+  .employer-application-detail .app-messages-header { align-items: center; gap: 8px; }
+  .employer-application-detail .app-messages-list:has(.app-messages-empty) { min-height: 0; padding: 0; }
+  .employer-application-detail .app-messages-empty { margin: 0; padding: 6px 0; font-size: .8rem; }
+  .employer-application-detail .app-messages-compose { display: grid; gap: 8px; }
+  .employer-application-detail .app-messages-compose textarea {
+    width: 100%;
+    min-height: 88px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-family: inherit;
+    line-height: 1.4;
+    resize: vertical;
+  }
+  .employer-application-detail .app-message-bubble { max-width: 100%; overflow-wrap: anywhere; }
+}
+
+/* Center all app dialogs within the viewport that remains above the keyboard. */
+[role='dialog'][aria-modal='true'] {
+  position: fixed !important;
+  inset: auto !important;
+  top: var(--dialog-viewport-top, 0px) !important;
+  left: var(--dialog-viewport-left, 0px) !important;
+  width: var(--dialog-viewport-width, 100%) !important;
+  height: var(--dialog-viewport-height, 100dvh) !important;
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px !important;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+[role='dialog'][aria-modal='true'] > :is(.emp-modal-dialog, .admin-modal-dialog, .card, .jd-profile-tip) {
+  flex-shrink: 0;
+  min-height: 0;
+  max-height: calc(var(--dialog-viewport-height, 100dvh) - 24px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scroll-padding-block: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [role='dialog'][aria-modal='true'] > * { animation: none; }
+}

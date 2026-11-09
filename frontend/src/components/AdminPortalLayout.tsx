@@ -1,3 +1,4 @@
+import { MenuNotificationBadge } from './MenuNotificationBadge';
 import { SiteNavbar } from './SiteNavbar';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -24,12 +25,12 @@ export const AdminPortalLayout = () => {
                 subtitle={user.roles.includes('admin') ? 'Administrator' : 'Moderator'}
               >
                 <p className="nav-account-heading">Review & manage</p>
-                <NavLink to="/admin/verification">Employer verification</NavLink>
+                <NavLink to="/admin/verification">Employer verification<MenuNotificationBadge references={['company']} /></NavLink>
                 <NavLink to="/admin/cv-search">CV search</NavLink>
                 <div className="nav-account-separator" />
                 <p className="nav-account-heading">Communication</p>
-                <NavLink to="/admin/support">Support inbox</NavLink>
-                <NavLink to="/admin/notifications">Notifications</NavLink>
+                <NavLink to="/admin/support">Support inbox<MenuNotificationBadge references={['contact', 'report']} /></NavLink>
+                <NavLink to="/admin/notifications">Notifications<MenuNotificationBadge /></NavLink>
                 <div className="nav-account-separator" />
                 <Link to="/">View public website</Link>
                 <button type="button" className="nav-account-logout" onClick={async () => {
@@ -40,7 +41,7 @@ export const AdminPortalLayout = () => {
             )}
       </>}>
             {primaryLinks.map(([label, href]) => (
-              <NavLink key={href} to={href} end={href === '/admin'}>{label}</NavLink>
+              <NavLink key={href} to={href} end={href === '/admin'}>{label}{href === '/admin/jobs' && <MenuNotificationBadge references={['job']} />}{href === '/admin/companies' && <MenuNotificationBadge references={['company']} />}{href === '/admin/candidates' && <MenuNotificationBadge references={['candidates', 'application']} />}</NavLink>
             ))}
 
       </SiteNavbar>
