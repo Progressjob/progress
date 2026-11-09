@@ -118,6 +118,11 @@ export const CandidateApplicationsPage: React.FC = () => {
                             year: 'numeric',
                           })}
                         </time>
+                        <span className="apps-inline-status">
+                          <span className={applicationStatusBadgeClassFor(app.status, app.resubmittedAt)}>
+                            {applicationStatusLabel(app.status, app.resubmittedAt)}
+                          </span>
+                        </span>
                       </p>
                     </div>
                     <div className="apps-card-side">

@@ -4037,3 +4037,24 @@
   }
   .candidate-applications-list .apps-card-foot-links { justify-content: flex-start; }
 }
+
+.apps-inline-status { display: none; }
+
+@media screen and (max-width: 768px) {
+  .candidate-applications-list .apps-card-main {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .candidate-applications-list .apps-card-logo { width: 42px; height: 42px; padding: 3px; }
+  .candidate-applications-list .apps-card-side { display: none; }
+  .candidate-applications-list .apps-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-top: 5px;
+  }
+  .candidate-applications-list .apps-inline-status { display: inline-flex; margin-left: auto; }
+  .candidate-applications-list .apps-inline-status > span { white-space: nowrap; }
+}
