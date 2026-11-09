@@ -4116,3 +4116,26 @@
   }
   .saved-job-unavailable { grid-column: 1 / -1; }
 }
+
+@media screen and (max-width: 768px) {
+  .saved-job-card .saved-job-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+  .saved-job-card .saved-job-view {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 78px;
+    min-height: 44px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    border-radius: 9px;
+    background: #edf4ff;
+    color: #0b57d0;
+    font-size: .75rem;
+  }
+}

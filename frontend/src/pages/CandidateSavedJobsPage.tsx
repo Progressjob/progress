@@ -5,14 +5,6 @@ import { candidateApi } from '../api/candidate';
 import { CompanyLogoMark } from '../components/CompanyLogoMark';
 import { companyLabel, isJobClosed, jobDeadlineDays } from '../utils/jobListing';
 
-function ArrowIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-      <path d="M7 17L17 7M9 7h8v8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export const CandidateSavedJobsPage: React.FC = () => {
   const queryClient = useQueryClient();
 
@@ -123,10 +115,8 @@ export const CandidateSavedJobsPage: React.FC = () => {
                 </div>
                 <div className="saved-job-actions">
                   {!closed && (
-                    <Link to={href} className="jb-featured-go">
-                      <span className="jb-sr-only">View {job.title}</span>
-                      <span className="saved-job-view-label" aria-hidden="true">View job</span>
-                      <ArrowIcon />
+                    <Link to={href} className="btn btn-sm btn-secondary saved-job-view" aria-label={`View ${job.title}`}>
+                      View job
                     </Link>
                   )}
                   <button
