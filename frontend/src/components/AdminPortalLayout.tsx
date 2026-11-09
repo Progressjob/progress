@@ -18,7 +18,9 @@ export const AdminPortalLayout = () => {
 
   return (
     <div className="app-shell admin-shell">
-      <SiteNavbar label="Admin navigation" admin account={<>
+      <SiteNavbar label="Admin navigation" admin
+        unreadScopes={['job', 'candidates', 'application'].map((referenceType) => ({ referenceType }))}
+        account={<>
             {user && (
               <AccountDropdown
                 unreadReferences={['company', 'contact', 'report']}
@@ -41,7 +43,7 @@ export const AdminPortalLayout = () => {
             )}
       </>}>
             {primaryLinks.map(([label, href]) => (
-              <NavLink key={href} to={href} end={href === '/admin'}>{label}{href === '/admin/jobs' && <MenuNotificationBadge references={['job']} />}{href === '/admin/companies' && <MenuNotificationBadge references={['company']} />}{href === '/admin/candidates' && <MenuNotificationBadge references={['candidates', 'application']} />}</NavLink>
+              <NavLink key={href} to={href} end={href === '/admin'}>{label}{href === '/admin/jobs' && <MenuNotificationBadge references={['job']} />}{href === '/admin/candidates' && <MenuNotificationBadge references={['candidates', 'application']} />}</NavLink>
             ))}
 
       </SiteNavbar>

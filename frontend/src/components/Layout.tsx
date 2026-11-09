@@ -78,7 +78,9 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-shell">
-      <SiteNavbar label="Main navigation" account={<>
+      <SiteNavbar label="Main navigation"
+        unreadScopes={showingEmployer ? [{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }] : []}
+        account={<>
             {user ? (
               <>
                 {!showingEmployer && hasRole('candidate') ? (
@@ -93,7 +95,10 @@ export const Layout: React.FC = () => {
                   />
                 )}
                 <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}
-                  unreadReferences={hasRole('candidate') && !showingEmployer ? ['application'] : []}>
+                  unreadScopes={[
+                    ...(hasRole('candidate') && !showingEmployer ? [{ referenceType: 'application' }] : []),
+                    ...(hasEmployerAccount ? [{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }] : []),
+                  ]}>
                       <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
                       {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
                       {hasRole('candidate') && !showingEmployer && (
@@ -106,7 +111,7 @@ export const Layout: React.FC = () => {
                         <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                       )}
                       {hasEmployerAccount && firstCompanyId && (
-                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace</NavLink>
+                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace<MenuNotificationBadge scopes={[{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }]} /></NavLink>
                       )}
                       {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
                       <Link to="/contact">Contact support</Link>
@@ -150,7 +155,7 @@ export const Layout: React.FC = () => {
               <>
                 <NavLink to={`/company/${firstCompanyId}/jobs`}>Job postings<MenuNotificationBadge references={['job']} /></NavLink>
                 <NavLink to={`/company/${firstCompanyId}/jobs/new`}>Post a job</NavLink>
-                <NavLink to={`/company/${firstCompanyId}/candidates`}>Review candidates<MenuNotificationBadge references={['candidates']} /></NavLink>
+                <NavLink to={`/company/${firstCompanyId}/candidates`}>Review candidates<MenuNotificationBadge scopes={[{ referenceType: 'candidates', referenceId: firstCompanyId }]} /></NavLink>
                 <NavLink to={`/company/${firstCompanyId}/cv-search`}>CV search</NavLink>
                 <NavLink to="/">Home</NavLink>
               </>

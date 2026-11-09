@@ -1,14 +1,17 @@
+import { MenuNotificationBadge } from './MenuNotificationBadge';
+import type { UnreadCountParams } from '../api/notifications';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ProgressLogo } from './ProgressLogo';
 
 export function SiteNavbar({
-  children, account, label, admin = false,
+  children, account, label, admin = false, unreadScopes = [],
 }: {
   children: ReactNode;
   account: ReactNode;
   label: string;
   admin?: boolean;
+  unreadScopes?: UnreadCountParams[];
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -45,6 +48,7 @@ export function SiteNavbar({
         <span className="nav-toggle-bar" />
         <span className="nav-toggle-bar" />
         <span className="nav-toggle-bar" />
+        <MenuNotificationBadge scopes={unreadScopes} />
       </button>
       <div className="nav-brand">
         <Link to={admin ? '/admin' : '/'} className="brand-logo-link" aria-label={admin ? 'Admin dashboard' : 'Home'}>

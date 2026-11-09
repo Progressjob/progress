@@ -16,7 +16,6 @@ import {
 } from '../auth/nav';
 import { employerHomeDestination, employerProfileEditPath } from '../auth/workspace';
 import { employerApi } from '../api/employer';
-import { notificationsApi } from '../api/notifications';
 import { AdminContactCard } from './AdminContactCard';
 import { WorkspaceSwitch } from './WorkspaceSwitch';
 
@@ -45,17 +44,6 @@ export const CompanyPortalLayout: React.FC = () => {
     refetchInterval: 30_000,
   });
 
-  const reviewUnreadQuery = useQuery({
-    queryKey: ['notifications', user?.id, 'unread', 'candidates', companyId],
-    queryFn: () =>
-      notificationsApi.unread({
-        referenceType: 'candidates',
-        referenceId: companyId!,
-      }),
-    enabled: Boolean(user && companyId),
-    refetchInterval: 30_000,
-  });
-
   useEffect(() => {
     setWorkspace('employer');
   }, [setWorkspace]);
@@ -63,7 +51,6 @@ export const CompanyPortalLayout: React.FC = () => {
   const companies = companiesQuery.data ?? [];
   const company = companyQuery.data;
   const jobs = jobsQuery.data ?? [];
-  const reviewUnreadCount = reviewUnreadQuery.data ?? 0;
 
   const showAdminContact = useMemo(() => {
     if (companiesQuery.isLoading) return false;
@@ -105,7 +92,9 @@ export const CompanyPortalLayout: React.FC = () => {
 
   return (
     <div className="app-shell employer-workspace">
-      <SiteNavbar label="Employer navigation" account={<>
+      <SiteNavbar label="Employer navigation"
+        unreadScopes={[{ referenceType: 'candidates', referenceId: companyId }, { referenceType: 'job' }]}
+        account={<>
             {user && (
               <>
                 {hasBothAccounts && (
@@ -145,7 +134,7 @@ export const CompanyPortalLayout: React.FC = () => {
                     )
                   }
                 >
-                  Job postings
+                  Job postings<MenuNotificationBadge references={['job']} />
                 </NavLink>
                 <NavLink
                   to={`/company/${companyId}/jobs/new`}
@@ -158,15 +147,7 @@ export const CompanyPortalLayout: React.FC = () => {
                   to={`/company/${companyId}/candidates`}
                   className={() => navActive(isCompanyReviewCandidates(location.pathname, companyId))}
                 >
-                  Review candidates<MenuNotificationBadge references={['candidates']} />
-                  {reviewUnreadCount > 0 && (
-                    <span
-                      className="nav-count-badge"
-                      aria-label={`${reviewUnreadCount} new applicant notifications`}
-                    >
-                      {reviewUnreadCount > 99 ? '99+' : reviewUnreadCount}
-                    </span>
-                  )}
+                  Review candidates<MenuNotificationBadge scopes={[{ referenceType: 'candidates', referenceId: companyId }]} />
                 </NavLink>
               </>
             ) : (
@@ -175,7 +156,7 @@ export const CompanyPortalLayout: React.FC = () => {
                 end
                 className={() => navActive(isExactPath(location.pathname, '/company'))}
               >
-                Hiring home
+                Hiring home<MenuNotificationBadge references={['candidates', 'job']} />
               </NavLink>
             )}
             <NavLink

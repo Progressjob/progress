@@ -1,10 +1,11 @@
+import type { UnreadCountParams } from '../api/notifications';
 import { MenuNotificationBadge } from './MenuNotificationBadge';
 import { NotificationBell } from './NotificationBell';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export function AccountDropdown({ name, subtitle, children, unreadReferences }: {
-  name: string; subtitle: string; children: ReactNode; unreadReferences?: string[];
+export function AccountDropdown({ name, subtitle, children, unreadReferences, unreadScopes }: {
+  name: string; subtitle: string; children: ReactNode; unreadReferences?: string[]; unreadScopes?: UnreadCountParams[];
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -32,7 +33,7 @@ export function AccountDropdown({ name, subtitle, children, unreadReferences }: 
   }}>
     <button type="button" className="nav-account-trigger" ref={trigger}
       aria-label={`Account menu for ${name}`} aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>
-      {unreadReferences && unreadReferences.length > 0 && <MenuNotificationBadge references={unreadReferences} />}
+      {(unreadScopes?.length || unreadReferences?.length) ? <MenuNotificationBadge references={unreadReferences} scopes={unreadScopes} /> : null}
       <span className="user-avatar-initial" aria-hidden="true">{name.trim().charAt(0) || 'U'}</span>
       <span className="user-pill-name"><strong>{name}</strong><small>{subtitle}</small></span>
       <svg className="nav-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
