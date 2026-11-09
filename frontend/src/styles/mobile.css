@@ -4042,10 +4042,11 @@
 
 @media screen and (max-width: 768px) {
   .candidate-applications-list .apps-card-main {
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 8px;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
   }
-  .candidate-applications-list .apps-card-logo { width: 42px; height: 42px; padding: 3px; }
+  .candidate-applications-list .apps-card-logo { width: 52px; height: 52px; padding: 0; }
+  .candidate-applications-list .apps-card-logo :is(.apps-logo-img, .apps-logo-fallback) { padding: 4px; }
   .candidate-applications-list .apps-card-side { display: none; }
   .candidate-applications-list .apps-card-meta {
     display: flex;
