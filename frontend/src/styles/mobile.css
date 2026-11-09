@@ -4142,7 +4142,9 @@
 
 @media (max-width: 767px) {
   .candidate-workspace .app-detail-compact .apps-card-top { align-items: flex-start; text-align: left; }
-  .candidate-workspace .app-detail-compact .apps-card-main { grid-template-columns: 42px minmax(0, 1fr); gap: 10px; }
+  .candidate-workspace .app-detail-compact .apps-card-main { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; }
+  .candidate-workspace .app-detail-compact .apps-card-logo--lg { width: 64px; height: 64px; padding: 0; border-radius: 12px; }
+  .candidate-workspace .app-detail-compact .apps-card-logo--lg :is(.apps-logo-img, .apps-logo-fallback) { padding: 4px; border-radius: 12px; }
   .candidate-workspace .app-detail-compact .apps-card-side--detail { margin-top: 8px; }
   .candidate-workspace .app-detail-compact .apps-card-side--detail .btn,
   .candidate-workspace .app-detail-compact .app-status-actions .btn { min-height: 36px; padding: 6px 12px; }
