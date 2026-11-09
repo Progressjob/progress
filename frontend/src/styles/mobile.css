@@ -4058,3 +4058,61 @@
   .candidate-applications-list .apps-inline-status { display: inline-flex; margin-left: auto; }
   .candidate-applications-list .apps-inline-status > span { white-space: nowrap; }
 }
+
+.saved-job-view-label { display: none; }
+
+@media screen and (max-width: 768px) {
+  .saved-job-card.jb-featured-card {
+    grid-template-rows: auto auto;
+    padding: 12px;
+    gap: 8px 10px;
+  }
+  .saved-job-card .saved-job-logo { grid-row: 1; align-self: start; }
+  .saved-job-card .saved-job-body .jb-featured-title {
+    display: block;
+    overflow: visible;
+    font-size: .95rem;
+    line-height: 1.35;
+  }
+  .saved-job-card .saved-job-body .jb-featured-company {
+    font-size: .78rem;
+    margin-top: 3px;
+    display: block;
+    overflow: visible;
+  }
+  .saved-job-card .jb-featured-foot {
+    grid-column: 1 / -1;
+    padding-top: 6px;
+    border-top: 1px solid #eef2f6;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .saved-job-card .jb-deadline strong {
+    font-size: .75rem;
+    font-weight: 650;
+    white-space: normal;
+    text-transform: none;
+    color: #475569;
+  }
+  .saved-job-card .jb-deadline.is-urgent strong { color: #b91c1c; }
+  .saved-job-card .saved-job-actions { gap: 6px; margin-left: auto; }
+  .saved-job-card .jb-featured-go {
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    padding: 6px 10px;
+    gap: 4px;
+    border-radius: 9px;
+    font-size: .75rem;
+    background: #edf4ff;
+    color: var(--primary);
+  }
+  .saved-job-view-label { display: inline; }
+  .saved-job-card .saved-job-remove {
+    min-height: 44px !important;
+    padding: 6px 8px !important;
+    font-size: .75rem !important;
+    background: transparent;
+  }
+  .saved-job-unavailable { grid-column: 1 / -1; }
+}

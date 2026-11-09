@@ -125,6 +125,7 @@ export const CandidateSavedJobsPage: React.FC = () => {
                   {!closed && (
                     <Link to={href} className="jb-featured-go">
                       <span className="jb-sr-only">View {job.title}</span>
+                      <span className="saved-job-view-label" aria-hidden="true">View job</span>
                       <ArrowIcon />
                     </Link>
                   )}
