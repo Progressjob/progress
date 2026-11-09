@@ -97,10 +97,11 @@ export const Layout: React.FC = () => {
                 <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}
                   unreadScopes={[
                     ...(hasRole('candidate') && !showingEmployer ? [{ referenceType: 'application' }] : []),
-                    ...(hasEmployerAccount ? [{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }] : []),
+                    ...(hasRole('admin', 'moderator') ? ['job', 'company', 'candidates', 'application', 'contact', 'report'].map((referenceType) => ({ referenceType })) : []),
+                    ...(hasEmployerAccount ? [{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }, { referenceType: 'company', referenceId: firstCompanyId }] : []),
                   ]}>
                       <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
-                      {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
+                      {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}{showingEmployer && <MenuNotificationBadge scopes={[{ referenceType: 'company', referenceId: firstCompanyId }]} />}</NavLink>}
                       {hasRole('candidate') && !showingEmployer && (
                         <>
                           <NavLink to="/candidate/applications">My applications<MenuNotificationBadge references={['application']} /></NavLink>
@@ -111,9 +112,9 @@ export const Layout: React.FC = () => {
                         <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                       )}
                       {hasEmployerAccount && firstCompanyId && (
-                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace<MenuNotificationBadge scopes={[{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }]} /></NavLink>
+                        <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace<MenuNotificationBadge scopes={[{ referenceType: 'candidates', referenceId: firstCompanyId }, { referenceType: 'job' }, { referenceType: 'company', referenceId: firstCompanyId }]} /></NavLink>
                       )}
-                      {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
+                      {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal<MenuNotificationBadge references={['job', 'company', 'candidates', 'application', 'contact', 'report']} /></NavLink>}
                       <Link to="/contact">Contact support</Link>
                       <div className="nav-account-separator" />
                       <button type="button" disabled={switching}

@@ -103,9 +103,10 @@ export const CompanyPortalLayout: React.FC = () => {
                     onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
                   />
                 )}
-                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account">
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle="Employer account"
+                  unreadScopes={[{ referenceType: 'company', referenceId: companyId ?? companies[0]?.id }]}>
                   <p className="nav-account-heading">Hiring workspace</p>
-                  <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile</NavLink>
+                  <NavLink to={companyId ? employerProfileEditPath(companyId) : companies[0] ? employerProfileEditPath(companies[0].id) : '/employer/setup'}>Company profile<MenuNotificationBadge scopes={[{ referenceType: 'company', referenceId: companyId ?? companies[0]?.id }]} /></NavLink>
                   <NavLink className="employer-account-duplicate" to={companyId ? `/company/${companyId}/jobs` : '/company'}>Manage posted jobs</NavLink>
                   {hasRole('candidate') && (
                     <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>

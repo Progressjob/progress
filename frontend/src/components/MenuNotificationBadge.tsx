@@ -7,7 +7,14 @@ export function MenuNotificationBadge({ references, scopes }: {
   scopes?: UnreadCountParams[];
 }) {
   const { user } = useAuth();
-  const filters = scopes ?? references?.map((referenceType) => ({ referenceType }));
+  const requested: UnreadCountParams[] | undefined = scopes ?? references?.map((referenceType) => ({ referenceType }));
+  const unique = new Map<string, UnreadCountParams>();
+  for (const filter of requested ?? []) {
+    unique.set(JSON.stringify([filter.referenceType, filter.referenceId]), filter);
+  }
+  const filters = requested ? [...unique.values()].filter((filter) =>
+    !filter.referenceId || !unique.has(JSON.stringify([filter.referenceType, undefined])),
+  ) : undefined;
   const query = useQuery({
     queryKey: filters
       ? ['notifications', user?.id, 'menu-unread', filters]
