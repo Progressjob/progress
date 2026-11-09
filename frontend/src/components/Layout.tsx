@@ -92,7 +92,8 @@ export const Layout: React.FC = () => {
                     onToggle={workspace === 'employer' ? switchToCandidate : switchToEmployer}
                   />
                 )}
-                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}>
+                <AccountDropdown name={`${user.firstName} ${user.lastName}`} subtitle={showingEmployer ? 'Employer account' : 'My account'}
+                  unreadReferences={hasRole('candidate') && !showingEmployer ? ['application'] : []}>
                       <p className="nav-account-heading">{showingEmployer ? 'Hiring workspace' : 'Your job search'}</p>
                       {showProfileEdit && <NavLink to={profileTo}>{showingEmployer ? 'Company profile' : 'My profile & CV'}</NavLink>}
                       {hasRole('candidate') && !showingEmployer && (
@@ -108,7 +109,6 @@ export const Layout: React.FC = () => {
                         <NavLink to={`/company/${firstCompanyId}/jobs`} onClick={() => setWorkspace('employer')}>Hiring workspace</NavLink>
                       )}
                       {hasRole('admin', 'moderator') && <NavLink to="/admin">Admin portal</NavLink>}
-                      <Link className="mobile-nav-notifications" to="/notifications">Notifications<MenuNotificationBadge /></Link>
                       <Link to="/contact">Contact support</Link>
                       <div className="nav-account-separator" />
                       <button type="button" disabled={switching}

@@ -122,7 +122,6 @@ export const CompanyPortalLayout: React.FC = () => {
                     <NavLink to="/candidate/saved-jobs" onClick={() => setWorkspace('candidate')}>Saved jobs</NavLink>
                   )}
                   <Link className="employer-account-duplicate" to="/">Homepage</Link>
-                  <Link className="mobile-nav-notifications" to="/notifications">Notifications<MenuNotificationBadge /></Link>
                   <Link to="/contact">Contact support</Link>
                   <div className="nav-account-separator" />
                   <button type="button" onClick={() => void handleFindWork()} disabled={switching}>

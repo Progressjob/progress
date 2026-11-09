@@ -21,6 +21,7 @@ export const AdminPortalLayout = () => {
       <SiteNavbar label="Admin navigation" admin account={<>
             {user && (
               <AccountDropdown
+                unreadReferences={['company', 'contact', 'report']}
                 name={`${user.firstName} ${user.lastName}`}
                 subtitle={user.roles.includes('admin') ? 'Administrator' : 'Moderator'}
               >
@@ -30,7 +31,6 @@ export const AdminPortalLayout = () => {
                 <div className="nav-account-separator" />
                 <p className="nav-account-heading">Communication</p>
                 <NavLink to="/admin/support">Support inbox<MenuNotificationBadge references={['contact', 'report']} /></NavLink>
-                <NavLink to="/admin/notifications">Notifications<MenuNotificationBadge /></NavLink>
                 <div className="nav-account-separator" />
                 <Link to="/">View public website</Link>
                 <button type="button" className="nav-account-logout" onClick={async () => {
