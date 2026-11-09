@@ -122,14 +122,6 @@ export const CandidateApplicationsPage: React.FC = () => {
                       <span className={applicationStatusBadgeClassFor(app.status, app.resubmittedAt)}>
                         {applicationStatusLabel(app.status, app.resubmittedAt)}
                       </span>
-                      {app.status === 'rejected' && app.job?.slug && (
-                        <Link
-                          to={`/jobs/${app.job.slug}/apply`}
-                          className="btn btn-sm app-reapply-btn"
-                        >
-                          Reapply again
-                        </Link>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -142,15 +134,17 @@ export const CandidateApplicationsPage: React.FC = () => {
                       View vacancy
                     </Link>
                   )}
-                  {app.status === 'rejected' && app.job?.slug && (
-                    <Link to={`/jobs/${app.job.slug}/apply`} className="apps-reapply-link">
-                      Reapply again →
-                    </Link>
-                  )}
                 </div>
-                <Link to={`/candidate/applications/${app.id}`} className="btn btn-sm apps-view-btn">
-                  View application
-                </Link>
+                {app.status === 'rejected' && app.job?.slug ? (
+                  <>
+                    <Link to={`/candidate/applications/${app.id}`} className="apps-text-link">Details</Link>
+                    <Link to={`/jobs/${app.job.slug}/apply`} className="btn btn-sm apps-view-btn">Reapply</Link>
+                  </>
+                ) : (
+                  <Link to={`/candidate/applications/${app.id}`} className="btn btn-sm apps-view-btn">
+                    View application
+                  </Link>
+                )}
               </div>
             </article>
           );

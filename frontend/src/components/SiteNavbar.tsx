@@ -1,4 +1,3 @@
-import { MenuNotificationBadge } from './MenuNotificationBadge';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ProgressLogo } from './ProgressLogo';
@@ -46,7 +45,6 @@ export function SiteNavbar({
         <span className="nav-toggle-bar" />
         <span className="nav-toggle-bar" />
         <span className="nav-toggle-bar" />
-        <MenuNotificationBadge />
       </button>
       <div className="nav-brand">
         <Link to={admin ? '/admin' : '/'} className="brand-logo-link" aria-label={admin ? 'Admin dashboard' : 'Home'}>

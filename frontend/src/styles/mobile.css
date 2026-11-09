@@ -3917,3 +3917,47 @@
 @media (prefers-reduced-motion: reduce) {
   [role='dialog'][aria-modal='true'] > * { animation: none; }
 }
+
+@media screen and (max-width: 1100px) {
+  .split-site-nav:has(.notification-bell) {
+    grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
+    gap: 6px;
+  }
+  .split-site-nav .nav-auth > .notification-bell {
+    display: inline-flex !important;
+    grid-column: 3;
+    grid-row: 1;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    position: relative;
+    overflow: visible;
+  }
+  .split-site-nav:has(.notification-bell) .nav-auth .nav-account { grid-column: 4; }
+  .split-site-nav:has(.notification-bell) .progress-logo-container { gap: 4px !important; }
+  .split-site-nav:has(.notification-bell) .progress-logo-container > img { width: 26px; height: 26px; }
+}
+
+@media screen and (max-width: 360px) {
+  .split-site-nav:has(.notification-bell) .progress-logo-container > div > span:first-child {
+    font-size: clamp(.55rem, 2.8vw, .8rem) !important;
+    letter-spacing: 0 !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .candidate-applications-list .apps-card-foot {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 12px;
+  }
+  .candidate-applications-list .apps-card-foot-links { order: 0; }
+  .candidate-applications-list .apps-card-foot > .btn { margin-left: auto; }
+  .candidate-applications-list .apps-card-foot > .apps-text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
