@@ -55,11 +55,11 @@ export const CandidateApplicationsPage: React.FC = () => {
         <div>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>My applications</h2>
           <p className="muted" style={{ margin: '0.35rem 0 0' }}>
-            {apps.length} application{apps.length === 1 ? '' : 's'} · Track status and updates.
+            {apps.length} application{apps.length === 1 ? '' : 's'}<span className="apps-header-hint"> · Track status and updates.</span>
           </p>
         </div>
         <Link to="/jobs" className="btn btn-sm btn-secondary">
-          Find more jobs
+          Find jobs
         </Link>
       </div>
 
@@ -93,6 +93,7 @@ export const CandidateApplicationsPage: React.FC = () => {
                         <Link to={`/candidate/applications/${app.id}`}>{title}</Link>
                       </h3>
                       <p className="apps-card-meta">
+                        <span className="apps-secondary-meta">
                         {meta.map((part, index) => (
                           <React.Fragment key={`${app.id}-meta-${index}`}>
                             {index > 0 && (
@@ -108,6 +109,7 @@ export const CandidateApplicationsPage: React.FC = () => {
                             ·
                           </span>
                         )}
+                        </span>
                         <time dateTime={app.appliedAt}>
                           Applied{' '}
                           {new Date(app.appliedAt).toLocaleDateString(undefined, {

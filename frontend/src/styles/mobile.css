@@ -3961,3 +3961,35 @@
     min-height: 44px;
   }
 }
+
+@media screen and (max-width: 768px) {
+  .candidate-applications-list { gap: 8px; }
+  .candidate-applications-list .apps-list-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 2px;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+  }
+  .candidate-applications-list .apps-list-header h2 { font-size: 1rem !important; }
+  .candidate-applications-list :is(.apps-header-hint, .apps-secondary-meta) { display: none; }
+  .candidate-applications-list .apps-list-header > .btn {
+    align-self: center;
+    padding: 6px 8px;
+    font-size: .75rem;
+  }
+  .candidate-applications-list .apps-card-list { gap: 8px; }
+  .candidate-applications-list .apps-card { padding: 10px; }
+  .candidate-applications-list .apps-card-main { grid-template-columns: 28px minmax(0, 1fr); gap: 8px; }
+  .candidate-applications-list .apps-card-logo { width: 28px; height: 28px; padding: 2px; }
+  .candidate-applications-list .apps-company-name { font-size: .72rem; margin-bottom: 2px; }
+  .candidate-applications-list .apps-card-copy h3 { font-size: .9rem; line-height: 1.3; }
+  .candidate-applications-list .apps-card-meta { margin: 4px 0 0; font-size: .72rem; }
+  .candidate-applications-list .apps-card-side { margin: 0; }
+  .candidate-applications-list .apps-card-top { gap: 4px; }
+  .candidate-applications-list .apps-card-foot { margin-top: 6px; padding-top: 4px; gap: 4px 10px; }
+  .candidate-applications-list .apps-card-foot :is(a, .btn) { font-size: .75rem; }
+}
