@@ -15756,3 +15756,10 @@ a.admin-metric:hover {
     justify-content: center;
   }
 }
+
+.candidate-interview { padding: 14px; border: 1px solid #dce8f6; border-radius: 12px; background: #f5f9ff; }
+.candidate-interview + .candidate-interview { margin-top: 10px; }
+.candidate-interview-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.candidate-interview-details { display: grid; gap: 12px; margin: 14px 0 0; }
+.candidate-interview-details dt { color: #64748b; font-size: .78rem; margin-bottom: 3px; }
+.candidate-interview-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }

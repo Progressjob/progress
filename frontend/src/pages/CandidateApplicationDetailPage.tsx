@@ -35,6 +35,8 @@ function shortWhen(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
+    timeZoneName: 'short',
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -239,15 +241,32 @@ export const CandidateApplicationDetailPage: React.FC = () => {
         <div className="pb-card">
           <h3 className="pb-card-title">Interviews</h3>
           <ul className="app-interview-list">
-            {app.interviews.map((interview) => (
-              <li key={interview.id}>
-                <strong>{interview.interviewType.replace(/_/g, ' ')}</strong>
-                <span className="apps-card-sep">·</span>
-                {shortWhen(interview.scheduledAt)}
-                <span className="apps-card-sep">·</span>
-                <span className="badge">{interview.status}</span>
-              </li>
-            ))}
+            {app.interviews.map((interview) => {
+              const place = interview.locationOrLink?.trim();
+              const meetingUrl = place && /^https?:\/\/\S+$/i.test(place) ? place : null;
+              const placeLabel = interview.interviewType === 'video'
+                ? 'Meeting link' : interview.interviewType === 'phone' ? 'Phone / instructions' : 'Location';
+              return (
+                <li key={interview.id} className="candidate-interview">
+                  <div className="candidate-interview-heading">
+                    <strong>{interview.interviewType === 'in_person' ? 'In-person interview' : `${prettyEnum(interview.interviewType)} interview`}</strong>
+                    <span className="badge">{prettyEnum(interview.status)}</span>
+                  </div>
+                  <dl className="candidate-interview-details">
+                    <div>
+                      <dt>Date &amp; time</dt>
+                      <dd><time dateTime={interview.scheduledAt}>{shortWhen(interview.scheduledAt)}</time></dd>
+                    </div>
+                    <div>
+                      <dt>{placeLabel}</dt>
+                      <dd>{place ? (
+                        meetingUrl ? <a href={meetingUrl} target="_blank" rel="noopener noreferrer">{place}</a> : place
+                      ) : <span className="muted">Not provided. Contact the employer for details.</span>}</dd>
+                    </div>
+                  </dl>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
