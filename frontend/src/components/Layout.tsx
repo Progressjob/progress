@@ -272,7 +272,10 @@ export const Layout: React.FC = () => {
               <strong>Location:</strong> Bishoftu, Oromia Region, Ethiopia
             </div>
             <div className="contact-item">
-              <strong>Mobile / Hotline:</strong> +251 949 811 818 / +251 994 251 515
+              <strong>Mobile / Hotline:</strong>{' '}
+              <span className="footer-phone">+251 949 811 818</span>
+              {' / '}
+              <span className="footer-phone">+251 994 251 515</span>
             </div>
             <div className="contact-item">
               <strong>Email:</strong> progressjobs8@gmail.com
