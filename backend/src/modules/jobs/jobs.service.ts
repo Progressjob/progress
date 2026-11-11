@@ -339,6 +339,34 @@ export class JobsService {
     return { data: items.slice(0, take) };
   }
 
+  async topCategories() {
+    const openJobs = {
+      status: JobStatus.published,
+      postedAt: { not: null as Date | null },
+      applicationDeadline: { gte: this.today() },
+    };
+    const categories = await this.prisma.jobCategory.findMany({
+      where: { isActive: true, jobs: { some: openJobs } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: { select: { jobs: { where: openJobs } } },
+      },
+    });
+    return {
+      data: categories
+        .map((category) => ({
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          count: category._count.jobs,
+        }))
+        .filter((category) => category.count > 0)
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+    };
+  }
+
   async trendingIndustries(limit = 6) {
     const take = Math.min(Math.max(limit, 1), 12);
     const openJobs = {

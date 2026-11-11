@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useFeaturedJobs } from '../hooks/useFeaturedJobs';
 import { jobsApi } from '../api/jobs';
-import { taxonomyApi } from '../api/taxonomy';
 import { HeroCanvas } from '../components/HeroCanvas';
 import { BlurText } from '../components/reactbits/BlurText';
 import { ShinyText } from '../components/reactbits/ShinyText';
 
 import { CountUp } from '../components/reactbits/CountUp';
 import { useAuth } from '../auth/AuthContext';
-import { GuestJobAccessNote, JobDetailLink } from '../components/JobDetailLink';
-import { CompanyLogoMark } from '../components/CompanyLogoMark';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'candidates' | 'employers'>('candidates');
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   const popularQuery = useQuery({
     queryKey: ['jobs', 'popular-searches'],
@@ -33,14 +30,13 @@ export const LandingPage: React.FC = () => {
     { id: 'cat-fg', label: 'Fresh Graduate Jobs', path: '/jobs?experience=0' },
   ];
   const displayPopular = popularJobs.length > 0 ? popularJobs : fallbackPopular;
-  // Fetch featured vacancies
-  const jobsQuery = useFeaturedJobs();
 
-  // Fetch categories for search and category grid
-  const categoriesQuery = useQuery({
-    queryKey: ['taxonomy-categories'],
-    queryFn: () => taxonomyApi.categories(),
+  const topCategoriesQuery = useQuery({
+    queryKey: ['jobs', 'top-categories'],
+    queryFn: () => jobsApi.topCategories(),
   });
+  const topCategories = topCategoriesQuery.data?.data ?? [];
+  const visibleCategories = showAllCategories ? topCategories : topCategories.slice(0, 12);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,128 +335,34 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="categories-section">
-        <div className="section-header">
-          <span className="section-eyebrow">Explore Sectors</span>
-          <h2 className="section-title">Browse By Job Category</h2>
-          <p className="section-subtitle">Discover vacancies tailored to your specialized domain</p>
-        </div>
-
-        <div className="mobile-category-picker">
-          <div className="mobile-category-shortcuts" aria-label="Explore job categories">
-            {categoriesQuery.data?.slice(0, 10).map((category) => (
-              <Link key={category.id} to={`/jobs?category=${encodeURIComponent(category.slug)}`}>
-                {category.name}
+      {topCategories.length > 0 && (
+        <section className="top-categories" aria-labelledby="top-categories-title">
+          <h2 id="top-categories-title" className="top-categories-title">Top Categories</h2>
+          <div className="top-categories-grid">
+            {visibleCategories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/jobs?category=${encodeURIComponent(category.slug)}#job-results`}
+                className="top-category-card"
+              >
+                <svg className="top-category-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="1.6" />
+                  <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" strokeWidth="1.6" />
+                </svg>
+                <span className="top-category-name">{category.name}</span>
+                <span className="top-category-count">{category.count}</span>
               </Link>
             ))}
           </div>
-        </div>
-
-        <div className="categories-grid">
-          {categoriesQuery.data?.slice(0, 10).map((cat) => (
-            <Link key={cat.id} to={`/jobs?category=${cat.slug}`} className="category-tile">
-              <div className="cat-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" strokeWidth="2" />
-                </svg>
-              </div>
-              <div className="cat-info">
-                <span className="cat-name">{cat.name}</span>
-                <span className="cat-explore">Explore Openings →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="featured-jobs-section">
-        <div className="section-header-row">
-          <div>
-            <span className="section-eyebrow">Verified Vacancies</span>
-            <h2 className="section-title">{jobsQuery.title}</h2>
-            <p className="section-subtitle">
-              {jobsQuery.description}
-              {jobsQuery.showProfileLink && <> <Link to="/candidate/profile">Update profile</Link></>}
-            </p>
-            {!user && <GuestJobAccessNote />}
-          </div>
-          <Link to="/jobs" className="btn-view-all-jobs">
-            <span>View more</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.2" strokeLinecap="round" />
-            </svg>
-          </Link>
-        </div>
-
-        {jobsQuery.isError ? (
-          <p role="alert">Could not load opportunities. <button type="button" onClick={() => void jobsQuery.refetch()}>Try again</button></p>
-        ) : jobsQuery.isLoading ? (
-          <div className="featured-jobs-grid">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="job-card-skeleton" />
-            ))}
-          </div>
-        ) : jobsQuery.data?.data && jobsQuery.data.data.length > 0 ? (
-          <div className="featured-jobs-grid">
-            {jobsQuery.data.data.slice(0, 6).map((job) => {
-              const hasSalary = Boolean(job.salaryVisibility && (job.salaryMin || job.salaryMax));
-              const salary = hasSalary
-                ? `${job.salaryCurrency ?? 'ETB'} ${[job.salaryMin, job.salaryMax]
-                    .filter((value): value is number => value != null)
-                    .map((value) => Number(value).toLocaleString())
-                    .join(' – ')}`
-                : null;
-              const meta = [job.location?.name, job.employmentType.replace(/_/g, ' ')].filter(Boolean).join(' · ');
-              return (
-                <article key={job.id} className="home-feature-card">
-                  <div className="home-feature-top">
-                    <div className="home-job-logo">
-                      <CompanyLogoMark
-                        name={job.company?.name}
-                        logoId={job.company?.logo?.id ?? job.company?.logoFileId}
-                        imgClassName="company-logo-img"
-                      />
-                    </div>
-                    <div className="home-feature-copy">
-                      <span className="home-feature-company">{job.company?.name ?? 'Progress Partner'}</span>
-                      <h3>
-                        <JobDetailLink slug={job.slug}>{job.title}</JobDetailLink>
-                      </h3>
-                    </div>
-                  </div>
-                  {meta ? <p className="home-feature-meta">{meta}</p> : null}
-                  <div className="home-feature-foot">
-                    <span className={salary ? 'home-feature-pay' : 'home-feature-pay is-quiet'}>
-                      {salary ? (
-                        <>
-                          {salary}
-                          <small> / month</small>
-                        </>
-                      ) : (
-                        `Closes ${new Date(job.applicationDeadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-                      )}
-                    </span>
-                    <JobDetailLink slug={job.slug} className="home-feature-view">
-                      <span>View</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2.2" strokeLinecap="round" />
-                      </svg>
-                    </JobDetailLink>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="empty-jobs-banner">
-            <p>No featured vacancies are currently published. Browse our live database.</p>
-            <Link to="/jobs" className="btn-nav-register">
-              Browse All Jobs
-            </Link>
-          </div>
-        )}
-      </section>
+          {topCategories.length > 12 && (
+            <div className="top-categories-more">
+              <button type="button" onClick={() => setShowAllCategories((open) => !open)}>
+                {showAllCategories ? 'Show less' : 'View all categories >>'}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
       {!user && (
         <section className="dual-cta-section">

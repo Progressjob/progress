@@ -44,6 +44,13 @@ export interface TrendingIndustry {
   count: number;
 }
 
+export interface TopCategory {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+
 export interface FeaturedJobsResponse {
   data: Job[];
   personalized: boolean;
@@ -56,6 +63,8 @@ export const jobsApi = {
     apiFetch<{ data: PopularJobFilter[] }>(`/jobs/popular-searches?limit=${limit}`, { skipAuth: true }),
   trendingIndustries: (limit = 6) =>
     apiFetch<{ data: TrendingIndustry[] }>(`/jobs/trending-industries?limit=${limit}`, { skipAuth: true }),
+  topCategories: () =>
+    apiFetch<{ data: TopCategory[] }>('/jobs/top-categories', { skipAuth: true }),
   list: (params: JobListParams = {}) => {
     const search = new URLSearchParams();
     if (params.q?.trim()) search.set('q', params.q.trim());

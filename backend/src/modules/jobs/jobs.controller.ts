@@ -79,6 +79,11 @@ export class PublicJobsController {
     return this.jobs.popularSearches(limit);
   }
 
+  @Get('top-categories')
+  topCategories() {
+    return this.jobs.topCategories();
+  }
+
   @Get('trending-industries')
   trendingIndustries(@Query('limit', new ParseIntPipe({ optional: true })) limit = 6) {
     return this.jobs.trendingIndustries(limit);
