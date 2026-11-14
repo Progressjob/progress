@@ -132,7 +132,7 @@ async function main(): Promise<void> {
     create: {
       userId: candidate.id,
       headline: 'Demo Candidate - Fullstack Developer',
-      bio: 'Demo candidate profile for testing application and profile features.',
+      summary: 'Demo candidate profile for testing application and profile features.',
     },
     update: {},
   });
