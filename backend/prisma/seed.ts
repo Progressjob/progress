@@ -1,8 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { PROGRESS_HIRE_EMAIL } from '../src/common/progress-contact';
-import { seedDemoData } from './seed-demo-data';
 import { ensureCompanyLogo } from './seed-company-logos';
 
 const prisma = new PrismaClient();
@@ -129,7 +127,6 @@ async function main(): Promise<void> {
 
   if ((process.env.NODE_ENV ?? 'development') !== 'production') {
     await seedDevelopmentData(roles, admin.id);
-    await seedDemoData(prisma);
   }
 }
 
@@ -196,58 +193,6 @@ async function seedDevelopmentData(roles: Map<string, number>, adminId: string):
     create: { userId: candidate.id, headline: 'Demo Candidate' },
     update: {},
   });
-
-  const category = await prisma.jobCategory.findUniqueOrThrow({
-    where: { slug: 'information-technology' },
-  });
-  const location = await prisma.location.findUniqueOrThrow({
-    where: { slug: 'addis-ababa-addis-ababa' },
-  });
-  await prisma.job.updateMany({
-    where: { educationRequirement: { in: ['Bachelor degree', 'Bachelors degree'] } },
-    data: { educationRequirement: "Bachelor's Degree" },
-  });
-
-  const sample = await prisma.job.findFirst({
-    where: { companyId: company.id, referenceCode: 'DEV-001' },
-  });
-  const hireThroughProgress = {
-    applicationMethod: 'admin' as const,
-    applicationEmail: PROGRESS_HIRE_EMAIL,
-  };
-  if (!sample) {
-    const deadline = new Date();
-    deadline.setUTCDate(deadline.getUTCDate() + 30);
-    await prisma.job.create({
-      data: {
-        companyId: company.id,
-        createdBy: adminId,
-        categoryId: category.id,
-        locationId: location.id,
-        title: 'Junior Backend Developer',
-        slug: 'junior-backend-developer-demo',
-        referenceCode: 'DEV-001',
-        description: 'Development-only sample vacancy.',
-        educationRequirement: "Bachelor's Degree",
-        employmentType: 'full_time',
-        workplaceType: 'hybrid',
-        ...hireThroughProgress,
-        applicationDeadline: deadline,
-        status: 'published',
-        postedAt: new Date(),
-        approvedBy: adminId,
-        approvedAt: new Date(),
-      },
-    });
-  } else {
-    await prisma.job.update({
-      where: { id: sample.id },
-      data: {
-        ...hireThroughProgress,
-        educationRequirement: sample.educationRequirement ?? "Bachelor's Degree",
-      },
-    });
-  }
 }
 
 main()
