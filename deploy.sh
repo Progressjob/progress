@@ -33,14 +33,14 @@ git reset --hard origin/main
 # 2. Update backend, apply migrations & build NestJS
 echo "[2/4] Updating backend dependencies and compiling..."
 cd "$REPO_DIR/backend"
-npm install --include=dev
+npm install --production=false
 npx prisma migrate deploy
 npm run build
 
 # 3. Build frontend SPA
 echo "[3/4] Building frontend application..."
 cd "$REPO_DIR/frontend"
-npm install --include=dev
+npm install --production=false
 npm run build
 chmod -R o+rx "$REPO_DIR/frontend/dist"
 chmod -R o+rwx "$REPO_DIR/backend/storage" 2>/dev/null || true
