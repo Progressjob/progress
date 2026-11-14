@@ -110,7 +110,7 @@ async function listenWithPortFallback(app: INestApplication, preferredPort: numb
 }
 
 async function bootstrap(AppModule: ReturnType<typeof loadAppModule>): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableShutdownHooks();
   app.use(
     helmet({

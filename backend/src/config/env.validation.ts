@@ -17,4 +17,5 @@ export const envValidationSchema = Joi.object({
   SMTP_USER: Joi.string().allow('').optional(),
   SMTP_PASSWORD: Joi.string().allow('').optional(),
   GOOGLE_CLIENT_ID: Joi.string().allow('').optional(),
+  DEPLOY_WEBHOOK_SECRET: Joi.string().allow('').optional(),
 });

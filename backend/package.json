@@ -23,6 +23,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
+    "seed:accounts": "tsx prisma/seed-demo-accounts.ts",
     "seed:demo": "tsx prisma/seed-demo-data.ts",
     "cv:open": "tsx prisma/open-sample-cv.ts"
   },

@@ -12,6 +12,7 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CandidatesModule } from './modules/candidates/candidates.module';
 import { CompaniesModule } from './modules/companies/companies.module';
+import { DeployModule } from './modules/deploy/deploy.module';
 import { FilesModule } from './modules/files/files.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -27,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
+    DeployModule,
     FilesModule,
     TaxonomyModule,
     CompaniesModule,
