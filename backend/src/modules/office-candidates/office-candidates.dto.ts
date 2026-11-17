@@ -7,7 +7,9 @@ import {
   IsOptional,
   IsString,
   Length,
+  Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 export const OFFICE_STATUSES = ['new', 'negotiating', 'ready', 'placed'] as const;
@@ -26,7 +28,10 @@ export class OfficeCandidateFieldsDto {
   @Length(9, 30)
   phone!: string;
 
-  @IsOptional() @IsString() @MaxLength(40) nationalId?: string;
+  @IsOptional()
+  @ValidateIf((_, v) => typeof v === 'string' && v.length > 0)
+  @Matches(/^\d{16}$/, { message: 'National ID FAN number must be exactly 16 digits' })
+  nationalId?: string;
   @IsOptional() @IsString() @MaxLength(200) headline?: string;
   @IsOptional() @IsString() @MaxLength(30) gender?: string;
   @IsOptional() @IsDateString() dateOfBirth?: string;
@@ -67,7 +72,10 @@ export class UpdateOfficeCandidateDto {
   @IsOptional() @IsString() @Length(1, 100) firstName?: string;
   @IsOptional() @IsString() @Length(1, 100) lastName?: string;
   @IsOptional() @IsString() @Length(9, 30) phone?: string;
-  @IsOptional() @IsString() @MaxLength(40) nationalId?: string;
+  @IsOptional()
+  @ValidateIf((_, v) => typeof v === 'string' && v.length > 0)
+  @Matches(/^\d{16}$/, { message: 'National ID FAN number must be exactly 16 digits' })
+  nationalId?: string;
   @IsOptional() @IsString() @MaxLength(200) headline?: string;
   @IsOptional() @IsString() @MaxLength(30) gender?: string;
   @IsOptional() @IsDateString() dateOfBirth?: string;

@@ -3201,6 +3201,20 @@
   .admin-candidates-screen .admin-candidate-profile-link {
     width: 100%;
   }
+  .admin-office-registry-page .office-register-form {
+    max-width: none;
+  }
+  .office-intake-sheet {
+    border-radius: 14px;
+  }
+  .office-form-section {
+    padding: 0.85rem 0.9rem 1rem;
+  }
+  .office-form-section :is(input, select, textarea),
+  .office-form-section .et-phone {
+    min-height: 44px;
+    font-size: 16px;
+  }
 }
 
 .employer-job-filter-label {

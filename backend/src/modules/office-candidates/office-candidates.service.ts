@@ -128,6 +128,7 @@ export class OfficeCandidatesService {
   async create(adminId: string, dto: OfficeCandidateFieldsDto) {
     const phone = this.requirePhone(dto.phone);
     const nationalId = blank(dto.nationalId);
+    this.assertNationalId(nationalId);
     await this.assertUnique(phone, nationalId);
     const role = await this.prisma.role.findUnique({ where: { name: 'candidate' } });
     if (!role) throw new ConflictException('Roles have not been seeded');
@@ -191,6 +192,7 @@ export class OfficeCandidatesService {
     if (!existing) throw new NotFoundException('Office candidate not found');
     const phone = dto.phone === undefined ? undefined : this.requirePhone(dto.phone);
     const nationalId = dto.nationalId === undefined ? undefined : blank(dto.nationalId);
+    if (nationalId !== undefined) this.assertNationalId(nationalId);
     await this.assertUnique(phone, nationalId, existing.userId, existing.id);
     const salary = dto.expectedSalary;
     await this.prisma.$transaction(async (tx) => {
@@ -344,6 +346,12 @@ export class OfficeCandidatesService {
     const phone = toEthiopianE164(raw);
     if (!phone) throw new BadRequestException('Enter a valid Ethiopian mobile number');
     return phone;
+  }
+
+  private assertNationalId(nationalId?: string | null) {
+    if (nationalId && !/^\d{16}$/.test(nationalId)) {
+      throw new BadRequestException('National ID FAN number must be exactly 16 digits');
+    }
   }
 
   private async assertUnique(phone?: string, nationalId?: string | null, userId?: string, profileId?: string) {

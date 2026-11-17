@@ -60,32 +60,63 @@ export const AdminOfficeCandidatesPage: React.FC = () => {
   });
 
   return (
-    <div className="stack admin-candidates-screen">
+    <div className="stack admin-candidates-screen admin-office-registry-page">
       <div className="page-header">
         <span className="section-eyebrow">Office registry</span>
         <h1>Office candidates</h1>
         <p className="muted">People registered at the office. They are kept separate from website accounts.</p>
       </div>
-      <div className="directory-company-actions">
-        <button type="button" onClick={() => setCreating((open) => !open)}>
+      <div className="office-page-toolbar">
+        <button type="button" className="rec-btn rec-btn-primary" onClick={() => setCreating((open) => !open)}>
           {creating ? 'Close form' : 'Register walk-in'}
         </button>
-        <button type="button" onClick={() => void downloadOfficeTemplate()}>Download Excel template</button>
+        <button type="button" className="rec-btn rec-btn-soft" onClick={() => void downloadOfficeTemplate()}>
+          Download Excel template
+        </button>
       </div>
 
       {creating && (
         <form
-          className="stack"
+          className="office-register-form"
           onSubmit={(event) => {
             event.preventDefault();
             createMutation.mutate();
           }}
         >
           {createMutation.isError && <div className="alert-box-error">{(createMutation.error as Error).message}</div>}
-          <OfficeCandidateForm value={form} onChange={setForm} />
-          <button type="submit" disabled={createMutation.isPending || !form.consent}>
-            {createMutation.isPending ? 'Saving…' : 'Save office candidate'}
-          </button>
+          <div className="office-register-layout">
+            <div className="office-register-main">
+              <OfficeCandidateForm value={form} onChange={setForm} />
+              <div className="office-form-footer">
+                <p className="muted">Consent is required before this record can be shared with employers.</p>
+                <button type="submit" className="rec-btn rec-btn-primary" disabled={createMutation.isPending || !form.consent}>
+                  {createMutation.isPending ? 'Saving…' : 'Save office candidate'}
+                </button>
+              </div>
+            </div>
+            <aside className="office-intake-hints" aria-label="What to collect from a walk-in candidate">
+              <p className="office-hints-kicker">Admin helper</p>
+              <h2>Ask and collect</h2>
+              <p className="office-hints-lead">Use this while the candidate is at the desk. Only the basics are needed to register them.</p>
+              <h3>Collect</h3>
+              <ul>
+                <li>Full name, as written on their FAN</li>
+                <li>A phone number they actually answer</li>
+                <li>National ID FAN number</li>
+                <li>Job they want, and expected salary</li>
+                <li>Education, languages, and recent work</li>
+                <li>CV file, if they brought one</li>
+              </ul>
+              <h3>Also ask</h3>
+              <ul>
+                <li>Can they start now, or are they still negotiating?</li>
+                <li>Which city or area can they work in?</li>
+                <li>Who should we call in an emergency, and who is their guarantor?</li>
+                <li>Do they agree Progress may recommend them to employers?</li>
+              </ul>
+              <p className="office-hints-note">Save first, then open the record to upload the CV. Employers only see the profile you recommend, not the guarantor or emergency details.</p>
+            </aside>
+          </div>
         </form>
       )}
 
@@ -132,7 +163,7 @@ export const AdminOfficeCandidatesPage: React.FC = () => {
       </section>
 
       <div className="form-input-group" style={{ maxWidth: '420px' }}>
-        <label htmlFor="office-search">Search name, phone, FAN or job title</label>
+        <label htmlFor="office-search">Search name, phone, national ID FAN number or job title</label>
         <input id="office-search" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
       <div className="admin-page-tabs">

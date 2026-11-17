@@ -16331,6 +16331,298 @@ a.admin-metric:hover {
   border-color: #b8cdef;
 }
 
+/* Admin office candidate registry form */
+.admin-office-registry-page .office-page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 880px;
+}
+
+.admin-office-registry-page .office-register-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 1180px;
+}
+
+.office-register-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.office-register-main {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 35, 65, 0.04);
+}
+
+.office-register-main .office-intake-sheet {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.office-intake-hints {
+  position: sticky;
+  top: 88px;
+  padding: 1rem 1rem 1.05rem;
+  background: #fff;
+  border: 1px solid #d7e4f6;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 35, 65, 0.04);
+}
+
+.office-hints-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0b57d0;
+}
+
+.office-intake-hints h2 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1.05rem;
+  color: #172b46;
+}
+
+.office-hints-lead,
+.office-hints-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.office-intake-hints h3 {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.office-intake-hints ul {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.office-intake-hints li {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #1e293b;
+}
+
+.office-hints-note {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e8eef6;
+}
+
+.office-intake-sheet {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 35, 65, 0.04);
+}
+
+.office-form-section {
+  margin: 0;
+  padding: 1rem 1.15rem 1.1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.office-form-section + .office-form-section {
+  border-top: 1px solid #eef2f6;
+}
+
+.office-form-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.office-form-hint {
+  margin: -0.4rem 0 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.office-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+
+.office-form-span-full {
+  grid-column: 1 / -1;
+}
+
+.office-form-section .form-input-group {
+  margin: 0;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+.office-form-section .form-input-group label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #475569;
+}
+
+.office-form-section :is(input, select, textarea) {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  border: 1px solid #dbe3ee;
+  background: #f8fafc;
+}
+
+.office-form-section input.is-invalid {
+  border-color: #dc2626;
+  background: #fff5f5;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.office-field-hint,
+.office-field-error {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.office-field-hint {
+  color: #64748b;
+}
+
+.office-field-error {
+  color: #dc2626;
+  font-weight: 650;
+}
+
+.office-form-section :is(input, select, textarea):focus {
+  background: #fff;
+  border-color: #0b57d0;
+  box-shadow: 0 0 0 3px rgba(11, 87, 208, 0.12);
+  outline: none;
+}
+
+.office-form-section textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.office-form-section .et-phone {
+  min-height: 40px;
+  border-radius: 10px;
+  border-color: #dbe3ee;
+  background: #f8fafc;
+}
+
+.office-form-section .et-phone-prefix {
+  padding: 0 0.7rem;
+  font-size: 0.84rem;
+  background: #eef3f8;
+}
+
+.office-form-section .et-phone input {
+  min-height: 38px;
+  padding: 0.4rem 0.7rem !important;
+  font-size: 0.9rem !important;
+  background: transparent !important;
+}
+
+.office-form-consent {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: #f4f8ff;
+  border: 1px solid #d7e4f6;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.office-form-consent input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #0b57d0;
+}
+
+.office-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  border-top: 1px solid #e8eef6;
+  background: #f8fafc;
+}
+
+.office-form-footer p {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.office-form-footer .rec-btn-primary {
+  flex-shrink: 0;
+  min-width: 190px;
+}
+
+@media (max-width: 980px) {
+  .office-register-layout {
+    grid-template-columns: 1fr;
+  }
+  .office-intake-hints {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .office-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .office-form-span-full {
+    grid-column: auto;
+  }
+  .office-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .office-form-footer .rec-btn-primary,
+  .admin-office-registry-page .office-page-toolbar .rec-btn {
+    width: 100%;
+  }
+}
+
 /* ==========================================================================
    Admin compact density
    ========================================================================== */

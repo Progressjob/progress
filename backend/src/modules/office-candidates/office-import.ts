@@ -135,8 +135,10 @@ export async function readOfficeSheet(buffer: Buffer, takenPhones: Set<string>, 
     const phone = toEthiopianE164(read('Employees Phone no'));
     if (!phone) errors.push('Invalid phone number');
     else if (seenPhones.has(phone) || takenPhones.has(phone)) errors.push('Duplicate phone');
-    const nationalId = read('FAN NO').replace(/\s+/g, '') || undefined;
-    if (nationalId && (seenFans.has(nationalId) || takenFans.has(nationalId))) errors.push('Duplicate FAN');
+    const rawFan = read('FAN NO').replace(/\s+/g, '');
+    const nationalId = /^\d{16}$/.test(rawFan) ? rawFan : undefined;
+    if (rawFan && !nationalId) errors.push('National ID FAN number must be exactly 16 digits');
+    if (rawFan && (seenFans.has(rawFan) || takenFans.has(rawFan))) errors.push('Duplicate FAN');
     const birth = readDate('D.B in GC');
     if (read('D.B in GC') && !birth) errors.push('Invalid date of birth');
     const registered = readDate('Date of Register');

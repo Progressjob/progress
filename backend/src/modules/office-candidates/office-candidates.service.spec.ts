@@ -30,11 +30,11 @@ describe('office candidate registration', () => {
       firstName: 'Abebe',
       lastName: 'Kebede',
       phone: '+251911223344',
-      nationalId: 'FAN-1',
+      nationalId: '1234567890123456',
       consent: true,
     })).rejects.toBeInstanceOf(ConflictException);
     expect(prisma.candidateProfile.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { nationalId: 'FAN-1' },
+      where: { nationalId: '1234567890123456' },
     }));
   });
 });

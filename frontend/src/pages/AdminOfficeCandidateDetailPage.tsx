@@ -115,7 +115,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
         </div>
       )}
       {editing && form && (
-        <form className="stack" onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }}>
+        <form className="office-register-form" onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }}>
           {saveMutation.isError && <div className="alert-box-error">{(saveMutation.error as Error).message}</div>}
           <OfficeCandidateForm value={form} onChange={setForm} />
           <button type="submit" disabled={saveMutation.isPending}>Save changes</button>
@@ -124,7 +124,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
 
       <section className="card stack">
         <h2>Profile</h2>
-        <p>Phone {detail.user.phone || '—'} · FAN {detail.nationalId || '—'} · {detail.city || 'Location not set'}</p>
+        <p>Phone {detail.user.phone || '—'} · National ID FAN number {detail.nationalId || '—'} · {detail.city || 'Location not set'}</p>
         <p>Consent {detail.consentAt ? 'recorded' : 'not recorded'}</p>
         <p>{detail.summary || 'No experience notes yet.'}</p>
         {detail.educations[0] && (

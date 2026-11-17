@@ -22,7 +22,7 @@ const OFFICE_LABELS: Record<string, string> = {
   emergencyPhone: 'Emergency phone',
   guarantorName: 'Guarantor',
   guarantorPhone: 'Guarantor phone',
-  guarantorNationalId: 'Guarantor FAN',
+  guarantorNationalId: 'Guarantor national ID FAN number',
   bankAccount: 'Bank account',
   notes: 'Office notes',
 };
@@ -57,7 +57,7 @@ export const OfficeRegistryReadout: React.FC<{
         Progress after your review.
       </p>
       <dl className="rec-facts-grid">
-        <Field label="FAN / national ID" value={registry.nationalId} />
+        <Field label="National ID FAN number" value={registry.nationalId} />
         <Field label="Gender" value={registry.gender} />
         <Field label="Date of birth" value={formatDate(registry.dateOfBirth)} />
         <Field label="Registered" value={formatDate(registry.registeredAt)} />
