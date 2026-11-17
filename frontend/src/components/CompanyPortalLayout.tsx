@@ -160,6 +160,11 @@ export const CompanyPortalLayout: React.FC = () => {
                 Hiring home<MenuNotificationBadge references={['candidates', 'job']} />
               </NavLink>
             )}
+            {companyId && (
+              <NavLink to={`/company/${companyId}/recommendations`}>
+                Recommendations<MenuNotificationBadge references={['recommendation']} />
+              </NavLink>
+            )}
             <NavLink
               to={
                 companyId

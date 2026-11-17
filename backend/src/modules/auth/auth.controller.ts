@@ -6,6 +6,7 @@ import {
   EnableEmployerDto,
   ForgotPasswordDto,
   GoogleLoginDto,
+  ChangePasswordDto,
   LoginDto,
   RefreshDto,
   RegisterDto,
@@ -29,6 +30,14 @@ export class AuthController {
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @Post('change-password')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  changePassword(@CurrentUser() user: AuthUser, @Body() dto: ChangePasswordDto) {
+    return this.auth.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
   @Post('google')

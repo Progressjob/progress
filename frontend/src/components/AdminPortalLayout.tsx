@@ -8,7 +8,8 @@ const primaryLinks = [
   ['Dashboard', '/admin'],
   ['Companies', '/admin/companies'],
   ['Jobs', '/admin/jobs'],
-  ['Candidates', '/admin/candidates'],
+  ['Online candidates', '/admin/candidates'],
+  ['Office candidates', '/admin/office-candidates'],
   ['Taxonomy', '/admin/taxonomy'],
 ];
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { RecommendCandidateModal } from "../components/admin/RecommendCandidateModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api/admin";
 import { AdminCandidateApplicationsModal } from "../components/admin/AdminCandidateApplicationsModal";
@@ -11,6 +12,7 @@ export const AdminCandidatesPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [applicationsFor, setApplicationsFor] =
     useState<AdminCandidateUser | null>(null);
+  const [recommendFor, setRecommendFor] = useState<AdminCandidateUser | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -45,7 +47,7 @@ export const AdminCandidatesPage: React.FC = () => {
     <div className="stack admin-candidates-screen">
       <div className="page-header">
         <span className="section-eyebrow">Talent management</span>
-        <h1>Candidates</h1>
+        <h1>Online candidates</h1>
         <p className="muted">
           {candidates.length} candidate{candidates.length === 1 ? "" : "s"}{" "}
           listed. Use <strong>Block</strong> to stop new job applications (they
@@ -143,6 +145,13 @@ export const AdminCandidatesPage: React.FC = () => {
               </div>
               <div className="directory-company-actions">
                 <button
+                  type="button"
+                  disabled={!c.profile?.id}
+                  onClick={() => setRecommendFor(c)}
+                >
+                  Recommend
+                </button>
+                <button
                   disabled={!c.stats.applicationsCount}
                   onClick={() => setApplicationsFor(c)}
                 >
@@ -168,6 +177,13 @@ export const AdminCandidatesPage: React.FC = () => {
         )}
       </div>
 
+      {recommendFor?.profile?.id && (
+        <RecommendCandidateModal
+          candidateId={recommendFor.profile.id}
+          candidateName={`${recommendFor.firstName} ${recommendFor.lastName}`}
+          onClose={() => setRecommendFor(null)}
+        />
+      )}
       {applicationsFor && (
         <AdminCandidateApplicationsModal
           candidate={applicationsFor}

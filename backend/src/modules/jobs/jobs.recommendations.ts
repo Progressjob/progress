@@ -36,3 +36,20 @@ export function recommendationScore(terms: Set<string>, skillIds: Set<string>, j
   for (const skill of job.skills) if (skillIds.has(skill.skillId)) score += 6;
   return score;
 }
+
+export function rankMatchingJobs<T extends {
+  id: string;
+  title: string;
+  educationRequirement: string | null;
+  category: { name: string };
+  skills: { skillId: string }[];
+}>(profile: RecommendationProfile, jobs: T[], limit = 8): { id: string; score: number }[] {
+  const terms = profileTerms(profile);
+  const skillIds = new Set(profile.skills.map((skill) => skill.skillId));
+  if (!terms.size && !skillIds.size) return [];
+  return jobs
+    .map((job) => ({ id: job.id, score: recommendationScore(terms, skillIds, job) }))
+    .filter((job) => job.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}

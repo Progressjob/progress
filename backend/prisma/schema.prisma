@@ -125,6 +125,18 @@ enum ReportStatus {
   dismissed
 }
 
+enum CandidateSource {
+  online
+  office
+}
+
+enum RecommendationStatus {
+  sent
+  viewed
+  interested
+  declined
+}
+
 model User {
   id                      String                        @id @default(uuid()) @db.Uuid
   email                   String?                       @unique @db.VarChar(255)
@@ -137,6 +149,7 @@ model User {
   emailVerifiedAt         DateTime?                     @map("email_verified_at") @db.Timestamptz
   phoneVerifiedAt         DateTime?                     @map("phone_verified_at") @db.Timestamptz
   lastLoginAt             DateTime?                     @map("last_login_at") @db.Timestamptz
+  mustChangePassword      Boolean                       @default(false) @map("must_change_password")
   createdAt               DateTime                      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt               DateTime                      @updatedAt @map("updated_at") @db.Timestamptz
   candidateProfile        CandidateProfile?
@@ -159,6 +172,8 @@ model User {
   jobRevisions            JobRevision[]
   contactMessages         ContactMessage[]
   reviewedDocuments       CompanyVerificationDocument[]
+  registeredOfficeProfiles CandidateProfile[]           @relation("OfficeRegistrar")
+  recommendationsMade     CandidateRecommendation[]     @relation("RecommendationAuthor")
 
   @@map("users")
 }
@@ -231,9 +246,16 @@ model CandidateProfile {
   profileVisibility  ProfileVisibility     @default(employers) @map("profile_visibility")
   applicationsBlocked Boolean              @default(false) @map("applications_blocked")
   photoFileId        String?               @unique @map("photo_file_id") @db.Uuid
+  source             CandidateSource       @default(online)
+  nationalId         String?               @unique @map("national_id") @db.VarChar(40)
+  registeredById     String?               @map("registered_by_id") @db.Uuid
+  registeredAt       DateTime?             @map("registered_at") @db.Timestamptz
+  consentAt          DateTime?             @map("consent_at") @db.Timestamptz
+  officeStatus       String?               @map("office_status") @db.VarChar(30)
   createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz
   user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registeredBy       User?                 @relation("OfficeRegistrar", fields: [registeredById], references: [id], onDelete: SetNull)
   photo              File?                 @relation("CandidatePhoto", fields: [photoFileId], references: [id], onDelete: SetNull)
   educations         CandidateEducation[]
   experiences        CandidateExperience[]
@@ -243,8 +265,62 @@ model CandidateProfile {
   resumes            CandidateResume[]
   applications       Application[]
   savedJobs          SavedJob[]
+  officeRecord       CandidateOfficeRecord?
+  recommendations    CandidateRecommendation[]
 
+  @@index([source])
   @@map("candidate_profiles")
+}
+
+model CandidateOfficeRecord {
+  candidateId           String           @id @map("candidate_id") @db.Uuid
+  department            String?          @db.VarChar(150)
+  category              String?          @db.VarChar(150)
+  jobGrade              String?          @map("job_grade") @db.VarChar(80)
+  basicSalaryExpectation Decimal?        @map("basic_salary_expectation") @db.Decimal(12, 2)
+  transportAllowance    String?          @map("transport_allowance") @db.VarChar(80)
+  houseAllowance        String?          @map("house_allowance") @db.VarChar(80)
+  mobileAllowance       String?          @map("mobile_allowance") @db.VarChar(80)
+  foodCoupon            String?          @map("food_coupon") @db.VarChar(80)
+  maritalStatus         String?          @map("marital_status") @db.VarChar(40)
+  placeOfBirth          String?          @map("place_of_birth") @db.VarChar(150)
+  bloodGroup            String?          @map("blood_group") @db.VarChar(20)
+  motherName            String?          @map("mother_name") @db.VarChar(150)
+  emergencyContactName  String?          @map("emergency_contact_name") @db.VarChar(150)
+  emergencyRelationship String?          @map("emergency_relationship") @db.VarChar(80)
+  emergencyPhone        String?          @map("emergency_phone") @db.VarChar(30)
+  guarantorName         String?          @map("guarantor_name") @db.VarChar(150)
+  guarantorPhone        String?          @map("guarantor_phone") @db.VarChar(30)
+  guarantorNationalId   String?          @map("guarantor_national_id") @db.VarChar(40)
+  bankAccount           String?          @map("bank_account") @db.VarChar(80)
+  notes                 String?
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  candidate             CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("candidate_office_records")
+}
+
+model CandidateRecommendation {
+  id               String               @id @default(uuid()) @db.Uuid
+  candidateId      String               @map("candidate_id") @db.Uuid
+  companyId        String               @map("company_id") @db.Uuid
+  jobId            String?              @map("job_id") @db.Uuid
+  note             String?
+  recommendedById  String               @map("recommended_by_id") @db.Uuid
+  status           RecommendationStatus @default(sent)
+  employerResponse String?              @map("employer_response")
+  viewedAt         DateTime?            @map("viewed_at") @db.Timestamptz
+  respondedAt      DateTime?            @map("responded_at") @db.Timestamptz
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  candidate        CandidateProfile     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  company          Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job              Job?                 @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  recommendedBy    User                 @relation("RecommendationAuthor", fields: [recommendedById], references: [id], onDelete: Restrict)
+
+  @@unique([candidateId, companyId, jobId])
+  @@index([companyId, status])
+  @@index([candidateId])
+  @@map("candidate_recommendations")
 }
 
 model CandidateEducation {
@@ -413,6 +489,7 @@ model Company {
   members            CompanyMember[]
   documents          CompanyVerificationDocument[]
   jobs               Job[]
+  recommendations    CandidateRecommendation[]
 
   @@index([industryId])
   @@map("companies")
@@ -535,6 +612,7 @@ model Job {
   views                   JobView[]
   reports                 JobReport[]
   revisions               JobRevision[]
+  recommendations         CandidateRecommendation[]
 
   @@unique([companyId, referenceCode])
   @@index([status, postedAt(sort: Desc)])

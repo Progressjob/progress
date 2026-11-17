@@ -11,5 +11,6 @@ import { TalentService } from './talent.service';
   imports: [AuthModule],
   controllers: [EmployerTalentController, AdminTalentController, TalentBrowseController],
   providers: [TalentService],
+  exports: [TalentService],
 })
 export class TalentModule {}

@@ -18,7 +18,8 @@ export type NotificationCategory =
   | "companies"
   | "jobs"
   | "applications"
-  | "messages";
+  | "messages"
+  | "recommendations";
 
 export interface NotificationListQuery {
   q?: string;

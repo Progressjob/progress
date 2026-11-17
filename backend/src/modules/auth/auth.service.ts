@@ -79,7 +79,24 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
-    return this.issueTokens(user.id, user.email, user.roles.map((r) => r.role.name));
+    const tokens = await this.issueTokens(user.id, user.email, user.roles.map((r) => r.role.name));
+    return { ...tokens, mustChangePassword: user.mustChangePassword };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.passwordHash) throw new UnauthorizedException('Invalid credentials');
+    if (!(await argon2.verify(user.passwordHash, currentPassword))) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await argon2.hash(newPassword, { type: argon2.argon2id }),
+        mustChangePassword: false,
+      },
+    });
+    return { mustChangePassword: false };
   }
 
   async loginWithGoogle(idToken: string) {
@@ -366,6 +383,7 @@ export class AuthService {
         firstName: true,
         lastName: true,
         accountStatus: true,
+        mustChangePassword: true,
         roles: { select: { role: { select: { name: true } } } },
         candidateProfile: { select: { id: true, applicationsBlocked: true } },
         companyMemberships: {

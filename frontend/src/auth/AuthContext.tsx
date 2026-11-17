@@ -30,6 +30,7 @@ export interface AuthUser {
   candidateProfileId: string | null;
   applicationsBlocked: boolean;
   accountStatus: string;
+  mustChangePassword: boolean;
   companyMemberships: Array<{ companyId: string; memberRole: string }>;
 }
 
@@ -78,13 +79,13 @@ function isAuthUserSnapshot(value: unknown): value is AuthUser {
 function readOptimisticUser(): AuthUser | null {
   if (!hasStoredSession()) return null;
   const snap = getStoredUserSnapshot<AuthUser>();
-  return isAuthUserSnapshot(snap) ? snap : null;
+  return isAuthUserSnapshot(snap) ? { ...snap, mustChangePassword: snap.mustChangePassword === true } : null;
 }
 
 function normalizeMe(raw: AuthMeResponse): AuthUser {
   return {
     id: raw.id,
-    email: raw.email,
+    email: raw.email ?? '',
     firstName: raw.firstName,
     lastName: raw.lastName,
     phone: raw.phone ?? null,
@@ -92,6 +93,7 @@ function normalizeMe(raw: AuthMeResponse): AuthUser {
     candidateProfileId: raw.candidateProfile?.id ?? null,
     applicationsBlocked: raw.candidateProfile?.applicationsBlocked ?? false,
     accountStatus: raw.accountStatus,
+    mustChangePassword: raw.mustChangePassword === true,
     companyMemberships: raw.companyMemberships ?? [],
   };
 }

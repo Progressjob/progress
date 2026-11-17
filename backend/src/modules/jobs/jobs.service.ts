@@ -1,4 +1,4 @@
-import { profileTerms, recommendationScore } from './jobs.recommendations';
+import { profileTerms, rankMatchingJobs } from './jobs.recommendations';
 import {
   BadRequestException,
   ForbiddenException,
@@ -100,7 +100,7 @@ export class JobsService {
       personalized: false,
       reason,
     });
-    if (!terms.size && !skillIds.size) return fallback('incomplete_profile');
+    if (!profile || (!terms.size && !skillIds.size)) return fallback('incomplete_profile');
     const eligible = {
       status: JobStatus.published,
       postedAt: { not: null },
@@ -115,8 +115,7 @@ export class JobsService {
       },
       orderBy: [{ isFeatured: 'desc' }, { postedAt: 'desc' }, { id: 'asc' }],
     });
-    const ranked = jobs.map((job) => ({ id: job.id, score: recommendationScore(terms, skillIds, job) }))
-      .filter((job) => job.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+    const ranked = rankMatchingJobs(profile, jobs, 8);
     if (!ranked.length) return fallback('no_matches');
     const matches = await this.prisma.job.findMany({
       where: { ...eligible, id: { in: ranked.map((job) => job.id) } },

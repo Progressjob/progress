@@ -445,7 +445,7 @@ export const AdminJobsPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="employer-tabs-header jb-admin-tabs-header" style={{ marginTop: '1.15rem' }}>
+          <div className="employer-tabs-header jb-admin-tabs-header">
             <div className="employer-tabs-nav" role="tablist" aria-label="Active and history job lists">
               <button
                 type="button"

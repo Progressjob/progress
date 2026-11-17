@@ -137,6 +137,19 @@
   .admin-overview-header, .admin-job-preview-bar, .admin-job-changes-head {
     flex-direction: column; align-items: stretch; gap: 12px;
   }
+  .admin-job-preview-bar-main {
+    justify-content: space-between;
+  }
+  .admin-job-preview-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    margin-left: 0;
+  }
+  .admin-job-preview-actions .admin-jobs-action {
+    width: 100%;
+    justify-content: center;
+  }
   .board-title, .jb-hero-title { font-size: clamp(1.75rem, 7vw, 2.5rem); }
   .jb-hero-inner, .jb-body { padding-inline: 0; }
   .jb-hero { padding-inline: 16px; padding-top: 1.25rem !important; padding-bottom: 0.5rem !important; }
@@ -1073,7 +1086,12 @@
   .jd-company-title-static { display: inline; }
   .jd-side-title-mobile { display: none !important; }
   .jd-contact-share { display: contents; }
-  .jd-support-links { display: contents; }
+  .jd-support-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
   .jd-support-blurb { display: none !important; }
   .jd-support-desktop-copy { display: block; }
   .share-name { display: none !important; }
@@ -2129,10 +2147,20 @@
     padding-top: 0;
     border-top: 0;
   }
-  .job-detail-page .support-phone,
+  .job-detail-page .support-phone {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 750;
+    color: #0b57d0;
+    text-decoration: none;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: keep-all;
+  }
   .job-detail-page .support-email {
     display: block;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-weight: 650;
     color: #0b57d0;
     text-decoration: none;
@@ -3069,11 +3097,27 @@
 }
 
 @media screen and (max-width: 768px) {
-  .admin-jobs-page .jb-hero-admin { padding-block: 12px; }
-  .admin-jobs-page .jb-admin-hero-row { gap: 8px; }
-  .admin-jobs-page .jb-admin-hero-row .page-back-button { margin-bottom: 8px; }
+  .admin-content .admin-jobs-page .jb-hero-inner,
+  .admin-content .admin-jobs-page .jb-body { padding-inline: 12px; }
+  .admin-jobs-page .jb-hero-admin { padding-block: 10px 0; }
+  .admin-jobs-page .jb-admin-hero-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .admin-jobs-page .jb-admin-hero-row .page-back-button { margin-bottom: 6px; }
   .admin-jobs-page .jb-admin-hero-row .jb-hero-copy { display: none; }
-  .admin-jobs-page .jb-admin-hero-row .btn-nav-register { width: 100%; min-height: 44px; }
+  .admin-jobs-page .jb-hero-title { font-size: 1.3rem; }
+  .admin-jobs-page .jb-admin-hero-row .btn-nav-register {
+    width: auto;
+    min-height: 36px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8125rem;
+    align-self: flex-end;
+  }
   .admin-jobs-page .jb-admin-tabs-header {
     display: flex;
     align-items: center;
@@ -3089,18 +3133,40 @@
     gap: 4px;
   }
   .admin-jobs-page .jb-admin-tabs-header .jb-results-count { width: auto; font-size: .75rem; }
-  .admin-jobs-page .jb-admin-toolbar { margin-block: 10px 12px; }
+  .admin-jobs-page .jb-admin-toolbar { margin-block: 10px 12px; gap: 8px; }
   .admin-jobs-page .jb-admin-toolbar .jb-search-bar {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    padding: 4px 6px;
-    gap: 5px;
-    border-radius: 12px;
+    flex: 1 1 100% !important;
+    height: 40px;
+    padding: 0 4px 0 10px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
   }
-  .admin-jobs-page .jb-admin-toolbar .jb-search-bar input { width: 100%; min-width: 0; }
-  .admin-jobs-page .jb-admin-toolbar .jb-search-submit { width: auto; padding-inline: 8px; font-size: .72rem; }
-  .admin-jobs-page .jb-industry-bar { margin-block: 8px; }
+  .admin-jobs-page .jb-admin-toolbar .jb-search-bar input { width: 100%; min-width: 0; padding: 0 !important; }
+  .admin-jobs-page .jb-admin-toolbar .jb-search-submit {
+    min-width: 0 !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: 8px !important;
+    font-size: .72rem !important;
+  }
+  .admin-jobs-page .jb-admin-hero-row .btn-nav-register { box-shadow: none; }
+  .admin-jobs-page .jb-admin-tabs-header { flex-wrap: nowrap; justify-content: space-between; padding-bottom: 10px; }
+  .admin-jobs-page .jb-admin-tabs-header .employer-tabs-nav { display: flex; width: auto; }
+  .admin-jobs-page .employer-jobs-tab { min-height: 34px; padding: 0 12px; }
+  .admin-jobs-page .jb-featured-heading-mobile { display: none !important; }
+  .admin-jobs-page .jb-featured-kicker-desktop { display: flex !important; font-size: .78rem; }
+  .admin-jobs-page .jb-featured-title-desktop { display: block !important; font-size: .7rem; }
+  .admin-jobs-page .jb-industry-bar { order: 0; margin: 0; }
+  .admin-jobs-page .jb-filters-admin-wrap { flex: 1 1 100%; }
+  .admin-jobs-page .jb-filters-mobile-toggle-bar { margin-bottom: 0; }
+  .admin-jobs-page .jb-filters-admin.is-open { margin-top: 8px; }
+  .admin-jobs-page .jb-filter-select { height: auto; padding: 5px 8px !important; border-radius: 8px !important; }
+  .admin-jobs-page .jb-featured { padding: 12px; margin-bottom: 12px; }
+  .admin-jobs-page .jb-featured-card { flex-basis: 78%; }
+  .admin-content > .stack,
+  .admin-screen { padding: 12px 12px 20px; }
+  .admin-content .page-header h1,
+  .admin-screen h1 { font-size: 1.3rem; }
 
   .admin-candidates-screen > .page-header {
     padding: 12px;
@@ -4164,4 +4230,57 @@
   .candidate-workspace .app-detail-compact .candidate-interview { padding: 12px; }
   .candidate-workspace .app-detail-compact .candidate-interview-heading { font-size: .88rem; }
   .candidate-workspace .app-detail-compact .candidate-interview-details { gap: 10px; margin-top: 10px; font-size: .84rem; }
+}
+
+@media screen and (max-width: 768px) {
+  .company-recommendation-shell {
+    padding: 0 2px 1.5rem;
+    gap: 0.65rem;
+  }
+  .company-recommendation-shell .page-back-button {
+    min-height: 40px;
+    margin-bottom: 0.25rem;
+  }
+  .rec-panel {
+    padding: 0.85rem 0.9rem;
+    border-radius: 14px;
+  }
+  .rec-page-head h1 {
+    font-size: 1.28rem;
+  }
+  .rec-facts-grid {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+  .rec-fact-cell {
+    border-radius: 10px;
+    padding: 0.5rem 0.6rem;
+  }
+  .rec-response-actions {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+  .rec-list-card {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'status'
+      'action';
+    gap: 0.5rem;
+    padding: 0.85rem;
+    border-radius: 14px;
+  }
+  .rec-list-card .rec-status-pill,
+  .rec-list-card .rec-btn-soft {
+    justify-self: stretch;
+    width: 100%;
+    text-align: center;
+  }
+  .rec-list-card .rec-btn-soft {
+    min-height: 40px;
+  }
+  .rec-inline-cta .rec-btn-primary {
+    display: flex;
+    width: 100%;
+  }
 }

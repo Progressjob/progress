@@ -544,6 +544,32 @@ Then `POST .../publish` when ready for the public site.
 
 ---
 
+## 9b. Office candidates and recommendations
+
+Office (walk-in) candidates are separate from website sign-ups. `GET /admin/candidates` returns `source=online` only.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/admin/office-candidates` | `q`, `officeStatus` (`new`, `negotiating`, `ready`, `placed`) |
+| POST | `/admin/office-candidates` | Intake form. Phone is required and stored as `+251…`. `consent: true` is required by the form. |
+| GET / PATCH | `/admin/office-candidates/:profileId` | Includes the private office record |
+| PATCH | `/admin/office-candidates/:profileId/status` | `{ officeStatus }` |
+| POST | `/admin/office-candidates/:profileId/cv` | Multipart field `file` |
+| GET | `/admin/office-candidates/:profileId/matching-jobs` | Open jobs scored with the same matcher as candidate recommendations |
+| POST | `/admin/office-candidates/:profileId/issue-access` | Returns `{ phone, temporaryPassword }` once. The candidate must change it at `POST /auth/change-password` |
+| GET | `/admin/office-candidates/import/template` | Excel download |
+| POST | `/admin/office-candidates/import/preview` | Multipart `file`. No writes |
+| POST | `/admin/office-candidates/import/commit` | Imports valid rows from the same file |
+| POST | `/admin/recommendations` | `{ candidateId, companyId, jobId?, note? }`. Notifies company members |
+| GET | `/admin/recommendations` | `companyId`, `candidateId`, `status` |
+| GET | `/employer/companies/:companyId/recommendations` | |
+| GET | `/employer/companies/:companyId/recommendations/:id` | Marks `sent` as `viewed`. Includes `recommendedBy`, `note`, and `profile`. **Office** candidates also include `registry` (intake fields + all uploaded CVs). **Online** candidates: use `profile.id` with CV search for the full dossier |
+| PATCH | `/employer/companies/:companyId/recommendations/:id/respond` | `{ status: "interested" \| "declined", message? }` notifies admins |
+
+`POST /auth/change-password` body: `{ currentPassword, newPassword }`. `/auth/me` includes `mustChangePassword`.
+
+---
+
 ## 10. Notifications (any authenticated user)
 
 | Method | Path |

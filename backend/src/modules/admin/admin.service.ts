@@ -111,6 +111,7 @@ export class AdminService {
     const term = query.q?.trim();
     const where: Prisma.UserWhereInput = {
       roles: { some: { role: { name: 'candidate' } } },
+      candidateProfile: { is: { source: 'online' } },
     };
     const and: Prisma.UserWhereInput[] = [];
 

@@ -232,11 +232,13 @@ export const AdminJobDetailPage: React.FC = () => {
           <Link to={isReopening ? '/admin/jobs?view=history' : '/admin/jobs'} className="admin-jobs-back">
             ← Jobs
           </Link>
-          <span className={`admin-status-pill is-${job.status}`}>{formatJobStatus(job.status)}</span>
-          {job.employerEdited && <span className="admin-status-pill is-edited">Employer edited</span>}
-          {isReopening && <span className="admin-status-pill is-edited">Reopening</span>}
+          <div className="admin-job-preview-pills">
+            <span className={`admin-status-pill is-${job.status}`}>{formatJobStatus(job.status)}</span>
+            {job.employerEdited && <span className="admin-status-pill is-edited">Employer edited</span>}
+            {isReopening && <span className="admin-status-pill is-edited">Reopening</span>}
+          </div>
         </div>
-        <div className="admin-jobs-actions">
+        <div className="admin-jobs-actions admin-job-preview-actions" role="toolbar" aria-label="Job actions">
           {!editing && (
             <Link
               to={`/admin/companies/${job.companyId}/jobs/${job.id}/applications`}

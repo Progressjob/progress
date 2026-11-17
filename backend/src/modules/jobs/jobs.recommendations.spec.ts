@@ -1,4 +1,4 @@
-import { profileTerms, recommendationScore } from './jobs.recommendations';
+import { profileTerms, rankMatchingJobs, recommendationScore } from './jobs.recommendations';
 import { JobsService, JobPostingPolicy } from './jobs.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -15,6 +15,13 @@ describe('candidate job recommendations', () => {
     const terms = profileTerms({ ...profile, headline: null, educations: [{ fieldOfStudy: 'Civil Engineering' }] });
     expect(recommendationScore(terms, new Set(), job('Site Engineer', 'Construction'))).toBeGreaterThan(0);
     expect(recommendationScore(new Set(), new Set(['sql']), { ...job('Data Analyst'), skills: [{ skillId: 'sql' }] })).toBe(6);
+  });
+  it('ranks the shared office and online matcher the same way', () => {
+    const ranked = rankMatchingJobs(profile, [
+      { id: 'nurse', ...job('Nurse') },
+      { id: 'accountant', ...job('Accountant', 'Finance') },
+    ]);
+    expect(ranked).toEqual([{ id: 'nurse', score: recommendationScore(profileTerms(profile), new Set(), job('Nurse')) }]);
   });
   it('ignores generic profile language', () => {
     expect(profileTerms({ ...profile, headline: 'Experienced senior professional', educations: [] }).size).toBe(0);

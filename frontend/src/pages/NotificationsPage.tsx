@@ -23,6 +23,7 @@ const CATEGORIES: { id: NotificationCategory; label: string }[] = [
   { id: "jobs", label: "Jobs" },
   { id: "applications", label: "Applications" },
   { id: "messages", label: "Messages" },
+  { id: "recommendations", label: "Recommendations" },
 ];
 
 const DATE_PRESETS = [
@@ -50,12 +51,15 @@ function categoryOf(n: Notification): Exclude<NotificationCategory, "all"> {
       return "applications";
     case "admin_message":
       return "messages";
+    case "candidate_recommendation":
+      return "recommendations";
     default:
       if (n.referenceType === "contact") return "support";
       if (n.referenceType === "report") return "reports";
       if (n.referenceType === "company") return "companies";
       if (n.referenceType === "job") return "jobs";
       if (n.referenceType === "application") return "applications";
+      if (n.referenceType === "recommendation") return "recommendations";
       return "messages";
   }
 }
@@ -169,6 +173,17 @@ export function NotificationsPage() {
   });
 
   const target = (n: Notification) => {
+    if (n.referenceType === "recommendation" && n.referenceId) {
+      const [left, right] = n.referenceId.split(":");
+      if (admin && left && right) {
+        return left === "office"
+          ? `/admin/office-candidates/${right}`
+          : `/admin/cv-search/${right}`;
+      }
+      if (hasRole("employer") && left && right) {
+        return `/company/${left}/recommendations/${right}`;
+      }
+    }
     if (n.referenceType === "company")
       return admin
         ? `/admin/verification?company=${n.referenceId}`

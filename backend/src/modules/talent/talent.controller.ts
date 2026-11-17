@@ -23,8 +23,8 @@ export class EmployerTalentController {
   }
 
   @Get(':candidateId')
-  detail(@Param('candidateId') candidateId: string) {
-    return this.talent.detail(candidateId);
+  detail(@Param('companyId') companyId: string, @Param('candidateId') candidateId: string) {
+    return this.talent.employerDetail(companyId, candidateId);
   }
 }
 
@@ -66,6 +66,6 @@ export class AdminTalentController {
 
   @Get(':candidateId')
   detail(@Param('candidateId') candidateId: string) {
-    return this.talent.detail(candidateId);
+    return this.talent.detail(candidateId, { revealContact: true });
   }
 }

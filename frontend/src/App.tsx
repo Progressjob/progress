@@ -4,7 +4,8 @@ import { AdminSupportPage } from './pages/AdminSupportPage';
 import { AdminReportDetailPage } from './pages/AdminReportDetailPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import React, { useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
@@ -35,6 +36,11 @@ import { CompanyReviewCandidatesPage } from './pages/CompanyReviewCandidatesPage
 import { CompanyPostJobPage } from './pages/CompanyPostJobPage';
 import { CompanyCvSearchPage } from './pages/CompanyCvSearchPage';
 import { CompanyCvDetailPage } from './pages/CompanyCvDetailPage';
+import { AdminOfficeCandidatesPage } from './pages/AdminOfficeCandidatesPage';
+import { AdminOfficeCandidateDetailPage } from './pages/AdminOfficeCandidateDetailPage';
+import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { CompanyRecommendationsPage } from './pages/CompanyRecommendationsPage';
+import { CompanyRecommendationDetailPage } from './pages/CompanyRecommendationDetailPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminJobsPage } from './pages/AdminJobsPage';
 import { AdminJobDetailPage } from './pages/AdminJobDetailPage';
@@ -80,12 +86,25 @@ function ScrollToTop(): null {
   return null;
 }
 
+function MustChangePasswordRedirect() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (user?.mustChangePassword && location.pathname !== '/change-password') {
+      navigate('/change-password', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+  return null;
+}
+
 export function App(): React.ReactElement {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
+          <MustChangePasswordRedirect />
           <DialogViewport />
           <Routes>
             {/* Public & candidate site */}
@@ -106,6 +125,7 @@ export function App(): React.ReactElement {
                   </RequireSignedIn>
                 }
               />
+              <Route path="/change-password" element={<RequireSignedIn><ChangePasswordPage /></RequireSignedIn>} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route
@@ -160,6 +180,8 @@ export function App(): React.ReactElement {
                 element={<CompanyApplicationDetailPage />}
               />
               <Route path="/admin/candidates" element={<AdminCandidatesPage />} />
+              <Route path="/admin/office-candidates" element={<AdminOfficeCandidatesPage />} />
+              <Route path="/admin/office-candidates/:profileId" element={<AdminOfficeCandidateDetailPage />} />
               <Route path="/admin/taxonomy" element={<AdminTaxonomyPage />} />
               <Route path="/admin/cv-search" element={<CompanyCvSearchPage />} />
               <Route path="/admin/cv-search/:candidateId" element={<CompanyCvDetailPage />} />
@@ -190,6 +212,8 @@ export function App(): React.ReactElement {
                 path="/company/:companyId/applications/:applicationId"
                 element={<CompanyApplicationDetailPage />}
               />
+              <Route path="/company/:companyId/recommendations" element={<CompanyRecommendationsPage />} />
+              <Route path="/company/:companyId/recommendations/:id" element={<CompanyRecommendationDetailPage />} />
               <Route path="/company/:companyId/cv-search" element={<CompanyCvSearchPage />} />
               <Route
                 path="/company/:companyId/cv-search/:candidateId"

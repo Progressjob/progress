@@ -1,5 +1,7 @@
 import { BackButton } from '../components/BackButton';
-import React from 'react';
+import React, { useState } from 'react';
+import { RecommendCandidateModal } from '../components/admin/RecommendCandidateModal';
+import { PROGRESS_HIRE_EMAIL, PROGRESS_MOBILE_PHONES } from '../constants/progressContact';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { publicFileUrl } from '../api/files';
@@ -89,6 +91,17 @@ function yearFromDate(value?: string | null): string {
 
           const profile = profileQuery.data;
           if (!profile) return null;
+          return <CvDossier profile={profile} portal={portal} />;
+  }
+
+function CvDossier({
+  profile,
+  portal,
+}: {
+  profile: TalentDetail;
+  portal: ReturnType<typeof useTalentPortal>;
+}) {
+  const [recommend, setRecommend] = useState(false);
 
           const photo = profile.photoFileId ? publicFileUrl(profile.photoFileId) : null;
           const years = formatYears(profile.yearsExperience);
@@ -110,6 +123,7 @@ function yearFromDate(value?: string | null): string {
   };
 
           return (
+            <>
             <div className="cv-detail-page-container">
               {/* Breadcrumb Navigation */}
               <BackButton fallback={portal.listPath} />
@@ -188,6 +202,15 @@ function yearFromDate(value?: string | null): string {
               </button>
             </>
           ) : null}
+
+          {portal.isAdmin && (
+            <button type="button" className="btn-cv-email" onClick={() => setRecommend(true)}>
+              <span>Recommend to employer</span>
+            </button>
+          )}
+          {profile.contactViaProgress && (
+            <span className="btn-cv-email">Registered by Progress</span>
+          )}
 
           {profile.email && (
             <a href={`mailto:${profile.email}?subject=Job Opportunity Inquiry via Progress Jobs`} className="btn-cv-email">
@@ -327,6 +350,16 @@ function yearFromDate(value?: string | null): string {
           <div className="cv-side-card">
             <h3 className="cv-side-title">Contact & Personal Details</h3>
             <div className="cv-contact-list">
+              {profile.contactViaProgress && (
+                <div className="cv-contact-row">
+                  <span className="cv-contact-icon">☎</span>
+                  <div>
+                    <span className="cv-contact-label">Contact via Progress</span>
+                    <span className="cv-contact-value">{PROGRESS_MOBILE_PHONES.join(' · ')}</span>
+                    <span className="cv-contact-value">{PROGRESS_HIRE_EMAIL}</span>
+                  </div>
+                </div>
+              )}
               {profile.email && (
                 <div className="cv-contact-row">
                   <span className="cv-contact-icon">✉️</span>
@@ -462,5 +495,13 @@ function yearFromDate(value?: string | null): string {
         </aside>
       </div>
     </div>
+    {recommend && (
+      <RecommendCandidateModal
+        candidateId={profile.id}
+        candidateName={`${profile.firstName} ${profile.lastName}`}
+        onClose={() => setRecommend(false)}
+      />
+    )}
+    </>
   );
 };

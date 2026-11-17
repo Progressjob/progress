@@ -10,12 +10,14 @@ export interface TokenResponse {
   refreshToken: string;
   expiresAt: string;
   isNew?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface AuthMeResponse {
   id: string;
-  email: string;
+  email: string | null;
   phone?: string | null;
+  mustChangePassword?: boolean;
   firstName: string;
   lastName: string;
   accountStatus: string;
@@ -455,6 +457,8 @@ export interface TalentCard {
   yearsExperience?: number | string | null;
   summary?: string | null;
   availabilityStatus?: string | null;
+  source?: 'online' | 'office';
+  contactViaProgress?: boolean;
 }
 
 export interface TalentResume {
@@ -479,6 +483,18 @@ export interface TalentDetail extends TalentCard {
   certifications: CandidateCertification[];
   languages: CandidateLanguage[];
   resume?: TalentResume | null;
+}
+
+export interface OfficeRecommendationRegistry {
+  nationalId: string | null;
+  gender: string | null;
+  dateOfBirth: string | null;
+  expectedSalary: string | null;
+  salaryCurrency: string | null;
+  consentAt: string | null;
+  registeredAt: string | null;
+  officeRecord: Record<string, string | null>;
+  resumes: TalentResume[];
 }
 
 export interface TalentSearchResponse {

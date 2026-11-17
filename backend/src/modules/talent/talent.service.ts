@@ -20,6 +20,7 @@ const cardSelect = {
   city: true,
   yearsExperience: true,
   availabilityStatus: true,
+  source: true,
   user: { select: { firstName: true, lastName: true } },
   experiences: {
     orderBy: [{ isCurrent: 'desc' as const }, { startDate: 'desc' as const }],
@@ -84,6 +85,8 @@ function toCard(profile: CardRow | DetailRow) {
     yearsExperience: profile.yearsExperience,
     summary: profile.summary,
     availabilityStatus: profile.availabilityStatus,
+    source: 'source' in profile ? profile.source : 'online',
+    contactViaProgress: 'source' in profile && profile.source === 'office',
   };
 }
 
@@ -139,18 +142,35 @@ export class TalentService {
     return { items: rows.map(toCard), total, page: safePage, limit: safeLimit };
   }
 
-  async detail(candidateId: string) {
+  async employerDetail(companyId: string, candidateId: string) {
+    const recommendation = await this.prisma.candidateRecommendation.findFirst({
+      where: { companyId, candidateId },
+      select: { id: true },
+    });
+    return this.detail(candidateId, {
+      requireVisible: !recommendation,
+      revealContact: false,
+    });
+  }
+
+  async detail(
+    candidateId: string,
+    options?: { requireVisible?: boolean; revealContact?: boolean },
+  ) {
+    const requireVisible = options?.requireVisible !== false;
     const profile = await this.prisma.candidateProfile.findFirst({
-      where: { id: candidateId, ...visibleWhere },
+      where: { id: candidateId, ...(requireVisible ? visibleWhere : {}) },
       include: detailInclude,
     });
     if (!profile) throw new NotFoundException('Candidate not found');
 
     const resume = profile.resumes[0];
+    const hideContact = profile.source === 'office' && options?.revealContact !== true;
     return {
       ...toCard(profile),
-      email: profile.user.email,
-      phone: profile.user.phone,
+      email: hideContact ? null : profile.user.email,
+      phone: hideContact ? null : profile.user.phone,
+      contactViaProgress: profile.source === 'office',
       address: profile.address,
       websiteUrl: profile.websiteUrl,
       careerLevel: profile.careerLevel,
