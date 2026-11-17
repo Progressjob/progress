@@ -22,7 +22,8 @@ export const CompanyRecommendationsPage: React.FC = () => {
       <div className="rec-list">
         {(listQuery.data ?? []).map((item) => {
           const name = `${item.candidate.user.firstName} ${item.candidate.user.lastName}`;
-          const statusLabel = item.status.replace(/_/g, ' ');
+          const statusLabel = item.status === 'sent' ? 'New' : 'Viewed';
+          const statusClass = item.status === 'sent' ? 'is-sent' : 'is-viewed';
           return (
             <article className="rec-list-card" key={item.id}>
               <div className="rec-list-main">
@@ -36,7 +37,7 @@ export const CompanyRecommendationsPage: React.FC = () => {
                 </p>
                 {item.note ? <p className="rec-list-note">{item.note}</p> : null}
               </div>
-              <span className={`rec-status-pill is-${item.status}`}>{statusLabel}</span>
+              <span className={`rec-status-pill ${statusClass}`}>{statusLabel}</span>
               <Link className="rec-btn rec-btn-soft" to={`/company/${companyId}/recommendations/${item.id}`}>
                 Open
               </Link>

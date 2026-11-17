@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { RecommendCandidateModal } from "../components/admin/RecommendCandidateModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api/admin";
@@ -143,7 +144,19 @@ export const AdminCandidatesPage: React.FC = () => {
                   <small>Applications</small>
                 </div>
               </div>
-              <div className="directory-company-actions">
+              <div className="directory-company-actions admin-candidate-actions">
+                {c.profile?.id ? (
+                  <Link to={`/admin/cv-search/${c.profile.id}`} className="admin-candidate-profile-link">
+                    View profile
+                  </Link>
+                ) : (
+                  <button type="button" disabled title="No candidate profile yet">
+                    View profile
+                  </button>
+                )}
+                <button type="button" onClick={() => setApplicationsFor(c)}>
+                  View applications
+                </button>
                 <button
                   type="button"
                   disabled={!c.profile?.id}
@@ -152,12 +165,7 @@ export const AdminCandidatesPage: React.FC = () => {
                   Recommend
                 </button>
                 <button
-                  disabled={!c.stats.applicationsCount}
-                  onClick={() => setApplicationsFor(c)}
-                >
-                  View applications
-                </button>
-                <button
+                  type="button"
                   className={blocked ? "" : "is-danger"}
                   disabled={
                     blockMutation.isPending || c.accountStatus === "suspended"

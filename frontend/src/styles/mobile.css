@@ -3194,9 +3194,12 @@
   .admin-candidates-screen .directory-company-identity small { display: none; }
   .admin-candidates-screen .directory-company-counts > div { display: flex; align-items: baseline; gap: 4px; }
   .admin-candidates-screen .directory-company-actions { width: 100%; }
-  .admin-candidates-screen .directory-company-actions button {
+  .admin-candidates-screen .directory-company-actions :is(button, a) {
     min-height: 44px !important;
     white-space: normal !important;
+  }
+  .admin-candidates-screen .admin-candidate-profile-link {
+    width: 100%;
   }
 }
 

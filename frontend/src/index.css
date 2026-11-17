@@ -16305,6 +16305,32 @@ a.admin-metric:hover {
   background: #fafbfd;
 }
 
+.admin-candidates-screen .admin-candidate-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
+.admin-candidates-screen .admin-candidate-profile-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 38px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #cfe0f7;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.73rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-candidates-screen .admin-candidate-profile-link:hover {
+  background: #e3edff;
+  border-color: #b8cdef;
+}
+
 /* ==========================================================================
    Admin compact density
    ========================================================================== */

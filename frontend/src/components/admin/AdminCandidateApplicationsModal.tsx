@@ -50,9 +50,18 @@ export const AdminCandidateApplicationsModal: React.FC<AdminCandidateApplication
           </button>
         </div>
 
+        {candidate.profile?.id ? (
+          <div className="directory-company-actions" style={{ gridTemplateColumns: '1fr', maxWidth: '220px' }}>
+            <Link to={`/admin/cv-search/${candidate.profile.id}`} onClick={onClose}>
+              View full profile
+            </Link>
+          </div>
+        ) : null}
+
         {apps.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>
-            No applications yet.
+            No applications yet. Use <strong>View full profile</strong> above to review their CV and account
+            details.
           </p>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1 }}>

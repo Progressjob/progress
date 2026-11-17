@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { recommendationsApi } from '../api/recommendations';
 import { BackButton } from '../components/BackButton';
 import { OfficeRegistryReadout } from '../components/recommendations/OfficeRegistryReadout';
+
+function employerStatusLabel(status: string) {
+  return status === 'sent' ? 'New' : 'Viewed';
+}
+
+function employerStatusClass(status: string) {
+  return status === 'sent' ? 'is-sent' : 'is-viewed';
+}
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -17,20 +25,10 @@ function formatWhen(iso: string) {
 
 export const CompanyRecommendationDetailPage: React.FC = () => {
   const { companyId = '', id = '' } = useParams();
-  const client = useQueryClient();
-  const [message, setMessage] = useState('');
   const detailQuery = useQuery({
     queryKey: ['company', companyId, 'recommendation', id],
     queryFn: () => recommendationsApi.employerDetail(companyId, id),
     enabled: Boolean(companyId && id),
-  });
-  const respond = useMutation({
-    mutationFn: (status: 'interested' | 'declined') =>
-      recommendationsApi.respond(companyId, id, { status, message: message.trim() || undefined }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['company', companyId, 'recommendation', id] });
-      void client.invalidateQueries({ queryKey: ['company', companyId, 'recommendations'] });
-    },
   });
 
   const detail = detailQuery.data;
@@ -54,8 +52,6 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
     ? `${detail.recommendedBy.firstName} ${detail.recommendedBy.lastName}`.trim()
     : 'Progress team';
 
-  const statusLabel = detail.status.replace(/_/g, ' ');
-
   return (
     <div className="company-recommendation-shell company-recommendation-detail">
       <BackButton fallback={`/company/${companyId}/recommendations`} />
@@ -66,7 +62,9 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
           <h1>
             {profile.firstName} {profile.lastName}
           </h1>
-          <span className={`rec-status-pill is-${detail.status}`}>{statusLabel}</span>
+          <span className={`rec-status-pill ${employerStatusClass(detail.status)}`}>
+            {employerStatusLabel(detail.status)}
+          </span>
         </div>
         <p className="muted rec-page-sub">
           {profile.headline || profile.currentTitle || 'Candidate'}
@@ -107,8 +105,8 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
             Online candidate profile
           </h2>
           <p className="muted rec-online-lead">
-            This candidate registered on Progress Jobs. Open their full CV profile for education, experience,
-            skills, and contact details.
+            This candidate registered on Progress Jobs. Open their full CV profile for education, experience, skills,
+            and contact details.
           </p>
           <dl className="rec-facts-grid">
             <div className="rec-fact-cell">
@@ -131,45 +129,6 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
           </div>
         </section>
       )}
-
-      <section className="rec-panel rec-response-panel">
-        <h2 className="rec-panel-title">Your response</h2>
-        {detail.employerResponse && (
-          <p className="rec-last-reply">
-            <strong>Last reply:</strong> {detail.employerResponse}
-          </p>
-        )}
-        <label className="rec-field-label" htmlFor="rec-reply">
-          Message to Progress
-        </label>
-        <textarea
-          id="rec-reply"
-          className="rec-textarea"
-          rows={3}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Optional note for the Progress team…"
-        />
-        {respond.isError && <div className="alert-box-error">{(respond.error as Error).message}</div>}
-        <div className="rec-response-actions">
-          <button
-            type="button"
-            className="rec-btn rec-btn-primary"
-            disabled={respond.isPending}
-            onClick={() => respond.mutate('interested')}
-          >
-            Interested
-          </button>
-          <button
-            type="button"
-            className="rec-btn rec-btn-danger"
-            disabled={respond.isPending}
-            onClick={() => respond.mutate('declined')}
-          >
-            Not suitable
-          </button>
-        </div>
-      </section>
     </div>
   );
 };
