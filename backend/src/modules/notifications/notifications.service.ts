@@ -273,6 +273,10 @@ export class NotificationsService {
         return { type: 'application_update' };
       case 'messages':
         return { type: 'admin_message' };
+      case 'recommendations':
+        return {
+          OR: [{ type: 'candidate_recommendation' }, { referenceType: 'recommendation' }],
+        };
       default:
         return {};
     }

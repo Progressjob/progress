@@ -27,6 +27,7 @@ export const NOTIFICATION_CATEGORIES = [
   'jobs',
   'applications',
   'messages',
+  'recommendations',
 ] as const;
 
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
