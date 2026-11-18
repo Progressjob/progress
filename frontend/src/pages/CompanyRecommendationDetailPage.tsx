@@ -1,17 +1,10 @@
+import { recommendationStatus } from '../utils/candidatePresentation';
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { recommendationsApi } from '../api/recommendations';
 import { BackButton } from '../components/BackButton';
 import { OfficeRegistryReadout } from '../components/recommendations/OfficeRegistryReadout';
-
-function employerStatusLabel(status: string) {
-  return status === 'sent' ? 'New' : 'Viewed';
-}
-
-function employerStatusClass(status: string) {
-  return status === 'sent' ? 'is-sent' : 'is-viewed';
-}
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -35,14 +28,15 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
   if (detailQuery.isLoading) {
     return (
       <div className="company-recommendation-shell">
-        <div className="rec-panel">Loading recommendation…</div>
+        <BackButton fallback={`/company/${companyId}/recommendations`} /><div className="rec-panel" role="status">Loading recommendation…</div>
       </div>
     );
   }
   if (!detail) {
     return (
       <div className="company-recommendation-shell">
-        <div className="alert-box-error">{(detailQuery.error as Error)?.message || 'Not found'}</div>
+        <BackButton fallback={`/company/${companyId}/recommendations`} />
+        <div className="record-error" role="alert"><h1>Profile unavailable</h1><p>{(detailQuery.error as Error)?.message || 'This recommendation could not be found.'}</p><button type="button" className="rec-btn rec-btn-soft" disabled={detailQuery.isFetching} onClick={() => void detailQuery.refetch()}>{detailQuery.isFetching ? 'Trying again…' : 'Try again'}</button></div>
       </div>
     );
   }
@@ -64,8 +58,8 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
         <span className="section-eyebrow">Progress candidate recommendation</span>
         <div className="rec-page-title-row">
           <h1>{candidateName}</h1>
-          <span className={`rec-status-pill ${employerStatusClass(detail.status)}`}>
-            {employerStatusLabel(detail.status)}
+          <span className={`rec-status-pill is-${detail.status}`}>
+            {recommendationStatus(detail.status)}
           </span>
         </div>
         <p className="muted rec-page-sub">
@@ -73,7 +67,8 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
         </p>
       </header>
 
-      <section className="rec-panel rec-progress-card" aria-labelledby="rec-progress-heading">
+      <nav className="record-section-nav" aria-label="Recommendation sections"><a href="#recommendation-overview">Recommendation</a><a href="#recommended-profile">Profile</a>{isOffice && detail.registry && <><a href="#recommendation-cv">CV</a><a href="#recommendation-contact">Contact Progress</a></>}</nav>
+      <section id="recommendation-overview" className="rec-panel rec-progress-card" aria-labelledby="rec-progress-heading">
         <h2 className="rec-panel-title" id="rec-progress-heading">
           Why Progress recommends them
         </h2>
@@ -94,14 +89,14 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
       </section>
 
       {isOffice && detail.registry ? (
-        <section className="rec-panel" aria-labelledby="rec-office-heading">
+        <section id="recommended-profile" className="rec-panel" aria-labelledby="rec-office-heading">
           <h2 className="rec-panel-title" id="rec-office-heading">
             Profile
           </h2>
           <OfficeRegistryReadout profile={profile} registry={detail.registry} />
         </section>
       ) : (
-        <section className="rec-panel" aria-labelledby="rec-online-heading">
+        <section id="recommended-profile" className="rec-panel" aria-labelledby="rec-online-heading">
           <h2 className="rec-panel-title" id="rec-online-heading">
             Online candidate profile
           </h2>
