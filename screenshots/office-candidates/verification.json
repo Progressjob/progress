@@ -1,0 +1,53 @@
+{
+  "checks": [
+    "Registry hidden during registration",
+    "Five optional sections start collapsed on mobile",
+    "Registration help starts collapsed",
+    "Help expands on request",
+    "Blank submission highlights all four missing requirements",
+    "First missing field receives focus",
+    "Whitespace name blocked",
+    "Missing permission is explained and focused",
+    "Invalid FAN reopens its collapsed section and receives focus",
+    "Invalid optional emergency phone also reopens and focuses",
+    "No formal schooling still clears school and stream",
+    "Valid submission sent exactly once with collapsed field values retained",
+    "Cancel restores registry without submitting",
+    "Draft retained when reopening registration",
+    "Status filter sends the selected status",
+    "Search sends debounced query",
+    "Import preview distinguishes ready rows from errors",
+    "Preview can be dismissed",
+    "Editing can revoke consent without a new registration requirement",
+    "Registry has no horizontal overflow at 320",
+    "Expanded registration has no horizontal overflow at 320",
+    "Registry has no horizontal overflow at 390",
+    "Expanded registration has no horizontal overflow at 390",
+    "Registry has no horizontal overflow at 430",
+    "Expanded registration has no horizontal overflow at 430",
+    "Registry has no horizontal overflow at 1280",
+    "Expanded registration has no horizontal overflow at 1280",
+    "Desktop sections remain expanded",
+    "No browser page exceptions"
+  ],
+  "layout": [
+    {
+      "width": 320,
+      "formHeight": 3598.015625
+    },
+    {
+      "width": 390,
+      "formHeight": 3512.828125
+    },
+    {
+      "width": 430,
+      "formHeight": 3512.828125
+    },
+    {
+      "width": 1280,
+      "formHeight": 2304.75
+    }
+  ],
+  "errors": [],
+  "note": "Local frontend with synthetic API fixtures; no real records changed."
+}

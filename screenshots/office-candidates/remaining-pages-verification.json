@@ -1,0 +1,130 @@
+{
+  "checks": [
+    "All original office facts retained",
+    "CV filename displayed separately",
+    "CV download calls the existing file endpoint",
+    "Recommendation history still opens",
+    "Dialog is modal and initially focuses company",
+    "Dialog traps backwards focus",
+    "Dialog traps forwards focus",
+    "Dialog card fits reduced viewport and scrolls internally",
+    "Dialog actions reachable at reduced height",
+    "Escape closes dialog and restores trigger focus",
+    "Body scrolling restored after close",
+    "Each employer card keeps a compact status beside its name",
+    "Open profile preserves recommendation destination",
+    "Recommendation profile keeps private office data hidden",
+    "Progress phone and email actions use tel and mailto",
+    "office-detail fits 320px",
+    "Long CV action fits 320px",
+    "employer-list fits 320px",
+    "employer-detail fits 320px",
+    "password fits 320px",
+    "office-detail fits 390px",
+    "Long CV action fits 390px",
+    "employer-list fits 390px",
+    "employer-detail fits 390px",
+    "password fits 390px",
+    "office-detail fits 430px",
+    "Long CV action fits 430px",
+    "employer-list fits 430px",
+    "employer-detail fits 430px",
+    "password fits 430px",
+    "office-detail fits 1280px",
+    "Long CV action fits 1280px",
+    "employer-list fits 1280px",
+    "employer-detail fits 1280px",
+    "password fits 1280px",
+    "Employer list empty state remains available",
+    "Online recommendation variant still links to full profile",
+    "Password fields support browser autofill",
+    "Password minimum length retained",
+    "Save password has a proper mobile tap target",
+    "No password change or recommendation sent during review",
+    "No browser page exceptions"
+  ],
+  "measures": [
+    {
+      "name": "office-detail",
+      "width": 320,
+      "height": 2240
+    },
+    {
+      "name": "employer-list",
+      "width": 320,
+      "height": 844
+    },
+    {
+      "name": "employer-detail",
+      "width": 320,
+      "height": 1292
+    },
+    {
+      "name": "password",
+      "width": 320,
+      "height": 847
+    },
+    {
+      "name": "office-detail",
+      "width": 390,
+      "height": 2138
+    },
+    {
+      "name": "employer-list",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "employer-detail",
+      "width": 390,
+      "height": 1253
+    },
+    {
+      "name": "password",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "office-detail",
+      "width": 430,
+      "height": 2118
+    },
+    {
+      "name": "employer-list",
+      "width": 430,
+      "height": 844
+    },
+    {
+      "name": "employer-detail",
+      "width": 430,
+      "height": 1212
+    },
+    {
+      "name": "password",
+      "width": 430,
+      "height": 844
+    },
+    {
+      "name": "office-detail",
+      "width": 1280,
+      "height": 1453
+    },
+    {
+      "name": "employer-list",
+      "width": 1280,
+      "height": 844
+    },
+    {
+      "name": "employer-detail",
+      "width": 1280,
+      "height": 1322
+    },
+    {
+      "name": "password",
+      "width": 1280,
+      "height": 1088
+    }
+  ],
+  "errors": [],
+  "note": "Local frontend with sample API responses; reduced-height viewport, not a physical keyboard test. No passwords changed or recommendations sent."
+}
