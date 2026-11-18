@@ -4301,3 +4301,165 @@
     width: 100%;
   }
 }
+
+/* Office registry: keep registration primary and pair the Excel actions. */
+@media screen and (max-width: 768px) {
+  .admin-office-registry-page .office-page-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .admin-office-registry-page .office-page-toolbar .rec-btn {
+    min-width: 0;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px;
+    font-size: .78rem;
+    line-height: 1.25;
+  }
+  .admin-office-registry-page .office-page-toolbar .office-register-toggle {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    font-size: .85rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .admin-office-registry-page .office-sheet li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+    padding: 14px;
+  }
+  .admin-office-registry-page .office-sheet-name { grid-column: 1 / -1; justify-content: space-between; align-items: flex-start; }
+  .admin-office-registry-page .office-sheet-name strong { min-width: 0; font-size: .95rem; overflow-wrap: anywhere; }
+  .admin-office-registry-page .office-sheet-name > span { flex-shrink: 0; white-space: nowrap; }
+  .admin-office-registry-page .office-sheet-name .office-status-new { background: #edf4ff; color: #1955b8; }
+  .admin-office-registry-page .office-sheet-name .office-status-negotiating { background: #fff6df; color: #885900; }
+  .admin-office-registry-page .office-sheet-name .office-status-placed { background: #f0eaff; color: #6841a1; }
+  .admin-office-registry-page .office-row-desktop-facts { display: none; }
+  .admin-office-registry-page .office-row-mobile-facts { display: grid; grid-column: 1 / -1; gap: 5px; min-width: 0; }
+  .admin-office-registry-page .office-row-mobile-facts .office-row-job { color: #243c59; font-weight: 600; line-height: 1.4; }
+  .admin-office-registry-page .office-row-contact { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .admin-office-registry-page .office-row-contact span { white-space: nowrap; }
+  .admin-office-registry-page .office-row-mobile-facts .office-row-education { color: #64748b; font-size: .78rem; line-height: 1.4; }
+  .admin-office-registry-page .office-sheet-actions { grid-column: 1; grid-row: auto; margin-top: 4px; gap: 6px; }
+  .admin-office-registry-page .office-sheet-actions :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px 12px; }
+  .admin-office-registry-page .office-row-cv { display: inline; align-self: center; justify-self: end; color: #64748b; font-size: .7rem; }
+}
+
+@media screen and (max-width: 768px) {
+  .office-register-form .office-form-section { padding: 14px; }
+  .office-register-form .office-optional-section > summary { min-height: 30px; }
+  .office-register-form .office-optional-section > summary h2 { font-size: .8rem; text-transform: none; letter-spacing: 0; color: #243c59; }
+  .office-register-form .office-form-section :is(input, select, textarea) { min-height: 44px; }
+}
+
+@media screen and (max-width: 768px) {
+  .admin-office-registry-page .office-intake-hints { padding: 12px 14px; }
+  .admin-office-registry-page .office-intake-hints > summary { min-height: 24px; line-height: 24px; }
+}
+
+@media screen and (max-width: 768px) {
+  .admin-office-registry-page .office-form-footer { padding: 14px; gap: 12px; }
+  .admin-office-registry-page .office-form-actions { display: grid; grid-template-columns: auto minmax(0, 1fr); width: 100%; gap: 8px; }
+  .admin-office-registry-page .office-form-actions .rec-btn { min-width: 0; min-height: 44px; padding: 8px 12px; }
+}
+
+@media screen and (max-width: 768px) {
+  .admin-office-registry-page .office-finder { display: grid; gap: 8px; min-width: 0; }
+  .admin-office-registry-page .office-finder input { width: 100%; min-width: 0; min-height: 44px; font-size: .85rem; }
+  .admin-office-registry-page .office-finder-status { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 2px 0; }
+  .admin-office-registry-page .office-finder-status::-webkit-scrollbar { display: none; }
+  .admin-office-registry-page .office-finder-status button { flex: 0 0 auto; min-height: 44px; padding-inline: 14px; }
+  .admin-office-registry-page .office-finder-status button:focus-visible { outline: 2px solid #0b57d0; outline-offset: -2px; }
+  .admin-office-registry-page .office-import-sheet { padding: 14px; min-width: 0; }
+  .admin-office-registry-page .office-import-title { flex-wrap: wrap; }
+  .admin-office-registry-page .office-import-title .rec-btn { min-height: 44px; }
+  .admin-office-registry-page .office-import-head { align-items: stretch; flex-direction: column; gap: 12px; }
+  .admin-office-registry-page .office-import-head .rec-btn { min-height: 44px; width: 100%; }
+  .admin-office-registry-page .office-import-row-heading { font-size: .84rem; }
+  .admin-office-registry-page .office-sheet footer button { min-height: 44px; }
+}
+
+/* Office candidate details: retain every fact, using the available width. */
+@media screen and (max-width: 768px) {
+  .admin-content .office-profile-page { padding: 12px; gap: 12px; }
+  .office-profile-page .office-profile-head { gap: 12px; }
+  .office-profile-page .office-profile-head > div { width: 100%; min-width: 0; }
+  .office-profile-page .rec-page-title-row { justify-content: space-between; align-items: flex-start; flex-wrap: nowrap; gap: 10px; }
+  .office-profile-page .rec-page-title-row h1 { min-width: 0; font-size: 1.3rem; line-height: 1.35; overflow-wrap: anywhere; }
+  .office-profile-page .rec-page-title-row .rec-status-pill { flex-shrink: 0; }
+  .office-profile-page .office-page-toolbar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .office-profile-page .office-page-toolbar .rec-btn { width: 100%; min-width: 0; min-height: 44px; padding: 8px; font-size: .78rem; }
+  .office-profile-page .office-form-section { padding: 14px; }
+  .office-profile-sheet .rec-facts-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .office-profile-sheet .office-fact-wide { grid-column: 1 / -1; }
+  .office-profile-sheet .rec-fact-cell { padding: 8px; min-width: 0; }
+  .office-profile-sheet .rec-fact-cell dt { font-size: .62rem; letter-spacing: .02em; }
+  .office-profile-sheet .rec-fact-cell dd { font-size: .8rem; }
+  .office-profile-sheet .office-profile-note { margin-top: 10px; padding-top: 10px; }
+  .office-profile-sheet .office-profile-note p { font-size: .85rem; }
+  .office-profile-page .office-profile-cv input[type=file] { width: 100%; min-width: 0; min-height: 44px; font-size: .8rem; }
+  .office-profile-page .office-cv-file { align-items: stretch; flex-direction: column; gap: 8px; }
+  .office-profile-page .office-cv-file .rec-btn { min-height: 44px; }
+  .office-profile-page .office-profile-extra { margin-top: 0; padding: 14px; }
+  .office-recommend-card { padding: 16px; border-radius: 16px; gap: 12px; }
+}
+
+@media screen and (max-width: 768px) {
+  .company-recommendations-page.company-recommendation-shell { padding: 12px 12px 24px; gap: 12px; }
+  .company-recommendations-page .rec-page-head { margin: 0; }
+  .company-recommendations-page .rec-page-sub { margin-top: 6px; font-size: .84rem; }
+  .company-recommendations-page .rec-list-card {
+    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-areas: 'name status' 'meta meta' 'job job' 'note note' 'type action';
+    gap: 6px 10px;
+    padding: 14px;
+  }
+  .company-recommendations-page .rec-list-main { display: contents; }
+  .company-recommendations-page .rec-list-main h2 { grid-area: name; align-self: center; min-width: 0; overflow-wrap: anywhere; }
+  .company-recommendations-page .rec-list-meta { grid-area: meta; margin: 0; }
+  .company-recommendations-page .rec-list-job { grid-area: job; margin: 0; font-size: .78rem; }
+  .company-recommendations-page .rec-list-note { grid-area: note; margin: 4px 0; padding: 8px 10px; font-size: .82rem; }
+  .company-recommendations-page .rec-list-type { grid-area: type; align-self: center; margin: 0; font-size: .72rem; }
+  .company-recommendations-page .rec-list-card > .rec-status-pill { grid-area: status; justify-self: end; width: auto; white-space: nowrap; }
+  .company-recommendations-page .rec-list-card > .rec-btn { grid-area: action; justify-self: end; width: auto; min-height: 44px; padding: 8px 14px; }
+}
+
+@media screen and (max-width: 768px) {
+  .company-recommendation-detail.company-recommendation-shell { padding: 12px 12px 24px; gap: 12px; }
+  .company-recommendation-detail .page-back-button { min-height: 44px; margin: 0; }
+  .company-recommendation-detail .rec-page-head { margin: 0; }
+  .company-recommendation-detail .rec-page-title-row { justify-content: space-between; flex-wrap: nowrap; align-items: flex-start; }
+  .company-recommendation-detail .rec-page-title-row h1 { min-width: 0; overflow-wrap: anywhere; }
+  .company-recommendation-detail .rec-page-title-row .rec-status-pill { flex-shrink: 0; }
+  .company-recommendation-detail .rec-panel { padding: 14px; }
+  .company-recommendation-detail .rec-panel-title { margin-bottom: 10px; }
+  .company-recommendation-detail .rec-progress-note { font-size: .86rem; }
+  .company-recommendation-detail .rec-office-registry { gap: 12px; }
+  .company-recommendation-detail .rec-office-registry > * { margin: 0; }
+  .company-recommendation-detail .rec-facts-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .company-recommendation-detail .rec-office-lead + .rec-facts-grid { padding: 0; border: 0; }
+  .company-recommendation-detail .rec-fact-cell { min-width: 0; padding: 8px; }
+  .company-recommendation-detail .rec-fact-cell dd { font-size: .82rem; }
+  .company-recommendation-detail .rec-registry-block + .rec-registry-block { margin-top: 0; padding-top: 12px; }
+  .company-recommendation-detail .rec-registry-block h3 { margin: 0 0 6px; font-size: .85rem; }
+  .company-recommendation-detail .rec-registry-block p,
+  .company-recommendation-detail .rec-registry-list { margin: 0; font-size: .85rem; line-height: 1.5; }
+  .company-recommendation-detail .rec-registry-list .rec-btn { min-height: 44px; margin-top: 8px; }
+  .company-recommendation-detail .rec-registry-block.rec-office-contact { padding: 12px; }
+  .company-recommendation-detail .rec-contact-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 8px; }
+  .company-recommendation-detail .rec-contact-links a { min-width: 0; font-size: .76rem; }
+  .company-recommendation-detail .rec-contact-email { grid-column: 1 / -1; }
+  .company-recommendation-detail .rec-inline-cta .rec-btn { min-height: 44px; }
+}
+
+@media screen and (max-width: 768px) {
+  .password-change-page.card.stack { padding: 20px; margin: 16px auto; gap: 16px; }
+  .password-change-page h1 { font-size: 1.4rem; }
+}
+
+@media screen and (max-width: 768px) {
+  .company-recommendations-page .rec-list-card { grid-template-areas: 'name status' 'meta meta' 'job job' 'context context' 'note note' 'type action'; }
+  .company-recommendations-page .rec-list-context { grid-area: context; margin: 0; }
+}
