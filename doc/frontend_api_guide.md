@@ -564,7 +564,7 @@ Office (walk-in) candidates are separate from website sign-ups. `GET /admin/cand
 | POST | `/admin/recommendations` | `{ candidateId, companyId, jobId?, note? }`. Notifies company members |
 | GET | `/admin/recommendations` | `companyId`, `candidateId`, `status` |
 | GET | `/employer/companies/:companyId/recommendations` | |
-| GET | `/employer/companies/:companyId/recommendations/:id` | Marks `sent` as `viewed`. Includes `recommendedBy`, `note`, and `profile`. **Office** candidates also include `registry` (intake fields + all uploaded CVs). **Online** candidates: use `profile.id` with CV search for the full dossier |
+| GET | `/employer/companies/:companyId/recommendations/:id` | Marks `sent` as `viewed`. Includes `recommendedBy`, `note`, and `profile`. **Office** candidates also include `registry` with gender, date of birth, expected salary, and uploaded CVs. National ID, consent, and the private office intake record are not included. **Online** candidates: use `profile.id` with CV search for the full dossier |
 | PATCH | `/employer/companies/:companyId/recommendations/:id/respond` | Optional API (not used in employer UI). View-only flow: admin recommends, employer reviews profile |
 
 `POST /auth/change-password` body: `{ currentPassword, newPassword }`. `/auth/me` includes `mustChangePassword`.

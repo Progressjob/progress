@@ -486,14 +486,10 @@ export interface TalentDetail extends TalentCard {
 }
 
 export interface OfficeRecommendationRegistry {
-  nationalId: string | null;
   gender: string | null;
   dateOfBirth: string | null;
   expectedSalary: string | null;
   salaryCurrency: string | null;
-  consentAt: string | null;
-  registeredAt: string | null;
-  officeRecord: Record<string, string | null>;
   resumes: TalentResume[];
 }
 

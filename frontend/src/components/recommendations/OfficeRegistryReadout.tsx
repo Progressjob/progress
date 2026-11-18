@@ -1,37 +1,7 @@
 import React from 'react';
-import type { OfficeRecommendationRegistry } from '../../types/api';
+import type { OfficeRecommendationRegistry, TalentDetail } from '../../types/api';
 import { apiDownloadFile } from '../../api/client';
 import { PROGRESS_HIRE_EMAIL, PROGRESS_MOBILE_PHONES } from '../../constants/progressContact';
-import type { TalentDetail } from '../../types/api';
-
-const OFFICE_LABELS: Record<string, string> = {
-  department: 'Department',
-  category: 'Category',
-  jobGrade: 'Job grade',
-  basicSalaryExpectation: 'Basic salary expectation',
-  transportAllowance: 'Transport allowance',
-  houseAllowance: 'House allowance',
-  mobileAllowance: 'Mobile allowance',
-  foodCoupon: 'Food coupon',
-  maritalStatus: 'Marital status',
-  placeOfBirth: 'Place of birth',
-  bloodGroup: 'Blood group',
-  motherName: "Mother's name",
-  emergencyContactName: 'Emergency contact',
-  emergencyRelationship: 'Emergency relationship',
-  emergencyPhone: 'Emergency phone',
-  guarantorName: 'Guarantor',
-  guarantorPhone: 'Guarantor phone',
-  guarantorNationalId: 'Guarantor national ID FAN number',
-  bankAccount: 'Bank account',
-  notes: 'Office notes',
-};
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
-}
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value == null || value === '') return null;
@@ -43,39 +13,51 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function birthLabel(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const today = new Date();
+  let years = today.getFullYear() - date.getFullYear();
+  const month = today.getMonth() - date.getMonth();
+  if (month < 0 || (month === 0 && today.getDate() < date.getDate())) years -= 1;
+  const shown = date.toLocaleDateString();
+  return years >= 0 ? `${shown} · ${years} years` : shown;
+}
+
+function schoolName(value: string | null | undefined) {
+  const text = value?.trim();
+  if (!text || text === 'Not specified') return '';
+  return text;
+}
+
 export const OfficeRegistryReadout: React.FC<{
   profile: TalentDetail;
   registry: OfficeRecommendationRegistry;
 }> = ({ profile, registry }) => {
-  const office = registry.officeRecord ?? {};
   const resumes = registry.resumes.length ? registry.resumes : profile.resume ? [profile.resume] : [];
+  const location = [profile.city, profile.region, profile.country].filter(Boolean).join(', ');
+  const salary = registry.expectedSalary
+    ? `${registry.expectedSalary}${registry.salaryCurrency ? ` ${registry.salaryCurrency}` : ''}`
+    : null;
 
   return (
     <div className="rec-office-registry stack">
       <p className="muted rec-office-lead">
-        Registered at the Progress office. Direct contact details are not shown — reach the candidate through
-        Progress after your review.
+        Reach this candidate through Progress. Their phone and email are not shown here.
       </p>
-      <dl className="rec-facts-grid">
-        <Field label="National ID FAN number" value={registry.nationalId} />
-        <Field label="Gender" value={registry.gender} />
-        <Field label="Date of birth" value={formatDate(registry.dateOfBirth)} />
-        <Field label="Registered" value={formatDate(registry.registeredAt)} />
-        <Field label="Consent" value={registry.consentAt ? 'Recorded' : 'Not recorded'} />
-        <Field
-          label="Expected salary"
-          value={
-            registry.expectedSalary
-              ? `${registry.expectedSalary}${registry.salaryCurrency ? ` ${registry.salaryCurrency}` : ''}`
-              : null
-          }
-        />
-        <Field label="Location" value={[profile.city, profile.region, profile.country].filter(Boolean).join(', ')} />
-      </dl>
+      {(location || registry.gender || registry.dateOfBirth || salary) && (
+        <dl className="rec-facts-grid">
+          <Field label="Location" value={location} />
+          <Field label="Gender" value={registry.gender} />
+          <Field label="Date of birth" value={birthLabel(registry.dateOfBirth)} />
+          <Field label="Expected salary" value={salary} />
+        </dl>
+      )}
 
       {profile.summary ? (
         <div className="rec-registry-block">
-          <h3>Experience &amp; background</h3>
+          <h3>Experience</h3>
           <p>{profile.summary}</p>
         </div>
       ) : null}
@@ -84,13 +66,10 @@ export const OfficeRegistryReadout: React.FC<{
         <div className="rec-registry-block">
           <h3>Education</h3>
           <ul className="rec-registry-list">
-            {profile.educations.map((item) => (
-              <li key={item.id}>
-                {item.qualification}
-                {item.fieldOfStudy ? ` · ${item.fieldOfStudy}` : ''}
-                {item.institution ? ` · ${item.institution}` : ''}
-              </li>
-            ))}
+            {profile.educations.map((item) => {
+              const line = [item.qualification, item.fieldOfStudy, schoolName(item.institution)].filter(Boolean).join(' · ');
+              return <li key={item.id}>{line}</li>;
+            })}
           </ul>
         </div>
       )}
@@ -102,21 +81,8 @@ export const OfficeRegistryReadout: React.FC<{
         </div>
       )}
 
-      {Object.values(office).some(Boolean) && (
-        <div className="rec-registry-block">
-          <h3>Office intake record</h3>
-          <dl className="rec-facts-grid">
-            {Object.entries(office)
-              .filter(([, value]) => value != null && String(value).trim() !== '')
-              .map(([key, value]) => (
-                <Field key={key} label={OFFICE_LABELS[key] ?? key} value={value} />
-              ))}
-          </dl>
-        </div>
-      )}
-
       <div className="rec-registry-block">
-        <h3>CV documents</h3>
+        <h3>CV</h3>
         {resumes.length ? (
           <ul className="rec-registry-list">
             {resumes.map((file) => (
@@ -132,7 +98,7 @@ export const OfficeRegistryReadout: React.FC<{
             ))}
           </ul>
         ) : (
-          <p className="muted">No CV uploaded with this office registration.</p>
+          <p className="muted">No CV uploaded yet.</p>
         )}
       </div>
 

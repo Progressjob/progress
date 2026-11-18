@@ -151,28 +151,20 @@ export class RecommendationsService {
       revealContact: false,
     });
     let registry: {
-      nationalId: string | null;
       gender: string | null;
       dateOfBirth: Date | null;
       expectedSalary: string | null;
       salaryCurrency: string | null;
-      consentAt: Date | null;
-      registeredAt: Date | null;
-      officeRecord: Record<string, string | null>;
       resumes: ReturnType<typeof mapResumes>;
     } | null = null;
     if (recommendation.candidate.source === 'office') {
       const row = await this.prisma.candidateProfile.findUnique({
         where: { id: recommendation.candidateId },
         select: {
-          nationalId: true,
           gender: true,
           dateOfBirth: true,
           expectedSalary: true,
           salaryCurrency: true,
-          consentAt: true,
-          registeredAt: true,
-          officeRecord: true,
           resumes: {
             include: {
               file: { select: { id: true, originalFilename: true, mimeType: true, sizeBytes: true } },
@@ -182,39 +174,11 @@ export class RecommendationsService {
         },
       });
       if (row) {
-        const office = row.officeRecord;
         registry = {
-          nationalId: row.nationalId,
           gender: row.gender,
           dateOfBirth: row.dateOfBirth,
           expectedSalary: row.expectedSalary?.toString() ?? null,
           salaryCurrency: row.salaryCurrency,
-          consentAt: row.consentAt,
-          registeredAt: row.registeredAt,
-          officeRecord: office
-            ? {
-                department: office.department,
-                category: office.category,
-                jobGrade: office.jobGrade,
-                basicSalaryExpectation: office.basicSalaryExpectation?.toString() ?? null,
-                transportAllowance: office.transportAllowance,
-                houseAllowance: office.houseAllowance,
-                mobileAllowance: office.mobileAllowance,
-                foodCoupon: office.foodCoupon,
-                maritalStatus: office.maritalStatus,
-                placeOfBirth: office.placeOfBirth,
-                bloodGroup: office.bloodGroup,
-                motherName: office.motherName,
-                emergencyContactName: office.emergencyContactName,
-                emergencyRelationship: office.emergencyRelationship,
-                emergencyPhone: office.emergencyPhone,
-                guarantorName: office.guarantorName,
-                guarantorPhone: office.guarantorPhone,
-                guarantorNationalId: office.guarantorNationalId,
-                bankAccount: office.bankAccount,
-                notes: office.notes,
-              }
-            : {},
           resumes: mapResumes(row.resumes),
         };
       }

@@ -51,6 +51,10 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
   const progressBy = detail.recommendedBy
     ? `${detail.recommendedBy.firstName} ${detail.recommendedBy.lastName}`.trim()
     : 'Progress team';
+  const candidateName = `${profile.firstName} ${profile.lastName}`
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase());
 
   return (
     <div className="company-recommendation-shell company-recommendation-detail">
@@ -59,16 +63,13 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
       <header className="rec-page-head">
         <span className="section-eyebrow">Progress candidate recommendation</span>
         <div className="rec-page-title-row">
-          <h1>
-            {profile.firstName} {profile.lastName}
-          </h1>
+          <h1>{candidateName}</h1>
           <span className={`rec-status-pill ${employerStatusClass(detail.status)}`}>
             {employerStatusLabel(detail.status)}
           </span>
         </div>
         <p className="muted rec-page-sub">
           {profile.headline || profile.currentTitle || 'Candidate'}
-          {isOffice ? ' · Office registration' : ' · Online profile'}
         </p>
       </header>
 
@@ -95,7 +96,7 @@ export const CompanyRecommendationDetailPage: React.FC = () => {
       {isOffice && detail.registry ? (
         <section className="rec-panel" aria-labelledby="rec-office-heading">
           <h2 className="rec-panel-title" id="rec-office-heading">
-            Office registration details
+            Profile
           </h2>
           <OfficeRegistryReadout profile={profile} registry={detail.registry} />
         </section>
