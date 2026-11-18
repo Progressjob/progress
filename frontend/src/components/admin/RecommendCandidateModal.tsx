@@ -18,9 +18,19 @@ export const RecommendCandidateModal: React.FC<{
   });
   const jobsQuery = useQuery({
     queryKey: ['admin', 'jobs', 'recommend', companyId],
-    queryFn: () => adminApi.listJobs({ companyId, pageSize: 50 }),
+    queryFn: () => adminApi.listJobs({ companyId, status: 'published', pageSize: 50 }),
     enabled: Boolean(companyId),
   });
+
+  const openJobs = (jobsQuery.data?.items ?? []).filter((job) => {
+    if (job.status !== 'published') return false;
+    const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
+    if (!deadline || Number.isNaN(deadline.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return deadline >= today;
+  });
+  const companyHasNoOpenPost = Boolean(companyId) && jobsQuery.isSuccess && openJobs.length === 0;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -60,13 +70,16 @@ export const RecommendCandidateModal: React.FC<{
           </select>
         </div>
         <div className="form-input-group">
-          <label htmlFor="rec-job">Job (optional)</label>
-          <select id="rec-job" value={jobId} onChange={(e) => setJobId(e.target.value)} disabled={!companyId}>
-            <option value="">No specific job</option>
-            {(jobsQuery.data?.items ?? []).map((job) => (
+          <label htmlFor="rec-job">Open job</label>
+          <select id="rec-job" value={jobId} onChange={(e) => setJobId(e.target.value)} disabled={!companyId || companyHasNoOpenPost}>
+            <option value="">{companyHasNoOpenPost ? 'No open job posts' : 'Any open post at this company'}</option>
+            {openJobs.map((job) => (
               <option key={job.id} value={job.id}>{job.title}</option>
             ))}
           </select>
+          {companyHasNoOpenPost ? (
+            <p className="office-field-error">This company’s posts are closed. Pick a company with an open job.</p>
+          ) : null}
         </div>
         <div className="form-input-group">
           <label htmlFor="rec-note">Note to the employer</label>
@@ -74,7 +87,7 @@ export const RecommendCandidateModal: React.FC<{
         </div>
         <div className="directory-company-actions">
           <button type="button" onClick={onClose}>Cancel</button>
-          <button type="button" disabled={!companyId || mutation.isPending} onClick={() => mutation.mutate()}>
+          <button type="button" disabled={!companyId || companyHasNoOpenPost || mutation.isPending} onClick={() => mutation.mutate()}>
             {mutation.isPending ? 'Sending…' : 'Send recommendation'}
           </button>
         </div>

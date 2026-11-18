@@ -550,7 +550,8 @@ Office (walk-in) candidates are separate from website sign-ups. `GET /admin/cand
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/admin/office-candidates` | `q`, `officeStatus` (`new`, `negotiating`, `ready`, `placed`) |
+| GET | `/admin/office-candidates` | `q`, `officeStatus` (`new`, `negotiating`, `ready`, `placed`), `page`, `pageSize`. Returns `{ items, total, page, pageSize }` |
+| DELETE | `/admin/office-candidates/:profileId` | Removes the office registration |
 | POST | `/admin/office-candidates` | Intake form. Phone is required and stored as `+251…`. `consent: true` is required by the form. |
 | GET / PATCH | `/admin/office-candidates/:profileId` | Includes the private office record |
 | PATCH | `/admin/office-candidates/:profileId/status` | `{ officeStatus }` |

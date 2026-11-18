@@ -50,6 +50,8 @@ export interface OfficeCandidateListItem {
   phone: string | null;
   headline: string | null;
   city: string | null;
+  fieldOfStudy: string | null;
+  category: string | null;
   nationalId: string | null;
   officeStatus: string | null;
   registeredAt: string | null;
@@ -90,6 +92,13 @@ export interface OfficeCandidateDetail {
   }[];
 }
 
+export interface OfficeCandidateListResponse {
+  items: OfficeCandidateListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ImportPreviewRow {
   row: number;
   status: 'ok' | 'error';
@@ -98,13 +107,16 @@ export interface ImportPreviewRow {
 }
 
 export const officeCandidatesApi = {
-  list: (params?: { q?: string; officeStatus?: string }) => {
+  list: (params?: { q?: string; officeStatus?: string; page?: number; pageSize?: number }) => {
     const qs = new URLSearchParams();
     if (params?.q) qs.set('q', params.q);
     if (params?.officeStatus) qs.set('officeStatus', params.officeStatus);
+    if (params?.page && params.page > 1) qs.set('page', String(params.page));
+    if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     const query = qs.toString();
-    return apiFetch<OfficeCandidateListItem[]>(`/admin/office-candidates${query ? `?${query}` : ''}`);
+    return apiFetch<OfficeCandidateListResponse>(`/admin/office-candidates${query ? `?${query}` : ''}`);
   },
+  remove: (id: string) => apiFetch<void>(`/admin/office-candidates/${id}`, { method: 'DELETE' }),
   get: (id: string) => apiFetch<OfficeCandidateDetail>(`/admin/office-candidates/${id}`),
   create: (body: OfficeCandidateInput) =>
     apiFetch<OfficeCandidateDetail>('/admin/office-candidates', { method: 'POST', body }),

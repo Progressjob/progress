@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { RecommendationsService } from './recommendations.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TalentService } from '../talent/talent.service';
@@ -14,6 +14,7 @@ describe('candidate recommendations', () => {
     const prisma = {
       candidateProfile: { findUnique: vi.fn().mockResolvedValue({ id: 'cand', user: { firstName: 'Ada', lastName: 'L' } }) },
       company: { findUnique: vi.fn().mockResolvedValue({ id: 'co', name: 'Acme' }) },
+      job: { findFirst: vi.fn().mockResolvedValue({ id: 'open-job' }) },
       $transaction: vi.fn(async (run: (client: typeof tx) => Promise<unknown>) => run(tx)),
     };
     const service = new RecommendationsService(prisma as unknown as PrismaService, {} as TalentService);
@@ -24,6 +25,16 @@ describe('candidate recommendations', () => {
         expect.objectContaining({ userId: 'm2', referenceType: 'recommendation' }),
       ],
     });
+  });
+
+  it('refuses a company whose job post is closed', async () => {
+    const prisma = {
+      candidateProfile: { findUnique: vi.fn().mockResolvedValue({ id: 'cand', user: { firstName: 'Ada', lastName: 'L' } }) },
+      company: { findUnique: vi.fn().mockResolvedValue({ id: 'co', name: 'Acme' }) },
+      job: { findFirst: vi.fn().mockResolvedValue(null) },
+    };
+    const service = new RecommendationsService(prisma as unknown as PrismaService, {} as TalentService);
+    await expect(service.create('admin', { candidateId: 'cand', companyId: 'co', jobId: 'closed-job' })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('hides a recommendation that belongs to another company', async () => {

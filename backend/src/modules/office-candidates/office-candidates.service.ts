@@ -82,47 +82,83 @@ export class OfficeCandidatesService {
     private readonly files: FilesService,
   ) {}
 
-  async list(q?: string, officeStatus?: string) {
+  async list(q?: string, officeStatus?: string, page = 1, pageSize = 8) {
     const term = q?.trim();
+    const size = Math.min(20, Math.max(1, Number(pageSize) || 8));
+    const current = Math.max(1, Number(page) || 1);
     const where: Prisma.CandidateProfileWhereInput = { source: 'office' };
     if (officeStatus) where.officeStatus = officeStatus;
     if (term) {
       where.OR = [
         { headline: { contains: term, mode: 'insensitive' } },
+        { city: { contains: term, mode: 'insensitive' } },
         { nationalId: { contains: term, mode: 'insensitive' } },
         { user: { firstName: { contains: term, mode: 'insensitive' } } },
         { user: { lastName: { contains: term, mode: 'insensitive' } } },
         { user: { phone: { contains: term } } },
+        { educations: { some: { fieldOfStudy: { contains: term, mode: 'insensitive' } } } },
+        { educations: { some: { institution: { contains: term, mode: 'insensitive' } } } },
+        { officeRecord: { is: { category: { contains: term, mode: 'insensitive' } } } },
       ];
     }
-    const rows = await this.prisma.candidateProfile.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        headline: true,
-        city: true,
-        nationalId: true,
-        officeStatus: true,
-        registeredAt: true,
-        createdAt: true,
-        user: { select: { firstName: true, lastName: true, phone: true } },
-        resumes: { select: { id: true }, take: 1 },
-      },
+    const [total, rows] = await Promise.all([
+      this.prisma.candidateProfile.count({ where }),
+      this.prisma.candidateProfile.findMany({
+        where,
+        orderBy: [{ user: { lastName: 'asc' } }, { user: { firstName: 'asc' } }],
+        skip: (current - 1) * size,
+        take: size,
+        select: {
+          id: true,
+          headline: true,
+          city: true,
+          nationalId: true,
+          officeStatus: true,
+          registeredAt: true,
+          createdAt: true,
+          user: { select: { firstName: true, lastName: true, phone: true } },
+          educations: { select: { fieldOfStudy: true }, take: 1 },
+          officeRecord: { select: { category: true } },
+          resumes: { select: { id: true }, take: 1 },
+        },
+      }),
+    ]);
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        firstName: row.user.firstName,
+        lastName: row.user.lastName,
+        phone: row.user.phone,
+        headline: row.headline,
+        city: row.city,
+        fieldOfStudy: row.educations[0]?.fieldOfStudy ?? null,
+        category: row.officeRecord?.category ?? null,
+        nationalId: row.nationalId,
+        officeStatus: row.officeStatus,
+        registeredAt: row.registeredAt,
+        createdAt: row.createdAt,
+        hasCv: row.resumes.length > 0,
+      })),
+      total,
+      page: current,
+      pageSize: size,
+    };
+  }
+
+  async remove(profileId: string) {
+    const profile = await this.prisma.candidateProfile.findFirst({
+      where: { id: profileId, source: 'office' },
+      select: { userId: true },
     });
-    return rows.map((row) => ({
-      id: row.id,
-      firstName: row.user.firstName,
-      lastName: row.user.lastName,
-      phone: row.user.phone,
-      headline: row.headline,
-      city: row.city,
-      nationalId: row.nationalId,
-      officeStatus: row.officeStatus,
-      registeredAt: row.registeredAt,
-      createdAt: row.createdAt,
-      hasCv: row.resumes.length > 0,
-    }));
+    if (!profile) throw new NotFoundException('Office candidate not found');
+    try {
+      await this.prisma.user.delete({ where: { id: profile.userId } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new ConflictException('This candidate is still linked to other records and cannot be deleted.');
+      }
+      throw error;
+    }
   }
 
   async create(adminId: string, dto: OfficeCandidateFieldsDto) {

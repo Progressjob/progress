@@ -61,12 +61,29 @@ export class RecommendationsService {
       select: { id: true, name: true },
     });
     if (!company) throw new NotFoundException('Company not found');
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const openJob = {
+      companyId: dto.companyId,
+      status: 'published' as const,
+      applicationDeadline: { gte: today },
+    };
     if (dto.jobId) {
       const job = await this.prisma.job.findFirst({
-        where: { id: dto.jobId, companyId: dto.companyId },
+        where: { id: dto.jobId, ...openJob },
         select: { id: true },
       });
-      if (!job) throw new BadRequestException('That job does not belong to the selected company');
+      if (!job) {
+        throw new BadRequestException('That job is closed or is not an open post for this company');
+      }
+    } else {
+      const job = await this.prisma.job.findFirst({
+        where: openJob,
+        select: { id: true },
+      });
+      if (!job) {
+        throw new BadRequestException('This company has no open job post. A closed post cannot receive a recommendation.');
+      }
     }
     const name = `${candidate.user.firstName} ${candidate.user.lastName}`.trim();
     try {

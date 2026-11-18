@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -70,8 +71,18 @@ export class OfficeCandidatesController {
   }
 
   @Get()
-  list(@Query('q') q?: string, @Query('officeStatus') officeStatus?: string) {
-    return this.office.list(q, officeStatus);
+  list(
+    @Query('q') q?: string,
+    @Query('officeStatus') officeStatus?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.office.list(q, officeStatus, Number(page) || 1, Number(pageSize) || 8);
+  }
+
+  @Delete(':profileId')
+  remove(@Param('profileId', ParseUUIDPipe) profileId: string) {
+    return this.office.remove(profileId);
   }
 
   @Post()
