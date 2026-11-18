@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { EthiopianPhoneInput } from '../EthiopianPhoneInput';
 import { isValidEthiopianMobile } from '../../utils/ethiopianPhone';
+import { officeCandidateFieldErrors } from '../../utils/officeCandidateValidation';
 import { taxonomyApi } from '../../api/taxonomy';
 import { EXPERIENCE_STAGES } from '../../constants/candidateProfile';
 import {
@@ -72,10 +73,23 @@ export const emptyOfficeCandidate = (): OfficeCandidateInput => ({
   officeStatus: 'new',
 });
 
+function OfficeOptionalSection({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(() => !window.matchMedia('(max-width: 768px)').matches);
+  return (
+    <details className="office-form-section office-optional-section" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary><h2>{title}</h2><span className="office-section-optional">Optional</span></summary>
+      {hint && <p className="office-form-hint">{hint}</p>}
+      {children}
+    </details>
+  );
+}
+
 export const OfficeCandidateForm: React.FC<{
   value: OfficeCandidateInput;
   onChange: (value: OfficeCandidateInput) => void;
-}> = ({ value, onChange }) => {
+  showErrors?: boolean;
+  requireConsent?: boolean;
+}> = ({ value, onChange, showErrors = false, requireConsent = true }) => {
   const set = (patch: Partial<OfficeCandidateInput>) => onChange({ ...value, ...patch });
   const categoriesQuery = useQuery({
     queryKey: ['taxonomy', 'categories'],
@@ -86,59 +100,30 @@ export const OfficeCandidateForm: React.FC<{
   const categoryIsKnown = !savedCategory || categories.includes(savedCategory);
   const nationalId = nationalIdDigits(value.nationalId ?? '');
   const nationalIdShort = nationalId.length > 0 && nationalId.length < 16;
+  const errors = showErrors ? officeCandidateFieldErrors(value, requireConsent) : {};
+  const error = (id: string) => errors[id] ? <p id={`${id}-error`} className="office-field-error" role="alert">{errors[id]}</p> : null;
+  const validationProps = (id: string) => ({ 'aria-invalid': Boolean(errors[id]), 'aria-describedby': errors[id] ? `${id}-error` : undefined });
   return (
     <div className="office-intake-sheet">
+      {Object.keys(errors).length > 0 && <div className="office-validation-summary" role="alert">Please check {Object.keys(errors).length} highlighted field{Object.keys(errors).length === 1 ? '' : 's'} before saving.</div>}
       <section className="office-form-section">
-        <h2>Identity</h2>
+        <h2>Basic details</h2>
+        <p className="office-form-hint">Start with the candidate’s name and phone. Other details can be added later.</p>
         <div className="office-form-grid">
           <div className="form-input-group">
-            <label htmlFor="oc-first">First name</label>
-            <input id="oc-first" value={value.firstName} onChange={(e) => set({ firstName: e.target.value })} required />
+            <label htmlFor="oc-first">First name <span className="office-required">*</span></label>
+            <input id="oc-first" {...validationProps('oc-first')} maxLength={100} value={value.firstName} onChange={(e) => set({ firstName: e.target.value })} required />
+            {error('oc-first')}
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-last">Last name</label>
-            <input id="oc-last" value={value.lastName} onChange={(e) => set({ lastName: e.target.value })} required />
+            <label htmlFor="oc-last">Last name <span className="office-required">*</span></label>
+            <input id="oc-last" {...validationProps('oc-last')} maxLength={100} value={value.lastName} onChange={(e) => set({ lastName: e.target.value })} required />
+            {error('oc-last')}
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-phone">Phone</label>
-            <EthiopianPhoneInput id="oc-phone" value={value.phone} onChange={(phone) => set({ phone })} required />
-          </div>
-          <div className="form-input-group">
-            <label htmlFor="oc-fan">National ID FAN number</label>
-            <input
-              id="oc-fan"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={16}
-              pattern="\d{16}"
-              title="Enter exactly 16 digits"
-              aria-invalid={nationalIdShort}
-              className={nationalIdShort ? 'is-invalid' : undefined}
-              value={nationalId}
-              onChange={(e) => set({ nationalId: nationalIdDigits(e.target.value) })}
-            />
-            {nationalIdShort ? (
-              <p className="office-field-error" role="alert">
-                National ID FAN number must be exactly 16 digits ({nationalId.length}/16).
-              </p>
-            ) : (
-              <p className="office-field-hint">16 digits only. Letters are not accepted.</p>
-            )}
-          </div>
-          <div className="form-input-group">
-            <label htmlFor="oc-sex">Sex</label>
-            <select id="oc-sex" value={value.gender ?? ''} onChange={(e) => set({ gender: e.target.value })}>
-              <option value="">Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              {value.gender && value.gender !== 'Male' && value.gender !== 'Female' ? (
-                <option value={value.gender}>{value.gender}</option>
-              ) : null}
-            </select>
-          </div>
-          <div className="form-input-group">
-            <label htmlFor="oc-dob">Date of birth</label>
-            <input id="oc-dob" type="date" value={value.dateOfBirth ?? ''} onChange={(e) => set({ dateOfBirth: e.target.value })} />
+            <label htmlFor="oc-phone">Phone <span className="office-required">*</span></label>
+            <EthiopianPhoneInput id="oc-phone" {...validationProps('oc-phone')} value={value.phone} onChange={(phone) => set({ phone })} required />
+            {error('oc-phone')}
           </div>
           <div className="form-input-group office-form-span-full">
             <label htmlFor="oc-city">Current location</label>
@@ -147,8 +132,7 @@ export const OfficeCandidateForm: React.FC<{
         </div>
       </section>
 
-      <section className="office-form-section">
-        <h2>Job and salary <span className="office-optional">Optional</span></h2>
+      <OfficeOptionalSection title="Job and salary">
         <p className="office-form-hint">Leave this blank at the desk. You can add or change the job, category, grade, salary, and experience after the candidate is registered.</p>
         <div className="office-form-grid">
           <div className="form-input-group">
@@ -218,10 +202,12 @@ export const OfficeCandidateForm: React.FC<{
             <label htmlFor="oc-salary">Basic salary (ETB)</label>
             <input
               id="oc-salary"
+              {...validationProps('oc-salary')}
               inputMode="decimal"
               value={value.expectedSalary ?? ''}
               onChange={(e) => set({ expectedSalary: e.target.value === '' ? undefined : Number(e.target.value) })}
             />
+            {error('oc-salary')}
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-transport">Transport</label>
@@ -244,10 +230,10 @@ export const OfficeCandidateForm: React.FC<{
             <textarea id="oc-exp" rows={3} value={value.summary ?? ''} onChange={(e) => set({ summary: e.target.value })} />
           </div>
         </div>
-      </section>
+      </OfficeOptionalSection>
 
-      <section className="office-form-section">
-        <h2>Education and languages</h2>
+      <OfficeOptionalSection title="Education and languages">
+        {error('oc-edu')}
         <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-edu">Education level</label>
@@ -327,12 +313,48 @@ export const OfficeCandidateForm: React.FC<{
             />
           </div>
         </div>
-      </section>
+      </OfficeOptionalSection>
 
-      <section className="office-form-section">
-        <h2>Personal, emergency contact and guarantor</h2>
-        <p className="muted office-form-hint">These details stay in the office record. Employers never see them. Guarantor details and bank account can be left blank.</p>
+      <OfficeOptionalSection title="Personal details" hint="Private office records. These details are not shared with employers.">
         <div className="office-form-grid">
+          <div className="form-input-group">
+            <label htmlFor="oc-fan">National ID FAN number</label>
+            <input
+              id="oc-fan"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={16}
+              pattern="\d{16}"
+              title="Enter exactly 16 digits"
+              aria-invalid={nationalIdShort}
+              aria-describedby={nationalIdShort ? 'oc-fan-error' : undefined}
+              className={nationalIdShort ? 'is-invalid' : undefined}
+              value={nationalId}
+              onChange={(e) => set({ nationalId: nationalIdDigits(e.target.value) })}
+            />
+            {nationalIdShort ? (
+              <p id="oc-fan-error" className="office-field-error" role="alert">
+                National ID FAN number must be exactly 16 digits ({nationalId.length}/16).
+              </p>
+            ) : (
+              <p className="office-field-hint">16 digits only. Letters are not accepted.</p>
+            )}
+          </div>
+          <div className="form-input-group">
+            <label htmlFor="oc-sex">Sex</label>
+            <select id="oc-sex" value={value.gender ?? ''} onChange={(e) => set({ gender: e.target.value })}>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              {value.gender && value.gender !== 'Male' && value.gender !== 'Female' ? (
+                <option value={value.gender}>{value.gender}</option>
+              ) : null}
+            </select>
+          </div>
+          <div className="form-input-group">
+            <label htmlFor="oc-dob">Date of birth</label>
+            <input id="oc-dob" type="date" value={value.dateOfBirth ?? ''} onChange={(e) => set({ dateOfBirth: e.target.value })} />
+          </div>
           <div className="form-input-group">
             <label htmlFor="oc-marital">Marital status</label>
             <ChoiceSelect
@@ -361,6 +383,19 @@ export const OfficeCandidateForm: React.FC<{
             <label htmlFor="oc-mother">Mother's name</label>
             <input id="oc-mother" value={value.motherName ?? ''} onChange={(e) => set({ motherName: e.target.value })} />
           </div>
+          <div className="form-input-group office-form-span-full">
+            <label htmlFor="oc-bank">Bank account <span className="office-optional">Optional</span></label>
+            <input id="oc-bank" value={value.bankAccount ?? ''} onChange={(e) => set({ bankAccount: e.target.value })} />
+          </div>
+          <div className="form-input-group office-form-span-full">
+            <label htmlFor="oc-notes">Notes</label>
+            <textarea id="oc-notes" rows={2} value={value.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} />
+          </div>
+        </div>
+      </OfficeOptionalSection>
+
+      <OfficeOptionalSection title="Emergency contact">
+        <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-em-name">Emergency contact</label>
             <input id="oc-em-name" value={value.emergencyContactName ?? ''} onChange={(e) => set({ emergencyContactName: e.target.value })} />
@@ -372,15 +407,21 @@ export const OfficeCandidateForm: React.FC<{
               value={value.emergencyPhone ?? ''}
               onChange={(emergencyPhone) => set({ emergencyPhone })}
               aria-invalid={Boolean(value.emergencyPhone?.trim()) && !isValidEthiopianMobile(value.emergencyPhone)}
+              aria-describedby={value.emergencyPhone?.trim() && !isValidEthiopianMobile(value.emergencyPhone) ? 'oc-em-phone-error' : undefined}
             />
             {value.emergencyPhone?.trim() && !isValidEthiopianMobile(value.emergencyPhone) ? (
-              <p className="office-field-error" role="alert">
+              <p id="oc-em-phone-error" className="office-field-error" role="alert">
                 Enter 9 digits after +251. Numbers only.
               </p>
             ) : (
               <p className="office-field-hint">Same as the candidate phone: +251 and 9 digits.</p>
             )}
           </div>
+        </div>
+      </OfficeOptionalSection>
+
+      <OfficeOptionalSection title="Guarantor">
+        <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-g-name">Guarantor name <span className="office-optional">Optional</span></label>
             <input id="oc-g-name" value={value.guarantorName ?? ''} onChange={(e) => set({ guarantorName: e.target.value })} />
@@ -393,37 +434,20 @@ export const OfficeCandidateForm: React.FC<{
             <label htmlFor="oc-g-fan">Guarantor national ID FAN number <span className="office-optional">Optional</span></label>
             <input id="oc-g-fan" value={value.guarantorNationalId ?? ''} onChange={(e) => set({ guarantorNationalId: e.target.value })} />
           </div>
-          <div className="form-input-group office-form-span-full">
-            <label htmlFor="oc-bank">Bank account <span className="office-optional">Optional</span></label>
-            <input id="oc-bank" value={value.bankAccount ?? ''} onChange={(e) => set({ bankAccount: e.target.value })} />
-          </div>
-          <div className="form-input-group office-form-span-full">
-            <label htmlFor="oc-notes">Notes</label>
-            <textarea id="oc-notes" rows={2} value={value.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} />
-          </div>
-          <label className="office-form-consent">
-            <input type="checkbox" checked={value.consent} onChange={(e) => set({ consent: e.target.checked })} />
-            The candidate agreed to be shared with employers
-          </label>
         </div>
+      </OfficeOptionalSection>
+
+      <section className="office-form-section office-consent-section">
+          <label className="office-form-consent">
+            <input id="oc-consent" {...validationProps('oc-consent')} type="checkbox" checked={value.consent} onChange={(e) => set({ consent: e.target.checked })} />
+            <span>The candidate agreed to be shared with employers{requireConsent && <span className="office-required"> *</span>}</span>
+          </label>
+          <p className="office-field-hint">{requireConsent ? 'Ask for permission and tick this box before saving. Only the employer-facing profile is shared.' : 'Turn this off if the candidate withdraws permission to share their profile.'}</p>
+          {error('oc-consent')}
       </section>
     </div>
   );
 };
-
-export function officeEmergencyPhoneIssue(value: OfficeCandidateInput): string | null {
-  const phone = value.emergencyPhone?.trim() ?? '';
-  if (!phone || isValidEthiopianMobile(phone)) return null;
-  return 'Emergency phone must start with +251 and contain 9 digits.';
-}
-
-export function officeEducationIssue(value: OfficeCandidateInput): string | null {
-  const kind = educationPlaceKind(value.qualification);
-  if (kind === 'none' && (value.institution?.trim() || value.fieldOfStudy?.trim())) {
-    return 'Graduated school is not collected when there is no formal schooling.';
-  }
-  return null;
-}
 
 export function useOfficeForm(initial?: OfficeCandidateInput) {
   return useState<OfficeCandidateInput>(initial ?? emptyOfficeCandidate());
