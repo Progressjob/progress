@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../api/admin';
 import { recommendationsApi } from '../../api/recommendations';
 
@@ -8,9 +9,21 @@ export const RecommendCandidateModal: React.FC<{
   candidateName: string;
   onClose: () => void;
 }> = ({ candidateId, candidateName, onClose }) => {
+  const client = useQueryClient();
   const [companyId, setCompanyId] = useState('');
   const [jobId, setJobId] = useState('');
   const [note, setNote] = useState('');
+  const dialog = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialog.current?.querySelector<HTMLSelectElement>('select')?.focus({ preventScroll: true });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, []);
 
   const companiesQuery = useQuery({
     queryKey: ['admin', 'companies', 'recommend'],
@@ -40,18 +53,35 @@ export const RecommendCandidateModal: React.FC<{
         jobId: jobId || undefined,
         note: note.trim() || undefined,
       }),
-    onSuccess: onClose,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['admin', 'office-candidate', candidateId] });
+      void client.invalidateQueries({ queryKey: ['company', companyId, 'recommendations'] });
+      onClose();
+    },
   });
 
-  return (
+  return createPortal(
     <div
-      role="presentation"
+      className="office-recommend-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recommend-title"
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.55)', display: 'grid', placeItems: 'center', padding: '1rem', zIndex: 40 }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
+        if (event.key !== 'Tab') return;
+        const controls = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled), textarea, input, a[href]');
+        if (!controls?.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }}
     >
-      <div className="card stack" role="dialog" aria-labelledby="recommend-title" onClick={(e) => e.stopPropagation()} style={{ width: 'min(520px, 100%)' }}>
+      <div ref={dialog} className="card office-recommend-card" onClick={(e) => e.stopPropagation()}>
         <h2 id="recommend-title">Recommend {candidateName}</h2>
         <p className="muted">The employer gets a notification and can open this profile.</p>
+        {(companiesQuery.isError || jobsQuery.isError) && <p className="office-field-error" role="alert">Companies or jobs could not be loaded. Close this dialog and try again.</p>}
         {mutation.isError && <div className="alert-box-error">{(mutation.error as Error).message}</div>}
         <div className="form-input-group">
           <label htmlFor="rec-company">Company</label>
@@ -85,13 +115,13 @@ export const RecommendCandidateModal: React.FC<{
           <label htmlFor="rec-note">Note to the employer</label>
           <textarea id="rec-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
-        <div className="directory-company-actions">
-          <button type="button" onClick={onClose}>Cancel</button>
-          <button type="button" disabled={!companyId || companyHasNoOpenPost || mutation.isPending} onClick={() => mutation.mutate()}>
+        <div className="office-recommend-actions">
+          <button type="button" className="rec-btn rec-btn-soft" onClick={onClose}>Cancel</button>
+          <button type="button" className="rec-btn rec-btn-primary" disabled={!companyId || jobsQuery.isPending || jobsQuery.isError || companyHasNoOpenPost || mutation.isPending} onClick={() => mutation.mutate()}>
             {mutation.isPending ? 'Sending…' : 'Send recommendation'}
           </button>
         </div>
       </div>
-    </div>
+    </div>, document.body
   );
 };
