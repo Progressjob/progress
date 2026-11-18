@@ -36,9 +36,9 @@ export class OfficeCandidatesController {
 
   @Get('import/template')
   async template(@Res() response: Response) {
-    const buffer = await officeTemplateBuffer();
+    const buffer = await officeTemplateBuffer(await this.office.exportRows());
     response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    response.setHeader('Content-Disposition', 'attachment; filename="office-candidates-template.xlsx"');
+    response.setHeader('Content-Disposition', 'attachment; filename="office-candidates.xlsx"');
     response.send(buffer);
   }
 

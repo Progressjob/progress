@@ -173,8 +173,9 @@ export async function downloadOfficeTemplate(): Promise<void> {
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
+  const named = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '');
   link.href = url;
-  link.download = 'office-candidates-template.xlsx';
+  link.download = named?.[1] || 'office-candidates.xlsx';
   link.click();
   URL.revokeObjectURL(url);
 }

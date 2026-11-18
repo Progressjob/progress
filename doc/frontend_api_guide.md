@@ -558,7 +558,7 @@ Office (walk-in) candidates are separate from website sign-ups. `GET /admin/cand
 | POST | `/admin/office-candidates/:profileId/cv` | Multipart field `file` |
 | GET | `/admin/office-candidates/:profileId/matching-jobs` | Open jobs scored with the same matcher as candidate recommendations |
 | POST | `/admin/office-candidates/:profileId/issue-access` | Returns `{ phone, temporaryPassword }` once. The candidate must change it at `POST /auth/change-password` |
-| GET | `/admin/office-candidates/import/template` | Excel download |
+| GET | `/admin/office-candidates/import/template` | Excel download of every office candidate, using the same columns as import |
 | POST | `/admin/office-candidates/import/preview` | Multipart `file`. No writes |
 | POST | `/admin/office-candidates/import/commit` | Imports valid rows from the same file |
 | POST | `/admin/recommendations` | `{ candidateId, companyId, jobId?, note? }`. Notifies company members |

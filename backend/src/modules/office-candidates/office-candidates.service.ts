@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { FilesService } from '../files/files.service';
 import { rankMatchingJobs } from '../jobs/jobs.recommendations';
 import { OfficeCandidateFieldsDto, UpdateOfficeCandidateDto } from './office-candidates.dto';
+import type { OfficeSheetRow } from './office-import';
 import { toEthiopianE164 } from './ethiopian-phone';
 
 const OFFICE_KEYS = [
@@ -52,6 +53,23 @@ const detailInclude = {
     },
   },
 } satisfies Prisma.CandidateProfileInclude;
+
+function sheetDay(value: Date | null): string {
+  if (!value) return '';
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function sheetAge(value: Date | null): string {
+  if (!value) return '';
+  const today = new Date();
+  let years = today.getFullYear() - value.getFullYear();
+  const month = today.getMonth() - value.getMonth();
+  if (month < 0 || (month === 0 && today.getDate() < value.getDate())) years -= 1;
+  return years >= 0 ? String(years) : '';
+}
 
 function blank(value?: string | null): string | null {
   const trimmed = value?.trim();
@@ -143,6 +161,72 @@ export class OfficeCandidatesService {
       page: current,
       pageSize: size,
     };
+  }
+
+  async exportRows(): Promise<OfficeSheetRow[]> {
+    const rows = await this.prisma.candidateProfile.findMany({
+      where: { source: 'office' },
+      orderBy: [{ user: { lastName: 'asc' } }, { user: { firstName: 'asc' } }],
+      select: {
+        headline: true,
+        summary: true,
+        gender: true,
+        dateOfBirth: true,
+        city: true,
+        nationalId: true,
+        officeStatus: true,
+        registeredAt: true,
+        expectedSalary: true,
+        user: { select: { firstName: true, lastName: true, phone: true } },
+        educations: { select: { qualification: true, fieldOfStudy: true, institution: true }, take: 1 },
+        languages: { select: { name: true }, orderBy: { name: 'asc' } },
+        officeRecord: true,
+      },
+    });
+    return rows.map((row, index) => {
+      const record = row.officeRecord;
+      const education = row.educations[0];
+      const salary = record?.basicSalaryExpectation ?? row.expectedSalary;
+      const lastName = row.user.lastName === '-' ? '' : row.user.lastName;
+      return {
+        no: index + 1,
+        nationalId: row.nationalId ?? '',
+        name: `${row.user.firstName} ${lastName}`.trim(),
+        registeredAt: sheetDay(row.registeredAt),
+        headline: row.headline ?? '',
+        department: record?.department ?? '',
+        category: record?.category ?? '',
+        jobGrade: record?.jobGrade ?? '',
+        salary: salary == null ? '' : String(salary),
+        bankAccount: record?.bankAccount ?? '',
+        transportAllowance: record?.transportAllowance ?? '',
+        houseAllowance: record?.houseAllowance ?? '',
+        mobileAllowance: record?.mobileAllowance ?? '',
+        foodCoupon: record?.foodCoupon ?? '',
+        languages: row.languages.map((language) => language.name).join(', '),
+        phone: row.user.phone ?? '',
+        maritalStatus: record?.maritalStatus ?? '',
+        gender: row.gender ?? '',
+        dateOfBirth: sheetDay(row.dateOfBirth),
+        age: sheetAge(row.dateOfBirth),
+        summary: row.summary ?? '',
+        qualification: education?.qualification ?? '',
+        fieldOfStudy: education?.fieldOfStudy ?? '',
+        institution: education?.institution && education.institution !== 'Not specified' ? education.institution : '',
+        motherName: record?.motherName ?? '',
+        emergencyContactName: record?.emergencyContactName ?? '',
+        emergencyRelationship: record?.emergencyRelationship ?? '',
+        emergencyPhone: record?.emergencyPhone ?? '',
+        city: row.city ?? '',
+        placeOfBirth: record?.placeOfBirth ?? '',
+        bloodGroup: record?.bloodGroup ?? '',
+        guarantorName: record?.guarantorName ?? '',
+        guarantorPhone: record?.guarantorPhone ?? '',
+        guarantorNationalId: record?.guarantorNationalId ?? '',
+        officeStatus: row.officeStatus ?? '',
+        notes: record?.notes ?? '',
+      };
+    });
   }
 
   async remove(profileId: string) {

@@ -39,7 +39,47 @@ export const SHEET_HEADERS = [
   'Mobile No',
   'Guaranter FAN NO',
   'Status',
+  'Notes',
 ] as const;
+
+export interface OfficeSheetRow {
+  no: number;
+  nationalId: string;
+  name: string;
+  registeredAt: string;
+  headline: string;
+  department: string;
+  category: string;
+  jobGrade: string;
+  salary: string;
+  bankAccount: string;
+  transportAllowance: string;
+  houseAllowance: string;
+  mobileAllowance: string;
+  foodCoupon: string;
+  languages: string;
+  phone: string;
+  maritalStatus: string;
+  gender: string;
+  dateOfBirth: string;
+  age: string;
+  summary: string;
+  qualification: string;
+  fieldOfStudy: string;
+  institution: string;
+  motherName: string;
+  emergencyContactName: string;
+  emergencyRelationship: string;
+  emergencyPhone: string;
+  city: string;
+  placeOfBirth: string;
+  bloodGroup: string;
+  guarantorName: string;
+  guarantorPhone: string;
+  guarantorNationalId: string;
+  officeStatus: string;
+  notes: string;
+}
 
 const DATE_FIELDS = new Set(['date of register', 'd.b in gc']);
 
@@ -213,11 +253,54 @@ export async function readOfficeSheet(buffer: Buffer, takenPhones: Set<string>, 
   return rows;
 }
 
-export async function officeTemplateBuffer(): Promise<Buffer> {
+export async function officeTemplateBuffer(rows: OfficeSheetRow[] = []): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Office candidates');
   sheet.addRow([...SHEET_HEADERS]);
   sheet.getRow(1).font = { bold: true };
+  for (const row of rows) {
+    sheet.addRow([
+      row.no,
+      row.nationalId,
+      row.name,
+      row.registeredAt,
+      row.headline,
+      row.department,
+      row.category,
+      row.jobGrade,
+      row.salary,
+      row.bankAccount,
+      row.transportAllowance,
+      row.houseAllowance,
+      row.mobileAllowance,
+      row.foodCoupon,
+      row.languages,
+      row.phone,
+      row.maritalStatus,
+      row.gender,
+      row.dateOfBirth,
+      row.age,
+      row.summary,
+      row.qualification,
+      row.fieldOfStudy,
+      row.institution,
+      row.motherName,
+      row.emergencyContactName,
+      row.emergencyRelationship,
+      row.emergencyPhone,
+      row.city,
+      row.placeOfBirth,
+      row.bloodGroup,
+      row.guarantorName,
+      row.guarantorPhone,
+      row.guarantorNationalId,
+      row.officeStatus,
+      row.notes,
+    ]);
+  }
+  sheet.columns.forEach((column) => {
+    column.width = 22;
+  });
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
