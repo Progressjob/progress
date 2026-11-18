@@ -69,6 +69,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
   const openedEdit = useRef(false);
   const [form, setForm] = useState<OfficeCandidateInput | null>(null);
   const [recommend, setRecommend] = useState(false);
+  const [recommendedOpen, setRecommendedOpen] = useState(false);
   const [credentials, setCredentials] = useState<{ phone: string | null; temporaryPassword: string } | null>(null);
 
   const detailQuery = useQuery({
@@ -131,16 +132,32 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
           <p className="muted rec-page-sub">{detail.headline || 'Job title not added yet'}</p>
         </div>
         <div className="office-page-toolbar">
-          <button type="button" className="rec-btn rec-btn-primary" onClick={() => setRecommend(true)}>Recommend</button>
+          <button type="button" className="rec-btn rec-btn-soft" onClick={() => setRecommend(true)}>Recommend</button>
           <button type="button" className="rec-btn rec-btn-soft" onClick={() => { setForm(toForm(detail)); setEditing((open) => !open); }}>
             {editing ? 'Close editor' : 'Edit record'}
           </button>
           <button type="button" className="rec-btn rec-btn-soft" disabled={accessMutation.isPending} onClick={() => accessMutation.mutate()}>
             Issue login
           </button>
+          <button type="button" className={`rec-btn rec-btn-soft${recommendedOpen ? ' is-open' : ''}`} onClick={() => setRecommendedOpen((open) => !open)}>
+            Recommended to{detail.recommendations.length ? ` (${detail.recommendations.length})` : ''}
+          </button>
         </div>
       </header>
-      {credentials && (
+      {recommendedOpen && (
+        <section className="office-profile-extra office-recommended-panel">
+          <h2>Recommended to</h2>
+          {detail.recommendations.map((item) => (
+            <article key={item.id}>
+              <strong>{item.company.name}</strong>
+              <p>{item.job?.title || 'Any open post'} · {item.status} · {new Date(item.createdAt).toLocaleDateString()}</p>
+              {item.note && <small>{item.note}</small>}
+            </article>
+          ))}
+          {!detail.recommendations.length && <p className="muted">Not recommended to an employer yet.</p>}
+        </section>
+      )}
+      {!recommendedOpen && credentials && (
         <div className="card">
           <strong>Temporary login, shown once</strong>
           <p>Phone: {credentials.phone}</p>
@@ -148,7 +165,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
           <p className="muted">They must change this password the first time they sign in.</p>
         </div>
       )}
-      {editing && form && (
+      {!recommendedOpen && editing && form && (
         <form className="office-register-form" onSubmit={(event) => {
           event.preventDefault();
           if (!form || officeEducationIssue(form) || officeEmergencyPhoneIssue(form)) return;
@@ -167,7 +184,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
         </form>
       )}
 
-      {!editing && (
+      {!recommendedOpen && !editing && (
         <article className="office-intake-sheet office-profile-sheet">
           <section className="office-form-section">
             <h2>Identity</h2>
@@ -251,7 +268,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
         </article>
       )}
 
-      <section className="office-profile-extra">
+      {!recommendedOpen && <section className="office-profile-extra">
         <h2>Matching open jobs</h2>
         {(jobsQuery.data ?? []).map((job) => (
           <article key={job.id}>
@@ -260,19 +277,7 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
           </article>
         ))}
         {jobsQuery.data && !jobsQuery.data.length && <p className="muted">No open jobs match this profile yet.</p>}
-      </section>
-
-      <section className="office-profile-extra">
-        <h2>Recommendations</h2>
-        {detail.recommendations.map((item) => (
-          <article key={item.id}>
-            <strong>{item.company.name}</strong>
-            <p>{item.job?.title || 'No specific job'} · {item.status}</p>
-            {item.note && <small>{item.note}</small>}
-          </article>
-        ))}
-        {!detail.recommendations.length && <p className="muted">Not recommended to an employer yet.</p>}
-      </section>
+      </section>}
 
       {recommend && (
         <RecommendCandidateModal candidateId={detail.id} candidateName={name} onClose={() => setRecommend(false)} />

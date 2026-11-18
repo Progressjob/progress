@@ -16668,6 +16668,16 @@ a.admin-metric:hover {
   color: #0f172a;
 }
 
+.office-recommended-panel {
+  margin-top: 0.75rem;
+}
+
+.office-page-toolbar .rec-btn.is-open {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 .office-profile-extra {
   padding: 0.9rem 1rem;
   background: #fff;
