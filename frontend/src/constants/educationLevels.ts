@@ -51,6 +51,28 @@ export function normalizeEducationRequirement(value?: string | null): string {
   return ALIASES[key] ?? trimmed;
 }
 
+/** Office registry option: no school, college, or university to record. */
+export const NO_FORMAL_SCHOOLING = 'No formal schooling';
+
+const SCHOOL_LEVELS = new Set<string>([
+  'Primary School',
+  'Secondary School',
+  'Preparatory / High School',
+]);
+
+const HIGHER_LEVELS = new Set<string>(
+  EDUCATION_LEVELS.filter((level) => !SCHOOL_LEVELS.has(level)),
+);
+
+export function educationPlaceKind(level?: string | null): 'none' | 'school' | 'higher' | '' {
+  const value = level?.trim() ?? '';
+  if (!value) return '';
+  if (value === NO_FORMAL_SCHOOLING) return 'none';
+  if (SCHOOL_LEVELS.has(value)) return 'school';
+  if (HIGHER_LEVELS.has(value)) return 'higher';
+  return '';
+}
+
 export function educationRequirementOptions(current?: string): string[] {
   const value = current?.trim();
   if (value && !(EDUCATION_LEVELS as readonly string[]).includes(value)) {

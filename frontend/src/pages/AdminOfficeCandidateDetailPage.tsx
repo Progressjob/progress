@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiDownloadFile } from '../api/client';
 import { officeCandidatesApi, type OfficeCandidateInput, type OfficeStatus } from '../api/officeCandidates';
-import { OfficeCandidateForm } from '../components/admin/OfficeCandidateForm';
+import { OfficeCandidateForm, officeEducationIssue, officeEmergencyPhoneIssue } from '../components/admin/OfficeCandidateForm';
 import { RecommendCandidateModal } from '../components/admin/RecommendCandidateModal';
 
 function toForm(detail: Awaited<ReturnType<typeof officeCandidatesApi.get>>): OfficeCandidateInput {
@@ -115,12 +115,30 @@ export const AdminOfficeCandidateDetailPage: React.FC = () => {
         </div>
       )}
       {editing && form && (
-        <form className="office-register-form" onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }}>
+        <form className="office-register-form" onSubmit={(event) => {
+          event.preventDefault();
+          if (!form || officeEducationIssue(form) || officeEmergencyPhoneIssue(form)) return;
+          saveMutation.mutate();
+        }}>
           {saveMutation.isError && <div className="alert-box-error">{(saveMutation.error as Error).message}</div>}
+          {form && officeEducationIssue(form) && <div className="alert-box-error">{officeEducationIssue(form)}</div>}
+          {form && officeEmergencyPhoneIssue(form) && <div className="alert-box-error">{officeEmergencyPhoneIssue(form)}</div>}
           <OfficeCandidateForm value={form} onChange={setForm} />
           <button type="submit" disabled={saveMutation.isPending}>Save changes</button>
         </form>
       )}
+
+      <section className="card stack">
+        <h2>Job and salary</h2>
+        <p className="muted">Optional. Use Edit record to fill this in or change it later.</p>
+        <p>
+          {detail.headline || 'No job title'} · {detail.officeRecord?.category || 'No category'} · {detail.officeRecord?.jobGrade || 'No job grade'}
+        </p>
+        <p>
+          Salary {detail.expectedSalary == null ? 'not set' : `${detail.expectedSalary} ETB`}
+          {detail.officeRecord?.department ? ` · ${detail.officeRecord.department}` : ''}
+        </p>
+      </section>
 
       <section className="card stack">
         <h2>Profile</h2>

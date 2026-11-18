@@ -16450,6 +16450,19 @@ a.admin-metric:hover {
   border-top: 1px solid #eef2f6;
 }
 
+.office-optional {
+  margin-left: 0.45rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #0b57d0;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .office-form-section h2 {
   margin: 0 0 0.75rem;
   font-size: 0.72rem;
@@ -16513,6 +16526,11 @@ a.admin-metric:hover {
 
 .office-field-hint {
   color: #64748b;
+}
+
+.office-form-grid > .office-field-hint {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .office-field-error {

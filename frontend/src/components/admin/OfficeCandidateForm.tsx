@@ -1,9 +1,60 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { EthiopianPhoneInput } from '../EthiopianPhoneInput';
+import { isValidEthiopianMobile } from '../../utils/ethiopianPhone';
+import { taxonomyApi } from '../../api/taxonomy';
+import { EXPERIENCE_STAGES } from '../../constants/candidateProfile';
+import {
+  EDUCATION_LEVELS,
+  NO_FORMAL_SCHOOLING,
+  educationPlaceKind,
+} from '../../constants/educationLevels';
+import type { Category } from '../../types/api';
 import type { OfficeCandidateInput, OfficeStatus } from '../../api/officeCandidates';
+
+function categoryNames(categories: Category[]): string[] {
+  const names: string[] = [];
+  const walk = (items: Category[]) => {
+    for (const item of items) {
+      if (item.isActive === false) continue;
+      names.push(item.name);
+      if (item.children?.length) walk(item.children);
+    }
+  };
+  walk(categories);
+  return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+}
 
 function nationalIdDigits(raw: string) {
   return raw.replace(/\D/g, '').slice(0, 16);
+}
+
+const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed'];
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+function ChoiceSelect({
+  id,
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  options: string[];
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+      {value && !options.includes(value) ? <option value={value}>{value}</option> : null}
+    </select>
+  );
 }
 
 const STATUSES: { id: OfficeStatus; label: string }[] = [
@@ -26,6 +77,13 @@ export const OfficeCandidateForm: React.FC<{
   onChange: (value: OfficeCandidateInput) => void;
 }> = ({ value, onChange }) => {
   const set = (patch: Partial<OfficeCandidateInput>) => onChange({ ...value, ...patch });
+  const categoriesQuery = useQuery({
+    queryKey: ['taxonomy', 'categories'],
+    queryFn: () => taxonomyApi.categories(),
+  });
+  const categories = useMemo(() => categoryNames(categoriesQuery.data ?? []), [categoriesQuery.data]);
+  const savedCategory = value.category?.trim() ?? '';
+  const categoryIsKnown = !savedCategory || categories.includes(savedCategory);
   const nationalId = nationalIdDigits(value.nationalId ?? '');
   const nationalIdShort = nationalId.length > 0 && nationalId.length < 16;
   return (
@@ -90,7 +148,8 @@ export const OfficeCandidateForm: React.FC<{
       </section>
 
       <section className="office-form-section">
-        <h2>Job and salary</h2>
+        <h2>Job and salary <span className="office-optional">Optional</span></h2>
+        <p className="office-form-hint">Leave this blank at the desk. You can add or change the job, category, grade, salary, and experience after the candidate is registered.</p>
         <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-title">Job title</label>
@@ -112,11 +171,48 @@ export const OfficeCandidateForm: React.FC<{
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-cat">Category</label>
-            <input id="oc-cat" value={value.category ?? ''} onChange={(e) => set({ category: e.target.value })} />
+            <select
+              id="oc-cat"
+              value={savedCategory}
+              disabled={categoriesQuery.isLoading}
+              onChange={(e) => set({ category: e.target.value })}
+            >
+              <option value="">{categoriesQuery.isLoading ? 'Loading categories…' : 'Select category'}</option>
+              {categories.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+              {savedCategory && !categoryIsKnown ? (
+                <option value={savedCategory}>{savedCategory} (not in the list)</option>
+              ) : null}
+            </select>
+            {categoriesQuery.isError ? (
+              <p className="office-field-error">Categories could not be loaded. Refresh and try again.</p>
+            ) : savedCategory && !categoryIsKnown ? (
+              <p className="office-field-error">This category is not in the system list. Pick one from the dropdown.</p>
+            ) : (
+              <p className="office-field-hint">Same career categories used on job posts.</p>
+            )}
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-grade">Job grade</label>
-            <input id="oc-grade" value={value.jobGrade ?? ''} onChange={(e) => set({ jobGrade: e.target.value })} />
+            <select id="oc-grade" value={value.jobGrade ?? ''} onChange={(e) => set({ jobGrade: e.target.value })}>
+              <option value="">Select job grade</option>
+              {EXPERIENCE_STAGES.map((stage) => (
+                <option key={stage.label} value={stage.label}>
+                  {stage.label}
+                </option>
+              ))}
+              {value.jobGrade && !EXPERIENCE_STAGES.some((stage) => stage.label === value.jobGrade) ? (
+                <option value={value.jobGrade}>{value.jobGrade} (not in the list)</option>
+              ) : null}
+            </select>
+            {value.jobGrade && !EXPERIENCE_STAGES.some((stage) => stage.label === value.jobGrade) ? (
+              <p className="office-field-error">This job grade is not in the system list. Pick one from the dropdown.</p>
+            ) : (
+              <p className="office-field-hint">Same career levels used on candidate profiles.</p>
+            )}
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-salary">Basic salary (ETB)</label>
@@ -143,24 +239,84 @@ export const OfficeCandidateForm: React.FC<{
             <label htmlFor="oc-food">Food coupon</label>
             <input id="oc-food" value={value.foodCoupon ?? ''} onChange={(e) => set({ foodCoupon: e.target.value })} />
           </div>
+          <div className="form-input-group office-form-span-full">
+            <label htmlFor="oc-exp">Experience in other companies</label>
+            <textarea id="oc-exp" rows={3} value={value.summary ?? ''} onChange={(e) => set({ summary: e.target.value })} />
+          </div>
         </div>
       </section>
 
       <section className="office-form-section">
-        <h2>Education, languages and experience</h2>
+        <h2>Education and languages</h2>
         <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-edu">Education level</label>
-            <input id="oc-edu" value={value.qualification ?? ''} onChange={(e) => set({ qualification: e.target.value })} />
+            <select
+              id="oc-edu"
+              value={value.qualification ?? ''}
+              onChange={(e) => {
+                const qualification = e.target.value;
+                const clearsSchool = educationPlaceKind(qualification) === 'none';
+                set({
+                  qualification,
+                  ...(clearsSchool ? { institution: '', fieldOfStudy: '' } : {}),
+                });
+              }}
+            >
+              <option value="">Select education level</option>
+              <option value={NO_FORMAL_SCHOOLING}>{NO_FORMAL_SCHOOLING}</option>
+              {EDUCATION_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+              {value.qualification &&
+              value.qualification !== NO_FORMAL_SCHOOLING &&
+              !(EDUCATION_LEVELS as readonly string[]).includes(value.qualification) ? (
+                <option value={value.qualification}>{value.qualification} (not in the list)</option>
+              ) : null}
+            </select>
+            <p className="office-field-hint">Same education levels used on candidate profiles.</p>
           </div>
-          <div className="form-input-group">
-            <label htmlFor="oc-stream">Stream</label>
-            <input id="oc-stream" value={value.fieldOfStudy ?? ''} onChange={(e) => set({ fieldOfStudy: e.target.value })} />
-          </div>
-          <div className="form-input-group">
-            <label htmlFor="oc-school">Graduated school</label>
-            <input id="oc-school" value={value.institution ?? ''} onChange={(e) => set({ institution: e.target.value })} />
-          </div>
+          {educationPlaceKind(value.qualification) === 'none' ? (
+            <p className="office-field-hint office-form-span-full">
+              No graduated school is asked for this education level.
+            </p>
+          ) : null}
+          {educationPlaceKind(value.qualification) !== 'none' ? (
+            <div className="form-input-group">
+              <label htmlFor="oc-stream">Stream (field of study)</label>
+              <input id="oc-stream" value={value.fieldOfStudy ?? ''} onChange={(e) => set({ fieldOfStudy: e.target.value })} />
+            </div>
+          ) : null}
+          {educationPlaceKind(value.qualification) === '' && value.qualification ? (
+            <div className="form-input-group">
+              <label htmlFor="oc-school">Graduated school</label>
+              <input id="oc-school" value={value.institution ?? ''} onChange={(e) => set({ institution: e.target.value })} />
+            </div>
+          ) : null}
+          {educationPlaceKind(value.qualification) === 'school' ? (
+            <div className="form-input-group">
+              <label htmlFor="oc-school">School</label>
+              <input
+                id="oc-school"
+                value={value.institution ?? ''}
+                onChange={(e) => set({ institution: e.target.value })}
+                placeholder="Primary or high school name"
+              />
+            </div>
+          ) : null}
+          {educationPlaceKind(value.qualification) === 'higher' ? (
+            <div className="form-input-group">
+              <label htmlFor="oc-school">College or university</label>
+              <input
+                id="oc-school"
+                value={value.institution ?? ''}
+                onChange={(e) => set({ institution: e.target.value })}
+                placeholder="College or university name"
+              />
+            </div>
+          ) : null}
           <div className="form-input-group">
             <label htmlFor="oc-lang">Language skills</label>
             <input
@@ -170,20 +326,22 @@ export const OfficeCandidateForm: React.FC<{
               placeholder="Amharic, English"
             />
           </div>
-          <div className="form-input-group office-form-span-full">
-            <label htmlFor="oc-exp">Experience in other companies</label>
-            <textarea id="oc-exp" rows={3} value={value.summary ?? ''} onChange={(e) => set({ summary: e.target.value })} />
-          </div>
         </div>
       </section>
 
       <section className="office-form-section">
         <h2>Personal, emergency contact and guarantor</h2>
-        <p className="muted office-form-hint">These details stay in the office record. Employers never see them.</p>
+        <p className="muted office-form-hint">These details stay in the office record. Employers never see them. Guarantor details and bank account can be left blank.</p>
         <div className="office-form-grid">
           <div className="form-input-group">
             <label htmlFor="oc-marital">Marital status</label>
-            <input id="oc-marital" value={value.maritalStatus ?? ''} onChange={(e) => set({ maritalStatus: e.target.value })} />
+            <ChoiceSelect
+              id="oc-marital"
+              value={value.maritalStatus ?? ''}
+              options={MARITAL_STATUSES}
+              placeholder="Select marital status"
+              onChange={(maritalStatus) => set({ maritalStatus })}
+            />
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-birth">Place of birth</label>
@@ -191,7 +349,13 @@ export const OfficeCandidateForm: React.FC<{
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-blood">Blood group</label>
-            <input id="oc-blood" value={value.bloodGroup ?? ''} onChange={(e) => set({ bloodGroup: e.target.value })} />
+            <ChoiceSelect
+              id="oc-blood"
+              value={value.bloodGroup ?? ''}
+              options={BLOOD_GROUPS}
+              placeholder="Select blood group"
+              onChange={(bloodGroup) => set({ bloodGroup })}
+            />
           </div>
           <div className="form-input-group">
             <label htmlFor="oc-mother">Mother's name</label>
@@ -202,27 +366,35 @@ export const OfficeCandidateForm: React.FC<{
             <input id="oc-em-name" value={value.emergencyContactName ?? ''} onChange={(e) => set({ emergencyContactName: e.target.value })} />
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-em-rel">Relationship</label>
-            <input id="oc-em-rel" value={value.emergencyRelationship ?? ''} onChange={(e) => set({ emergencyRelationship: e.target.value })} />
-          </div>
-          <div className="form-input-group">
             <label htmlFor="oc-em-phone">Emergency phone</label>
-            <input id="oc-em-phone" value={value.emergencyPhone ?? ''} onChange={(e) => set({ emergencyPhone: e.target.value })} />
+            <EthiopianPhoneInput
+              id="oc-em-phone"
+              value={value.emergencyPhone ?? ''}
+              onChange={(emergencyPhone) => set({ emergencyPhone })}
+              aria-invalid={Boolean(value.emergencyPhone?.trim()) && !isValidEthiopianMobile(value.emergencyPhone)}
+            />
+            {value.emergencyPhone?.trim() && !isValidEthiopianMobile(value.emergencyPhone) ? (
+              <p className="office-field-error" role="alert">
+                Enter 9 digits after +251. Numbers only.
+              </p>
+            ) : (
+              <p className="office-field-hint">Same as the candidate phone: +251 and 9 digits.</p>
+            )}
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-g-name">Guarantor name</label>
+            <label htmlFor="oc-g-name">Guarantor name <span className="office-optional">Optional</span></label>
             <input id="oc-g-name" value={value.guarantorName ?? ''} onChange={(e) => set({ guarantorName: e.target.value })} />
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-g-phone">Guarantor phone</label>
+            <label htmlFor="oc-g-phone">Guarantor phone <span className="office-optional">Optional</span></label>
             <input id="oc-g-phone" value={value.guarantorPhone ?? ''} onChange={(e) => set({ guarantorPhone: e.target.value })} />
           </div>
           <div className="form-input-group">
-            <label htmlFor="oc-g-fan">Guarantor national ID FAN number</label>
+            <label htmlFor="oc-g-fan">Guarantor national ID FAN number <span className="office-optional">Optional</span></label>
             <input id="oc-g-fan" value={value.guarantorNationalId ?? ''} onChange={(e) => set({ guarantorNationalId: e.target.value })} />
           </div>
           <div className="form-input-group office-form-span-full">
-            <label htmlFor="oc-bank">Bank account</label>
+            <label htmlFor="oc-bank">Bank account <span className="office-optional">Optional</span></label>
             <input id="oc-bank" value={value.bankAccount ?? ''} onChange={(e) => set({ bankAccount: e.target.value })} />
           </div>
           <div className="form-input-group office-form-span-full">
@@ -238,6 +410,20 @@ export const OfficeCandidateForm: React.FC<{
     </div>
   );
 };
+
+export function officeEmergencyPhoneIssue(value: OfficeCandidateInput): string | null {
+  const phone = value.emergencyPhone?.trim() ?? '';
+  if (!phone || isValidEthiopianMobile(phone)) return null;
+  return 'Emergency phone must start with +251 and contain 9 digits.';
+}
+
+export function officeEducationIssue(value: OfficeCandidateInput): string | null {
+  const kind = educationPlaceKind(value.qualification);
+  if (kind === 'none' && (value.institution?.trim() || value.fieldOfStudy?.trim())) {
+    return 'Graduated school is not collected when there is no formal schooling.';
+  }
+  return null;
+}
 
 export function useOfficeForm(initial?: OfficeCandidateInput) {
   return useState<OfficeCandidateInput>(initial ?? emptyOfficeCandidate());

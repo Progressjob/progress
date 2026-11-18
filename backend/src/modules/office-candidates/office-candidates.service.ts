@@ -129,6 +129,7 @@ export class OfficeCandidatesService {
     const phone = this.requirePhone(dto.phone);
     const nationalId = blank(dto.nationalId);
     this.assertNationalId(nationalId);
+    this.normalizeEmergencyPhone(dto);
     await this.assertUnique(phone, nationalId);
     const role = await this.prisma.role.findUnique({ where: { name: 'candidate' } });
     if (!role) throw new ConflictException('Roles have not been seeded');
@@ -193,6 +194,7 @@ export class OfficeCandidatesService {
     const phone = dto.phone === undefined ? undefined : this.requirePhone(dto.phone);
     const nationalId = dto.nationalId === undefined ? undefined : blank(dto.nationalId);
     if (nationalId !== undefined) this.assertNationalId(nationalId);
+    if (dto.emergencyPhone !== undefined) this.normalizeEmergencyPhone(dto);
     await this.assertUnique(phone, nationalId, existing.userId, existing.id);
     const salary = dto.expectedSalary;
     await this.prisma.$transaction(async (tx) => {
@@ -348,6 +350,16 @@ export class OfficeCandidatesService {
     return phone;
   }
 
+  private normalizeEmergencyPhone(dto: { emergencyPhone?: string }) {
+    const raw = blank(dto.emergencyPhone);
+    if (!raw) return;
+    const phone = toEthiopianE164(raw);
+    if (!phone) {
+      throw new BadRequestException('Emergency phone must start with +251 and contain 9 digits');
+    }
+    dto.emergencyPhone = phone;
+  }
+
   private assertNationalId(nationalId?: string | null) {
     if (nationalId && !/^\d{16}$/.test(nationalId)) {
       throw new BadRequestException('National ID FAN number must be exactly 16 digits');
@@ -373,12 +385,13 @@ export class OfficeCandidatesService {
 
   private educationCreate(dto: Partial<OfficeCandidateFieldsDto>) {
     const qualification = blank(dto.qualification);
-    const fieldOfStudy = blank(dto.fieldOfStudy);
-    const institution = blank(dto.institution);
+    const noSchooling = qualification?.toLowerCase() === 'no formal schooling';
+    const fieldOfStudy = noSchooling ? null : blank(dto.fieldOfStudy);
+    const institution = noSchooling ? null : blank(dto.institution);
     if (!qualification && !fieldOfStudy && !institution) return undefined;
     return {
       create: {
-        institution: institution ?? 'Not specified',
+        institution: noSchooling ? '' : (institution ?? 'Not specified'),
         qualification,
         fieldOfStudy,
       },

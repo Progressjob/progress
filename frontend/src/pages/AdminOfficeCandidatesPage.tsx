@@ -7,7 +7,7 @@ import {
   type ImportPreviewRow,
   type OfficeStatus,
 } from '../api/officeCandidates';
-import { emptyOfficeCandidate, OfficeCandidateForm } from '../components/admin/OfficeCandidateForm';
+import { emptyOfficeCandidate, OfficeCandidateForm, officeEducationIssue, officeEmergencyPhoneIssue } from '../components/admin/OfficeCandidateForm';
 
 const STATUSES: { id: '' | OfficeStatus; label: string }[] = [
   { id: '', label: 'All' },
@@ -80,10 +80,13 @@ export const AdminOfficeCandidatesPage: React.FC = () => {
           className="office-register-form"
           onSubmit={(event) => {
             event.preventDefault();
+            if (officeEducationIssue(form) || officeEmergencyPhoneIssue(form)) return;
             createMutation.mutate();
           }}
         >
           {createMutation.isError && <div className="alert-box-error">{(createMutation.error as Error).message}</div>}
+          {officeEducationIssue(form) && <div className="alert-box-error">{officeEducationIssue(form)}</div>}
+          {officeEmergencyPhoneIssue(form) && <div className="alert-box-error">{officeEmergencyPhoneIssue(form)}</div>}
           <div className="office-register-layout">
             <div className="office-register-main">
               <OfficeCandidateForm value={form} onChange={setForm} />
@@ -103,7 +106,7 @@ export const AdminOfficeCandidatesPage: React.FC = () => {
                 <li>Full name, as written on their FAN</li>
                 <li>A phone number they actually answer</li>
                 <li>National ID FAN number</li>
-                <li>Job they want, and expected salary</li>
+                <li>Job title, category, grade, and salary — optional, can be added later</li>
                 <li>Education, languages, and recent work</li>
                 <li>CV file, if they brought one</li>
               </ul>
@@ -111,10 +114,10 @@ export const AdminOfficeCandidatesPage: React.FC = () => {
               <ul>
                 <li>Can they start now, or are they still negotiating?</li>
                 <li>Which city or area can they work in?</li>
-                <li>Who should we call in an emergency, and who is their guarantor?</li>
+                <li>Who should we call in an emergency? A guarantor and bank account can be added later.</li>
                 <li>Do they agree Progress may recommend them to employers?</li>
               </ul>
-              <p className="office-hints-note">Save first, then open the record to upload the CV. Employers only see the profile you recommend, not the guarantor or emergency details.</p>
+              <p className="office-hints-note">Save first, then open the record to add job and salary or upload the CV. Employers only see the profile you recommend, not the guarantor or emergency details.</p>
             </aside>
           </div>
         </form>
